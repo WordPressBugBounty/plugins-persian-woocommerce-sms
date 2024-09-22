@@ -62,7 +62,7 @@ class MeliPayamakPattern implements GatewayInterface {
 						'username' => $username,
 						'password' => $password,
 						'text'     => reset( $textarray ),
-						'to'       => $this->$to[$i],
+						'to'       => $to[$i],
 						'bodyId'   => $bodyid
 					];
 					//استفاده از  متد SendByBaseNumber2 جایگزین SendByBaseNumber3

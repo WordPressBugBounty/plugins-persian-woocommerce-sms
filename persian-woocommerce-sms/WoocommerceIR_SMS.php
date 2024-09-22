@@ -3,7 +3,7 @@
  * Plugin Name: پیامک حرفه ای ووکامرس
  * Plugin URI: https://woosupport.ir
  * Description: افزونه کامل و حرفه ای برای اطلاع رسانی پیامکی سفارشات و رویداد های محصولات ووکامرس. تمامی حقوق این افزونه متعلق به <a href="http://woosupport.ir" target="_blank">تیم ووکامرس پارسی</a> می باشد و هر گونه کپی برداری، فروش آن غیر مجاز می باشد.
- * Version: 7.0.1
+ * Version: 7.0.2
  * Author: ووکامرس فارسی
  * Author URI: https://woosupport.ir
  * WC requires at least: 6.0.0
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once 'vendor/autoload.php';
 
 if ( ! defined( 'PWSMS_VERSION' ) ) {
-	define( 'PWSMS_VERSION', '7.0.1' );
+	define( 'PWSMS_VERSION', '7.0.0' );
 }
 
 if ( ! defined( 'PWSMS_URL' ) ) {
