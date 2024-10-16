@@ -643,7 +643,28 @@ class Settings {
             </div>';
 		}
 
+		echo '<div class="promote_hosting">
+	<i class="promote-hosting dashicons dashicons-admin-site-alt"></i>
+	<h3>یک هاستِ خوب ووکامرسی</h3>
+	<p>پیشنهاد ویژه ای برای شما داریم ;)</p>
+	<p>هاست ووکامرس فراداده با 10% تخفیف خرید سالانه</p>
+
+	<a href="https://faradadeh.com/woocommerce-host" target="_blank" class="button button-secondary"><i style="padding-top: 4px;" class="dashicons dashicons-yes-alt"></i> مشاهده سرویس ها</a>
+	<p>کد تخفیف: <code>woohost</code></p>
+	</div>';
+
+		if ( is_plugin_inactive( 'nabik-review-reminder/nabik-review-reminder.php' ) ) {
+			echo '<div class="promote_hosting" style="background: #f7b536; color: black">
+			<i class="promote-hosting dashicons dashicons-admin-comments"></i>
+			<h3 style="color: black">نظرسنجی خودکار ووکامرس</h3>
+			
+			<p>' . sprintf( 'جهت افزایش تعداد نظرات فروشگاه‌تان، می‌توانید با استفاده از <b><a href="%s" target="_blank">افزونه نظرسنجی خودکار ندا</a></b> با ارسال خودکار پیامک و ایمیل، برای هر سفارش از مشتریان خود درخواست ثبت نظر کنید.',
+					'https://yun.ir/pwsmsneda?utm_source=sidebar' ) . '</p>
 		
+			<a href="https://yun.ir/pwsmsneda?utm_source=sidebar" target="_blank" class="button button-secondary"><i style="padding-top: 4px;" class="dashicons dashicons-yes-alt"></i> مشاهده و خرید</a>
+			<p>کد تخفیف: <code>pwsms20</code></p>
+			</div>';
+		}
 
 		echo '</div>';
 

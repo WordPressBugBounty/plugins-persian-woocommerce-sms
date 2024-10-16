@@ -16,7 +16,7 @@ class MaxSMS implements GatewayInterface {
 	}
 
 	public static function name() {
-		return 'ippanel.co (maxsms.co) خدماتی عادی';
+		return 'maxsms.co';
 	}
 
 	public function send() {

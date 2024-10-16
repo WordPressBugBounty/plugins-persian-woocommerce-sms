@@ -14,7 +14,7 @@ class MaxSMSPattern implements GatewayInterface {
 	}
 
 	public static function name() {
-		return 'ippanel.co (maxsms.co) خدماتی پترن';
+		return 'ippanel.co (maxsms.co)';
 	}
 
 	public function send() {
@@ -43,17 +43,22 @@ class MaxSMSPattern implements GatewayInterface {
 		// Remove the line containing templateID
 		$message = preg_replace( '/templateID:([^|:\s]+)|/', '', $message );
 
-		// extract other pairs => key1:value1|key2:value2
+		// Extract other pairs => key1:value1|key2:value2
 		$pairs = array_filter( explode( '|', $message ) );
 
-		// Process each pair to create key-value arrays
+        // Process each pair to create key-value arrays
 		$key_value_pairs = array_map( function ( $pair ) {
 			[ $key, $value ] = explode( ':', trim( $pair ) );
+
+			// Check if the value is numeric and in scientific notation, then convert it to full number
+			if ( is_numeric( $value ) && strpos( $value, 'E' ) !== false ) {
+				$value = sprintf( '%0.0f', (float)$value ); // Convert from scientific notation to full number
+			}
 
 			return [ trim( $key ), is_numeric( $value ) ? $value + 0 : trim( $value ) ];
 		}, $pairs );
 
-		// Convert the array of arrays into an associative array
+// Convert the array of arrays into an associative array
 		$variable = array_column( $key_value_pairs, 1, 0 );
 
 

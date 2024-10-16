@@ -43,6 +43,15 @@ class MSGWay implements GatewayInterface {
 		$failed_numbers = [];
 		$message_params = array_filter( explode( '|', $message ) );
 
+		// Iterate over message_params and ensure large numbers are formatted as strings
+		foreach ( $message_params as &$param ) {
+			// Check if the param is numeric and is large enough to potentially be scientific notation
+			if ( is_numeric( $param ) && strpos( $param, 'E' ) !== false ) {
+				// Convert the number into a string without scientific notation
+				$param = sprintf( '%0.0f', (float) $param );
+			}
+		}
+
 		foreach ( $mobiles as $mobile ) {
 			try {
 				$params = [

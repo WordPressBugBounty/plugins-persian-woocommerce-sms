@@ -1,4 +1,5 @@
 <?php
+
 namespace PW\PWSMS;
 
 use DOMDocument;
@@ -34,7 +35,8 @@ class Notice {
 			$notice_id      = esc_attr( $notice['id'] );
 			$notice_content = strip_tags( $notice['content'], '<p><a><input><b><img><ul><ol><li>' );
 
-			printf( '<div class="notice pwsms_notice notice-success %s" id="pwsms_%s"><p>%s</p></div>', $dismissible, $notice_id, $notice_content );
+			printf( '<div class="notice pwsms_notice notice-success %s" id="pwsms_%s"><p>%s</p></div>', $dismissible,
+				$notice_id, $notice_content );
 
 			break;
 		}
@@ -78,6 +80,10 @@ class Notice {
 		<?php
 	}
 
+	public function is_dismiss( $notice_id ): bool {
+		return get_transient( 'pwsms_notice_' . $notice_id ) !== false;
+	}
+
 	public function notices(): array {
 
 		global $pagenow;
@@ -85,12 +91,13 @@ class Notice {
 		$post_type    = sanitize_text_field( $_GET['post_type'] ?? null );
 		$page         = sanitize_text_field( $_GET['page'] ?? null );
 		$tab          = sanitize_text_field( $_GET['tab'] ?? null );
-		$has_shipping = wc_shipping_enabled();
+		$has_shipping = function_exists( 'wc_shipping_enabled' ) && wc_shipping_enabled();
 
 		$notices = [
 			[
 				'id'        => 'nrr_product_reviews',
-				'content'   => sprintf( '<b>نظرسنجی خودکار ووکامرس:</b> جهت افزایش تعداد نظرات فروشگاه‌تان، می‌توانید با استفاده از <a href="%s" target="_blank">افزونه نظرسنجی خودکار ندا</a> با ارسال خودکار پیامک، برای هر سفارش از مشتریان خود درخواست ثبت نظر کنید. | کدتخفیف: pwsms20', 'https://yun.ir/pwsmsneda' ),
+				'content'   => sprintf( '<b>نظرسنجی خودکار ووکامرس:</b> جهت افزایش تعداد نظرات فروشگاه‌تان، می‌توانید با استفاده از <a href="%s" target="_blank">افزونه نظرسنجی خودکار ندا</a> با ارسال خودکار پیامک، برای هر سفارش از مشتریان خود درخواست ثبت نظر کنید. | کدتخفیف: pwsms20',
+					'https://yun.ir/pwsmsneda' ),
 				'condition' => $page == 'product-reviews' && is_plugin_inactive( 'nabik-review-reminder/nabik-review-reminder.php' ) && is_plugin_inactive( 'persian-woocommerce-shipping/woocommerce-shipping.php' ),
 				'dismiss'   => 6 * MONTH_IN_SECONDS,
 			],
@@ -152,8 +159,17 @@ class Notice {
 		die();
 	}
 
-	public function update_notice() {
+	public function set_dismiss( $notice_id ) {
 
+		$notices = wp_list_pluck( $this->notices(), 'dismiss', 'id' );
+
+		if ( isset( $notices[ $notice_id ] ) && $notices[ $notice_id ] ) {
+			set_transient( 'pwsms_notice_' . $notice_id, 'DISMISS', intval( $notices[ $notice_id ] ) );
+			set_transient( 'pwsms_notice_all', 'DISMISS', HOUR_IN_SECONDS );
+		}
+	}
+
+	public function update_notice() {
 		$update = get_transient( 'pwsms_update_notices' );
 
 		if ( $update ) {
@@ -233,20 +249,6 @@ class Notice {
 		update_option( 'pwsms_notices', $notices );
 
 		die();
-	}
-
-	public function set_dismiss( $notice_id ) {
-
-		$notices = wp_list_pluck( $this->notices(), 'dismiss', 'id' );
-
-		if ( isset( $notices[ $notice_id ] ) && $notices[ $notice_id ] ) {
-			set_transient( 'pwsms_notice_' . $notice_id, 'DISMISS', intval( $notices[ $notice_id ] ) );
-			set_transient( 'pwsms_notice_all', 'DISMISS', HOUR_IN_SECONDS );
-		}
-	}
-
-	public function is_dismiss( $notice_id ): bool {
-		return get_transient( 'pwsms_notice_' . $notice_id ) !== false;
 	}
 
 }

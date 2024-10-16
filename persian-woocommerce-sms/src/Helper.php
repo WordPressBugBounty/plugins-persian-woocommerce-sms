@@ -801,8 +801,8 @@ class Helper {
 		$sale_price_dates_to   = ( $date = $this->product_sale_price_time( $product_id, 'to' ) ) ? date_i18n( 'Y-m-d',
 			$date ) : '';
 
-		$product = wc_get_product( $product_id );
-		$parent_product = wc_get_product($parent_product_id);
+		$product        = wc_get_product( $product_id );
+		$parent_product = wc_get_product( $parent_product_id );
 
 		if ( ! PWSMS()->is_wc_product( $product ) ) {
 			return '';
@@ -1159,7 +1159,10 @@ class Helper {
 
 	public function get_sms_gateways() {
 
-		$gateways = [];
+		$gateways          = [];
+		$excluded_gateways = [
+			//'PW\PWSMS\Gateways\IppanelSms' => 'ippanelsms',
+		];
 		// Gateways are static as namespace and directory
 		$namespace = 'PW\PWSMS\Gateways';
 		$dir       = PWSMS_DIR . '/src/Gateways';
@@ -1170,6 +1173,7 @@ class Helper {
 			// Create Full Qualified Class Name based on file names without .php
 			$fqcn           = "$namespace\\$class";
 			$active_gateway = PWSMS()->get_option( 'sms_gateway' );
+
 			if ( empty( $active_gateway ) ) {
 				$active_gateway = Logger::class;
 			}
@@ -1201,6 +1205,9 @@ class Helper {
 			}
 
 		}
+
+		// Purify gateways
+		$gateways = array_diff( $gateways, $excluded_gateways );
 
 		return apply_filters( 'pwoosms_sms_gateways', $gateways );
 	}
