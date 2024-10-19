@@ -99,7 +99,7 @@ class ListTable extends WP_List_Table {
 		return $result;
 	}
 
-	/*TODO : Convert these types to function or constants*/
+
 	public function column_type( $item ) {
 
 		if ( empty( $item['type'] ) ) {

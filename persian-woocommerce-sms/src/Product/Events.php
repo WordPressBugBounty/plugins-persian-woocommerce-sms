@@ -88,7 +88,6 @@ class Events {
 				$parent_product->delete_meta_data( $post_meta );
 				$parent_product->save();
 
-				/// TODO : justify return type by exact usage of function
 				return true;
 			}
 
@@ -107,6 +106,7 @@ class Events {
 
 			return true;
 		}
+		return false;
 	}
 
 	// وقتی محصول موجود شد : کاربر
