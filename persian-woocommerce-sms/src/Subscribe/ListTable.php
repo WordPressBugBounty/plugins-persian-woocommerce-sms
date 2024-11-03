@@ -273,10 +273,12 @@ class ListTable extends WP_List_Table {
 	}
 
 	public function prepare_items() {
+
 		$columns               = $this->get_columns();
 		$hidden                = [];
 		$sortable              = $this->get_sortable_columns();
 		$this->_column_headers = [ $columns, $hidden, $sortable ];
+
 		$this->process_bulk_action();
 
 		$per_page     = 20;
@@ -287,7 +289,9 @@ class ListTable extends WP_List_Table {
 			'total_items' => $total_items,
 			'per_page'    => $per_page,
 		] );
+
 		$this->items = $this->get_items( $per_page, $current_page );
+
 	}
 
 	public function get_columns() {
@@ -425,9 +429,9 @@ class ListTable extends WP_List_Table {
 	public function get_items( int $per_page = 20, int $page_number = 1 ) {
 		$wpdb = $GLOBALS['wpdb'];
 
-		$sql = $this->get_query();
-		//$sql     .= $wpdb->prepare("LIMIT %d" , $per_page);
-		//$sql     .= $wpdb->prepare(" OFFSET ( %d - 1 ) * %d" , $page_number , $per_page);
+		$sql     = $this->get_query();
+		$offset  = ( $page_number - 1 ) * $per_page;
+		$sql     .= $wpdb->prepare( " LIMIT %d OFFSET %d", $per_page, $offset );
 		$results = $wpdb->get_results( $sql, 'ARRAY_A' );
 
 		$this->set_users_mobile( $results );

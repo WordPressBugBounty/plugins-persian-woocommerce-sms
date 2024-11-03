@@ -532,8 +532,8 @@ class Contacts {
 		<script type="text/javascript">
             jQuery(document).ready(function ($) {
                 $('select#select_product_id').on('change', function () {
-					<?php $url = htmlspecialchars( esc_url( remove_query_arg( [ 'add' ] ) ), ENT_QUOTES, 'UTF-8' ); ?>
-                    document.location = '<?php echo $url; ?>' + "&add=" + encodeURIComponent($(this).val());
+					<?php $url = esc_url_raw( remove_query_arg( [ 'add' ] ) ); ?>
+                    document.location = '<?php echo str_replace( '&amp;', '&', esc_js( $url ) ); ?>' + "&add=" + encodeURIComponent($(this).val());
                 });
             });
 		</script>

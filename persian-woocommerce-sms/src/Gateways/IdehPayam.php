@@ -31,7 +31,7 @@ class IdehPayam implements GatewayInterface {
 
         try {
 
-            $soap = new SoapClient( "http://panel.idehpayam.com/webservice/send.php?wsdl" );
+            $soap = new SoapClient( "http://185.112.33.61/webservice/send.php?wsdl" );
 
             $soap->Username = $username;
             $soap->Password = $password;
