@@ -6,9 +6,9 @@ Donate link: https://woosupport.ir
 plugin URI: https://woosupport.ir
 Tags: sms,ووکامرس فارسی,woocommerce,persian woocommerce,پیامک
 Requires at least: 5.8
-Tested up to: 6.6.2
+Tested up to: 6.7.1
 Requires PHP: 7.4
-Stable tag: 7.0.5
+Stable tag: 7.0.6
 
 افزونه کامل و حرفه ای برای اطلاع رسانی پیامکی سفارشات و رویداد های محصولات ووکامرس
 
@@ -378,5 +378,5 @@ Stable tag: 7.0.5
 * نسخه اولیه
 
 == Upgrade Notice ==
-= 7.0.5 =
-* رفع مشکل صفحه بندی خبرنامه
+= 7.0.6 =
+* رفع مشکل خبرنامه

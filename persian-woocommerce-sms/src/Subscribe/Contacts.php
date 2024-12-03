@@ -305,7 +305,7 @@ class Contacts {
 			<form method="post">
 				<input type="hidden" name="page" value="WoocommerceIR_SMS_Contacts_list_table">
 				<?php
-				$list->search_box( 'جستجوی شماره موبایل', 'search_id' );
+				$list->search_box( 'جستجوی تلفن/ شناسه محصول', 'search_id' );
 				$list->display();
 				?>
 			</form>

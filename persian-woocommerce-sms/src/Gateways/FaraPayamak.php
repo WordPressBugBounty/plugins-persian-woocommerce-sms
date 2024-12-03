@@ -32,7 +32,7 @@ class FaraPayamak implements GatewayInterface {
 
         try {
 
-            $client       = new SoapClient( "http://37.228.138.118/post/send.asmx?wsdl" );
+            $client       = new SoapClient( "https://api.payamak-panel.com/post/send.asmx?wsdl" );
             $encoding     = "UTF-8";
             $parameters   = [
                 'username' => $username,

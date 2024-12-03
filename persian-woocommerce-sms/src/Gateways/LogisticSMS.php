@@ -25,15 +25,18 @@ class LogisticSMS implements GatewayInterface {
 	}
 
 	public function send() {
-		$token            = $this->get_token();
-		$token_validation = true;
+		$token = $this->get_token();
 
 		if ( empty( $token ) ) {
-			$token_validation = $this->fetch_token();
-		}
 
-		if ( empty( $token ) && $token_validation === true ) {
+			$fetch_token_result = $this->fetch_token();
+
+			if ( $fetch_token_result !== true ) {
+				return $fetch_token_result;
+			}
+
 			$token = $this->get_token();
+
 		}
 
 		if ( empty( $token ) ) {
@@ -121,12 +124,15 @@ class LogisticSMS implements GatewayInterface {
 			'password' => $password,
 		];
 
+		$payload = wp_json_encode( $payload );
+
 		// Make the POST request to log in
 		$response = wp_remote_post( $url, [
+			'method'  => 'POST',
 			'body'    => $payload,
 			'timeout' => 10,
 			'headers' => [
-				'Content-Type' => 'application/x-www-form-urlencoded',
+				'Content-Type' => 'application/json',
 			],
 		] );
 
@@ -136,13 +142,13 @@ class LogisticSMS implements GatewayInterface {
 		}
 
 		// Get the response body and decode the JSON
-		$body          = wp_remote_retrieve_body( $response );
+		$body = wp_remote_retrieve_body( $response );
+
 		$json_response = json_decode( $body, true );
 
-		// Check if 'msg' is 'success'
+		// Check error message existence
 		if ( ! isset( $json_response['msg'] ) || $json_response['msg'] !== 'success' ) {
-			// If msg is not 'success', output the error message
-			return 'خطا : ' . $json_response['msg'];
+			return sprintf( 'خطای  %1$s : %2$s', $json_response['errorCode'], $json_response['errorMessage'] );
 		}
 
 		// Token and expiration data from response

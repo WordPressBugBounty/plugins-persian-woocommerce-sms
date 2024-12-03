@@ -73,36 +73,36 @@ class Archive {
 			$list->export_csv();
 		}
 
-		if (isset($_POST['delete_records'])) {
-			$period = sanitize_text_field($_POST['delete_period']);
-			$list->delete_records_by_period($period);
+		if ( isset( $_POST['delete_records'] ) ) {
+			$period = sanitize_text_field( $_POST['delete_period'] );
+			$list->delete_records_by_period( $period );
 		}
-
 
 
 		$list->prepare_items();
 		?>
 
-		<style type="text/css">
+        <style type="text/css">
             .wp-list-table .column-id {
                 max-width: 5%;
             }
-		</style>
+        </style>
 
 		<?php if ( ! empty( $_GET['id'] ) ) : ?>
-			<a class="page-title-action" href="<?php echo remove_query_arg( [ 'id' ] ); ?>">بازگشت به لیست آرشیو
-				همه پیامک‌ها</a>
+            <a class="page-title-action" href="<?php echo esc_url( remove_query_arg( [ 'id' ] ) ); ?>">
+                بازگشت به لیست آرشیو همه پیامک‌ها
+            </a>
 		<?php endif; ?>
 
-		<form method="post">
-			<input type="hidden" name="page" value="WoocommerceIR_SMS_Archive_list_table">
+        <form method="post">
+            <input type="hidden" name="page" value="WoocommerceIR_SMS_Archive_list_table">
 			<?php
 			$list->search_box( 'جستجوی گیرنده', 'search_id' );
 			$list->display();
 			?>
-		</form>
+        </form>
 
-		<script type="text/javascript">
+        <script type="text/javascript">
             jQuery(document).ready(function ($) {
                 $('.delete a, a.delete, .button.action').on('click', function (e) {
                     var action1 = $('select[name="action"]').val();
@@ -115,7 +115,7 @@ class Archive {
                     }
                 });
             });
-		</script>
+        </script>
 		<?php
 	}
 

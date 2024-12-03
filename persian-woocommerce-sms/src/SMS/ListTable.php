@@ -82,7 +82,7 @@ class ListTable extends WP_List_Table {
 			'delete' => sprintf( '<a target="_blank" href="%s">%s</a>', get_edit_post_link( $post_id ), $edit_title ),
 		];
 
-		$post_id = '<a title="' . $filter_title . '" href="' . add_query_arg( [ 'id' => $post_id ] ) . '">' . implode( ' :: ',
+		$post_id = '<a title="' . $filter_title . '" href="' . esc_url(add_query_arg( [ 'id' => $post_id ] )) . '">' . implode( ' :: ',
 				$value ) . '</a>';
 
 		return sprintf( '%1$s %2$s', $post_id, $this->row_actions( $actions ) );

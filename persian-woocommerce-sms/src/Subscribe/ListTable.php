@@ -28,11 +28,11 @@ class ListTable extends WP_List_Table {
 
 	public function export_csv_button() {
 		?>
-		<form method="post">
-			<input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>"/>
-			<input type="submit" name="export_csv" class="button button-primary"
-			       value="<?php esc_attr_e( 'برون بری' ); ?>"/>
-		</form>
+        <form method="post">
+            <input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>"/>
+            <input type="submit" name="export_csv" class="button button-primary"
+                   value="<?php esc_attr_e( 'برون بری' ); ?>"/>
+        </form>
 		<?php
 	}
 
@@ -115,11 +115,7 @@ class ListTable extends WP_List_Table {
 		$orderby = ! empty( $_REQUEST['orderby'] ) ? esc_sql( $_REQUEST['orderby'] ) : 'mobile';
 		$order   = ! empty( $_REQUEST['order'] ) ? esc_sql( $_REQUEST['order'] ) : 'asc';
 
-		$query = $wpdb->prepare(
-			"SELECT * FROM {$wpdb->prefix}woocommerce_ir_sms_contacts ORDER BY $orderby $order LIMIT %d OFFSET %d",
-			$per_page,
-			$offset
-		);
+		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}woocommerce_ir_sms_contacts ORDER BY $orderby $order LIMIT %d OFFSET %d", $per_page, $offset );
 
 		$data = $wpdb->get_results( $query, ARRAY_A );
 
@@ -138,9 +134,7 @@ class ListTable extends WP_List_Table {
 	}
 
 	public function column_cb( $item ) {
-		return sprintf(
-			'<input type="checkbox" name="item[]" value="%s" />', $item['id']
-		);
+		return sprintf( '<input type="checkbox" name="item[]" value="%s" />', $item['id'] );
 	}
 
 	public function column_mobile( $item ) {
@@ -163,15 +157,16 @@ class ListTable extends WP_List_Table {
 
 		$mobile = self::prepareMobile( $_mobile );
 		$user   = ! empty( self::$users[ $mobile ] ) ? self::$users[ $mobile ] : (object) [];
+
 		$mobile = PWSMS()->modify_mobile( $mobile );
 
 		if ( ! empty( $user->ID ) ) {
 
 			$user_id = $user->ID;
 
-			$full_name = get_user_meta( $user_id, 'billing_first_name', true ) . ' ' . get_user_meta( $user_id,
-					'billing_last_name', true );
+			$full_name = get_user_meta( $user_id, 'billing_first_name', true ) . ' ' . get_user_meta( $user_id, 'billing_last_name', true );
 			$full_name = trim( $full_name );
+
 			if ( empty( $full_name ) && ! empty( $user->display_name ) ) {
 				$full_name = ucwords( $user->display_name );
 			}
@@ -225,8 +220,7 @@ class ListTable extends WP_List_Table {
 			$query_args['product_id'] = $product_ids;
 		}
 
-		$edit_url = add_query_arg( $query_args,
-			admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=contacts' ) );
+		$edit_url = add_query_arg( $query_args, admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=contacts' ) );
 
 		$delete_url = add_query_arg( [
 			'action'   => 'delete',
@@ -240,8 +234,7 @@ class ListTable extends WP_List_Table {
 		];
 
 		if ( ! empty( $product_id ) ) {
-			$actions['edit_product'] = sprintf( '<a target="_blank" href="%s">%s</a>',
-				get_edit_post_link( $product_id ), 'مدیریت محصول' );
+			$actions['edit_product'] = sprintf( '<a target="_blank" href="%s">%s</a>', get_edit_post_link( $product_id ), 'مدیریت محصول' );
 		}
 
 		return sprintf( '%1$s %2$s', $column_value, $this->row_actions( $actions ) );
@@ -326,8 +319,7 @@ class ListTable extends WP_List_Table {
 
 		if ( 'delete' === $action ) {
 
-			if ( ! empty( $_REQUEST ) && ! wp_verify_nonce( sanitize_text_field( $_REQUEST['_wpnonce'] ),
-					'pwoosms_delete_contact' ) ) {
+			if ( ! empty( $_REQUEST ) && ! wp_verify_nonce( sanitize_text_field( $_REQUEST['_wpnonce'] ), 'pwoosms_delete_contact' ) ) {
 				die( 'خطایی رخ داده است. بعدا تلاش کنید.' );
 			}
 
@@ -336,8 +328,7 @@ class ListTable extends WP_List_Table {
 			echo '<div class="updated notice is-dismissible below-h2"><p>آیتم حذف شد.</p></div>';
 		} elseif ( $action == 'bulk_delete' ) {
 
-			if ( ! empty( $_REQUEST ) && ! wp_verify_nonce( sanitize_text_field( $_REQUEST['_wpnonce'] ),
-					'bulk-' . $this->_args['plural'] ) ) {
+			if ( ! empty( $_REQUEST ) && ! wp_verify_nonce( sanitize_text_field( $_REQUEST['_wpnonce'] ), 'bulk-' . $this->_args['plural'] ) ) {
 				die( 'خطایی رخ داده است. بعدا تلاش کنید.' );
 			}
 
@@ -376,10 +367,14 @@ class ListTable extends WP_List_Table {
 		$table = self::table();
 
 		$where = [];
+
 		if ( isset( $_REQUEST['s'] ) ) {
-			$s       = sanitize_text_field( $_REQUEST['s'] );
-			$s       = self::prepareMobile( $s );
-			$where[] = '(mobile LIKE "%' . $wpdb->prepare( "%s", $s ) . '%")';
+
+			$s = sanitize_text_field( $_REQUEST['s'] );
+			$s = self::prepareMobile( $s );
+            // Search in mobile and product id
+			$where[] = $wpdb->prepare( '(`mobile` LIKE %s OR `product_id` = %s)', '%' . $s . '%', $s );
+
 		}
 
 		if ( ! empty( $_REQUEST['product_id'] ) ) {
@@ -399,8 +394,7 @@ class ListTable extends WP_List_Table {
                     FROM %s t CROSS JOIN (SELECT a.N + b.N * 10 + 1 n FROM
                     (SELECT 0 AS N UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) a,
                     (SELECT 0 AS N UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) b
-                    ORDER BY n) n WHERE (n.n <= 1 + (LENGTH(t.groups) - LENGTH(REPLACE(t.groups, ',', ''))))", $select,
-				$table );
+                    ORDER BY n) n WHERE (n.n <= 1 + (LENGTH(t.groups) - LENGTH(REPLACE(t.groups, ',', ''))))", $select, $table );
 
 			if ( ! empty( $where ) ) {
 				$sql .= " AND {$where}";

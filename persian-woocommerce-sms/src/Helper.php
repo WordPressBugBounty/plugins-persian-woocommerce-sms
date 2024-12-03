@@ -1080,7 +1080,7 @@ class Helper {
 	}
 
 	public function send_sms( $data ) {
-
+       // TODO: Set mobile string handling in better way
 		$message = ! empty( $data['message'] ) ? esc_textarea( $data['message'] ) : '';
 
 		$mobile = ! empty( $data['mobile'] ) ? $data['mobile'] : '';
@@ -1089,8 +1089,7 @@ class Helper {
 		}
 
 		$mobile = $this->modify_mobile( $mobile );
-
-		$mobile = explode( ',', implode( ',', (array) $mobile ) );//حتما یه خیریتی داشته
+		$mobile = explode( ',', implode( ',', (array) $mobile ) );
 		$mobile = array_map( 'trim', $mobile );
 		$mobile = array_unique( array_filter( $mobile ) );
 

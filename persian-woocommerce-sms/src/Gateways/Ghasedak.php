@@ -6,17 +6,17 @@ use DateTime;
 use DateTimeZone;
 use PW\PWSMS\PWSMS;
 
-class MaxSMS implements GatewayInterface {
+class Ghasedak implements GatewayInterface {
 	use GatewayTrait;
 
-	public string $api_url = 'https://api2.ippanel.com/api/v1';
+	public string $api_url = 'https://gateway.ghasedaksms.com/api/v1';
 
 	public static function id() {
-		return 'maxsms';
+		return 'ghasedak';
 	}
 
 	public static function name() {
-		return 'maxsms.co';
+		return 'ghasedak.me';
 	}
 
 	public function send() {
@@ -24,11 +24,6 @@ class MaxSMS implements GatewayInterface {
 		$api_key         = ! empty( $this->username ) ? trim( $this->username ) : trim( $this->password );
 		$from            = trim( $this->senderNumber );
 		$message_content = $this->message;
-
-		// Default sender number if not provided
-		if ( empty( $from ) ) {
-			$from = '+983000505';
-		}
 
 		// Replace "pcode" with "patterncode" in the message
 		$message_content = str_replace( 'pcode', 'patterncode', $message_content );
@@ -44,7 +39,7 @@ class MaxSMS implements GatewayInterface {
 	}
 
 	private function send_pattern_sms( array $recipients, string $from, string $message_content, string $api_key ) {
-		$pattern_api_url = $this->api_url . '/sms/pattern/normal/send';
+		$pattern_api_url = $this->api_url . '/Send/NewOTP';
 
 		// Replace "pcode" with "patterncode" in the message
 		$message_content = str_replace( 'pcode', 'patterncode', $message_content );
@@ -72,106 +67,88 @@ class MaxSMS implements GatewayInterface {
 		$headers = [
 			'Content-Type' => 'application/json',
 			'Accept'       => 'application/json',
-			'apikey'       => $api_key,
+			'ApiKey'       => $api_key,
+			'agent: WooCommerce',
 		];
 
-		$failed_numbers = [];
+		$data = [
+			'template' => trim( $pattern_code ),
+			'type'     => '1',
+			'receptor' => $recipients,
+			'variable' => $pattern_data,
+			'allparam' => [],
+		];
 
-		foreach ( $recipients as $recipient ) {
-			$data = [
-				'code'      => trim( $pattern_code ),
-				'sender'    => $from,
-				'recipient' => $recipient,
-				'variable'  => $pattern_data,
+		$all_param = [];
+		foreach ( $pattern_data as $param => $value ) {
+			$all_param[] = [
+				'param' => $param,
+				'value' => $value
 			];
-
-			$remote = wp_remote_post( $pattern_api_url, [
-				'headers' => $headers,
-				'body'    => wp_json_encode( $data ),
-			] );
-
-			if ( is_wp_error( $remote ) ) {
-				$failed_numbers[ $recipient ] = $remote->get_error_message();
-			}
-
-			$response_message = wp_remote_retrieve_response_message( $remote );
-			$response_code    = wp_remote_retrieve_response_code( $remote );
-
-			if ( empty( $response_code ) || 200 != $response_code ) {
-				$failed_numbers[ $recipient ] = $response_code . ' -> ' . $response_message;
-				continue;
-			}
-
-			$response = wp_remote_retrieve_body( $remote );
-
-			if ( empty( $response ) ) {
-				$failed_numbers[ $recipient ] = 'بدون پاسخ دریافتی از سمت وب سرویس.';
-				continue;
-			}
-
-			$response_data = json_decode( $response, true );
-			if ( ! empty( json_last_error() ) ) {
-				$failed_numbers[ $recipient ] = 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
-				continue;
-			}
-
-			if ( isset( $response_data['status'] ) && strtolower( $response_data['status'] ) == 'ok' ) {
-				continue;
-			}
 		}
 
-		// Handle failed numbers and format response
-		return $this->formatFailedNumbers( $failed_numbers );
-	}
+		$data['allparam'] = $all_param;
 
-	private function formatFailedNumbers( array $failed_numbers ) {
-		// Handle failed numbers and format response
-		if ( ! empty( $failed_numbers ) ) {
-			$grouped = [];
-			foreach ( $failed_numbers as $number => $message ) {
-				if ( ! isset( $grouped[ $message ] ) ) {
-					$grouped[ $message ] = [];
-				}
-				$grouped[ $message ][] = $number;
-			}
+		$remote = wp_remote_post( $pattern_api_url, [
+			'headers' => $headers,
+			'body'    => wp_json_encode( $data ),
+		] );
 
-			$result = implode( ', ', array_map(
-				function ( string $message, array $numbers ) {
-					return implode( ',', $numbers ) . ': ' . $message;
-				},
-				array_keys( $grouped ),
-				$grouped
-			) );
-
-			return $result;
+		if ( is_wp_error( $remote ) ) {
+			return $remote->get_error_message();
 		}
 
-		return true;
+		$response_message = wp_remote_retrieve_response_message( $remote );
+		$response_code    = wp_remote_retrieve_response_code( $remote );
+
+		if ( empty( $response_code ) || 200 != $response_code ) {
+			return $response_code . ' -> ' . $response_message;
+		}
+
+		$response = wp_remote_retrieve_body( $remote );
+
+		if ( empty( $response ) ) {
+			return 'بدون پاسخ دریافتی از سمت وب سرویس.';
+		}
+
+		$response_data = json_decode( $response, true );
+		if ( ! empty( json_last_error() ) ) {
+			return 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
+		}
+
+		if ( isset( $response_data['isSuccess'] ) && $response_data['isSuccess'] ) {
+			return true;
+		}
+
+		return 'خطای وبسرویس: ' . $response_data['message'] ?? 'خطای نامشخص';
 	}
+
 
 	private function send_simple_sms( array $recipients, string $from, string $message_content, string $api_key ) {
-		$single_api_url = $this->api_url . '/sms/send/webservice/single';
+		$date_time           = new DateTime();
+		$date_string         = $date_time->format( 'c' );
+		$client_reference_id = rand( 1, 1000000 );
+
+		$single_api_url = $this->api_url . '/Send/Bulk';
 
 		// Check for required fields
 		if ( empty( $api_key ) || empty( $message_content ) || empty( $recipients ) ) {
 			return 'اطلاعات پنل، یا پیامک به درستی وارد نشده.';
 		}
 
-		$date_time_now = new DateTime( 'now', new DateTimeZone( 'UTC' ) );
-		$date_time_now->modify( '+30 seconds' );
-		$date_time = $date_time_now->format( 'Y-m-d\TH:i:s.v\Z' );
-
 		$data = [
-			'recipient' => $recipients,
-			'sender'    => $from,
-			'message'   => $message_content,
-			'time'      => $date_time
+			'sendDate' => $date_string,
+			'Sender'   => $from,
+			'receptor' => $recipients,
+			'message'  => $message_content,
+			'checkId'  => $client_reference_id . ""
 		];
 
 		$headers = [
 			'Content-Type' => 'application/json',
 			'Accept'       => 'application/json',
-			'apikey'       => $api_key,
+			'ApiKey'       => $api_key,
+			'agent: WooCommerce',
 		];
 
 		$remote = wp_remote_post( $single_api_url, [
@@ -202,10 +179,10 @@ class MaxSMS implements GatewayInterface {
 			return 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
 		}
 
-		if ( isset( $response_data['status'] ) && strtolower( $response_data['status'] ) == 'ok' ) {
+		if ( isset( $response_data['isSuccess'] ) && $response_data['isSuccess'] ) {
 			return true;
 		}
 
-		return $response;
+		return 'خطای وبسرویس: ' . $response_data['message'] ?? 'خطای نامشخص';
 	}
 }
