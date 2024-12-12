@@ -124,15 +124,12 @@ class LogisticSMS implements GatewayInterface {
 			'password' => $password,
 		];
 
-		$payload = wp_json_encode( $payload );
-
 		// Make the POST request to log in
 		$response = wp_remote_post( $url, [
-			'method'  => 'POST',
 			'body'    => $payload,
 			'timeout' => 10,
 			'headers' => [
-				'Content-Type' => 'application/json',
+				'Content-Type' => 'application/x-www-form-urlencoded',
 			],
 		] );
 

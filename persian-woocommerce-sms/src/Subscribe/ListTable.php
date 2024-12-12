@@ -28,11 +28,8 @@ class ListTable extends WP_List_Table {
 
 	public function export_csv_button() {
 		?>
-        <form method="post">
-            <input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>"/>
-            <input type="submit" name="export_csv" class="button button-primary"
-                   value="<?php esc_attr_e( 'برون بری' ); ?>"/>
-        </form>
+        <input type="submit" name="export_csv" class="button button-primary"
+               value="<?php esc_attr_e( 'برون بری' ); ?>"/>
 		<?php
 	}
 

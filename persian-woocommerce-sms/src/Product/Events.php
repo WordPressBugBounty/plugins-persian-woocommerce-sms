@@ -2,6 +2,7 @@
 
 namespace PW\PWSMS\Product;
 
+use PW\PWSMS\Repositories\ContactsRepository;
 use PW\PWSMS\Repositories\SMSRepository;
 use PW\PWSMS\Subscribe\Contacts;
 
@@ -26,8 +27,7 @@ class Events {
 
 	public function init() {
 
-		$action = ! empty( $_POST['action'] ) ? str_ireplace( 'woocommerce_', '',
-			sanitize_text_field( $_POST['action'] ) ) : '';
+		$action = ! empty( $_POST['action'] ) ? str_ireplace( 'woocommerce_', '', sanitize_text_field( $_POST['action'] ) ) : '';
 		if ( in_array( $action, [ 'add_variation', 'link_all_variations' ] ) ) {
 			return;
 		}
@@ -106,11 +106,12 @@ class Events {
 
 			return true;
 		}
+
 		return false;
 	}
 
 	// وقتی محصول موجود شد : کاربر
-	public function in_stock_sms( $product_id ) {
+	public function in_stock_sms( $product_id ): bool {
 		$type    = 11;
 		$product = wc_get_product( $product_id );
 		if ( ! PWSMS()->is_wc_product( $product ) ) {
@@ -131,7 +132,9 @@ class Events {
 
 			return true;
 		}
+
 		$in_stock_send = $product->get_meta( $post_meta, true );
+
 		if ( PWSMS()->maybe_bool( $in_stock_send ) ) {
 			return false;
 		}
@@ -157,7 +160,16 @@ class Events {
 			'message' => $message,
 		];
 
-		PWSMS()->send_sms( $data );
+
+		$message_sent = PWSMS()->send_sms( $data );
+
+		$remove_group = PWSMS()->get_option( 'notif_no_stock_remove_contacts' );
+
+		if ( true == $message_sent && $remove_group ) {
+			// Remove _in group from the contact groups which already got the sms!
+			ContactsRepository::instance()->remove_contacts_group( $receivers, '_in', $parent_product_id );
+		}
+
 		$parent_product->update_meta_data( $post_meta, 'yes' );
 		$parent_product->save();
 
@@ -214,8 +226,7 @@ class Events {
 			}
 		}
 		if ( $this->enable_product_admin_sms ) {
-			$mobiles = array_merge( $mobiles,
-				array_keys( PWSMS()->product_admin_mobiles( $parent_product_id, $status ) ) );
+			$mobiles = array_merge( $mobiles, array_keys( PWSMS()->product_admin_mobiles( $parent_product_id, $status ) ) );
 		}
 
 		$mobiles = array_map( 'trim', $mobiles );
@@ -241,16 +252,16 @@ class Events {
 			return false;
 		}
 
-		$product           = wc_get_product( $product_id );
+		$product = wc_get_product( $product_id );
 
-		if ( ! PWSMS()->is_wc_product( $product )) {
+		if ( ! PWSMS()->is_wc_product( $product ) ) {
 			return false;
 		}
 
 		$parent_product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
 		$parent_product    = wc_get_product( $parent_product_id );
 
-		if ( ! PWSMS()->is_wc_product( $parent_product )) {
+		if ( ! PWSMS()->is_wc_product( $parent_product ) ) {
 			return false;
 		}
 		/*-----------------------------------------------------------------*/

@@ -98,6 +98,8 @@ class Archive {
             <input type="hidden" name="page" value="WoocommerceIR_SMS_Archive_list_table">
 			<?php
 			$list->search_box( 'جستجوی گیرنده', 'search_id' );
+			$list->render_export_csv();
+			$list->render_period_delete();
 			$list->display();
 			?>
         </form>

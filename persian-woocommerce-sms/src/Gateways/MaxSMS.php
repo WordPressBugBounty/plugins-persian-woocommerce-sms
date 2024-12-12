@@ -121,10 +121,10 @@ class MaxSMS implements GatewayInterface {
 		}
 
 		// Handle failed numbers and format response
-		return $this->formatFailedNumbers( $failed_numbers );
+		return $this->format_failed_numbers( $failed_numbers );
 	}
 
-	private function formatFailedNumbers( array $failed_numbers ) {
+	private function format_failed_numbers( array $failed_numbers ) {
 		// Handle failed numbers and format response
 		if ( ! empty( $failed_numbers ) ) {
 			$grouped = [];

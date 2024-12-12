@@ -30,15 +30,13 @@ class Settings {
 			add_filter( 'admin_footer_text', [ $this, 'footer_note' ] );
 			add_filter( 'update_footer', [ $this, 'footer_version' ], 11 );
 
-			add_filter( "plugin_action_links_persian-woocommerce-sms/WoocommerceIR_SMS.php",
-				function ( $actions, $plugin_file, $plugin_data, $context ) {
-					$woo = [
-						'woo_ir' => sprintf( '<a href="%s" target="blank" style="background: #763ec2;color: white;padding: 0px 5px;border-radius: 2px;">%s</a>',
-							'https://woosupport.ir', 'ووکامرس فارسی' )
-					];
+			add_filter( "plugin_action_links_persian-woocommerce-sms/WoocommerceIR_SMS.php", function ( $actions, $plugin_file, $plugin_data, $context ) {
+				$woo = [
+					'woo_ir' => sprintf( '<a href="%s" target="blank" style="background: #763ec2;color: white;padding: 0px 5px;border-radius: 2px;">%s</a>', 'https://woosupport.ir', 'ووکامرس فارسی' )
+				];
 
-					return $woo + $actions;
-				}, 100, 4 );
+				return $woo + $actions;
+			}, 100, 4 );
 		}
 	}
 
@@ -56,8 +54,7 @@ class Settings {
 	}
 
 	public function admin_menu() {
-		add_submenu_page( 'persian-wc', 'پیامک ووکامرس', 'پیامک ووکامرس',
-			'manage_woocommerce', 'persian-woocommerce-sms-pro', [ $this, 'settings_page' ] );
+		add_submenu_page( 'persian-wc', 'پیامک ووکامرس', 'پیامک ووکامرس', 'manage_woocommerce', 'persian-woocommerce-sms-pro', [ $this, 'settings_page' ] );
 	}
 
 	public function admin_init() {
@@ -156,9 +153,7 @@ class Settings {
 					'label' => 'شماره ارسال کننده پیامک',
 					'type'  => 'text',
 					'ltr'   => true,
-					'desc'  => $gateway ? sprintf( 'یک پیامک تستی جهت بررسی صحت تنظیمات درگاه پیامک %sارسال نمایید.%s',
-						'<a href="' . admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=send' ) . '">',
-						'</a>' ) : '',
+					'desc'  => $gateway ? sprintf( 'یک پیامک تستی جهت بررسی صحت تنظیمات درگاه پیامک %sارسال نمایید.%s', '<a href="' . admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=send' ) . '">', '</a>' ) : '',
 				],
 				[
 					'name'  => 'enable_admin_bar',
@@ -397,8 +392,7 @@ class Settings {
 					'options' => [
 						'on'        => 'نمایش خودکار در بدنه محصول',
 						'thumbnail' => 'نمایش خودکار زیر تصویر شاخص',
-						'no'        => sprintf( 'نمایش دستی به وسیله هوک های ووکامرس یا ابزارک خبرنامه پیامکی محصولات ووکامرس و یا شورتکد %s',
-							"<code>$shortcode</code>" ),
+						'no'        => sprintf( 'نمایش دستی به وسیله هوک های ووکامرس یا ابزارک خبرنامه پیامکی محصولات ووکامرس و یا شورتکد %s', "<code>$shortcode</code>" ),
 					],
 				],
 				[
@@ -505,6 +499,13 @@ class Settings {
 					'type'    => 'textarea',
 					'default' => "سلام\nمحصول {product_title} هم اکنون موجود و قابل خرید می‌باشد.",
 					'row'     => 2,
+				],
+				[
+					'name'    => 'notif_no_stock_remove_contacts',
+					'label'   => 'حذف کاربر از این گروه پس از ارسال',
+					'desc'    => 'با فعالسازی این گزینه، پس از ارسال پیامک، گروه "زمانیکه محصول موجود شد" از لیست گروه های اطلاع رسانی به کاربر حذف خواهد شد.',
+					'type'    => 'checkbox',
+					'default' => "yes",
 				],
 				[
 					'name'  => 'header_null_3',
@@ -642,10 +643,6 @@ class Settings {
                 </p>
             </div>';
 		}
-
-		
-
-		
 
 		echo '</div>';
 
@@ -788,8 +785,7 @@ class Settings {
 			[
 				'name'  => 'sms_body_stock_product_admin',
 				'label' => '<h2>متن پیامک موجودی انبار</h2>',
-				'desc'  => sprintf( 'با توجه به مشترک بودن متن پیامک‌های موجودی انبار بین مدیران کل و فروشندگان محصول، برای تنظیم متن این پیامک‌ها از %s استفاده کنید.',
-					'<a href="' . admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=super_admin#sms_super_admin_settings[admin_low_stock]' ) . '" target="_blank">این لینک</a>' ),
+				'desc'  => sprintf( 'با توجه به مشترک بودن متن پیامک‌های موجودی انبار بین مدیران کل و فروشندگان محصول، برای تنظیم متن این پیامک‌ها از %s استفاده کنید.', '<a href="' . admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=super_admin#sms_super_admin_settings[admin_low_stock]' ) . '" target="_blank">این لینک</a>' ),
 				'type'  => 'html',
 			],
 		];

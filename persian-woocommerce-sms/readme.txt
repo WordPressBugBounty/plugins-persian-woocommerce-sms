@@ -8,7 +8,7 @@ Tags: sms,ووکامرس فارسی,woocommerce,persian woocommerce,پیامک
 Requires at least: 5.8
 Tested up to: 6.7.1
 Requires PHP: 7.4
-Stable tag: 7.0.6
+Stable tag: 7.0.7
 
 افزونه کامل و حرفه ای برای اطلاع رسانی پیامکی سفارشات و رویداد های محصولات ووکامرس
 
@@ -124,6 +124,8 @@ Stable tag: 7.0.6
  * MAX-SMS.co
  * IPPANEL.com 
  * ModirPayamak.com 
+ * FarazSMS.com
+ * GhasedakSMS.com 
 
 == Installation ==
 1. Upload `persian-woocommerce-sms` folder to the `/wp-content/plugins/` directory
@@ -147,6 +149,8 @@ Stable tag: 7.0.6
 14. Screen shot 14
 
 == Changelog ==
+= 7.0.7 =
+* افزوده شدن وبسرویس های جدید و رفع چند مورد خطا
 = 7.0.5 =
 * رفع مشکل در صفحه بندی خبرنامه
 = 7.0.3 =
@@ -378,5 +382,5 @@ Stable tag: 7.0.6
 * نسخه اولیه
 
 == Upgrade Notice ==
-= 7.0.6 =
-* رفع مشکل خبرنامه
+= 7.0.7 =
+* رفع چند خطا و افزوده شدن وبسرویس های جدید
