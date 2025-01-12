@@ -198,7 +198,7 @@ class Events {
 
 		if ( $product->is_in_stock() ) {
 			$parent_product->delete_meta_data( $post_meta );
-
+			$parent_product->save();
 			return true;
 		}
 
@@ -310,6 +310,7 @@ class Events {
 		//مدیر
 		$this->admins_stock_sms( $product_id, $parent_product_id, 'low', 8 );
 		$parent_product->update_meta_data( $post_meta, 'yes' );
+		$parent_product->save();
 
 		return true;
 

@@ -57,41 +57,45 @@ class Tab {
 			return false;
 		}
 
-		wp_register_script( 'pwoosms-frontend-js', PWSMS_URL . '/assets/js/multi-select.js', [ 'jquery' ],
-			PWSMS_VERSION, true );
+		wp_register_script( 'pwoosms-frontend-js', PWSMS_URL . '/assets/js/multi-select.js', [ 'jquery' ], PWSMS_VERSION, true );
 
-		wp_localize_script( 'pwoosms-frontend-js', 'pwoosms',
-			[
-				'ajax_url'                  => admin_url( 'admin-ajax.php' ),
-				'chosen_placeholder_single' => 'گزینه مورد نظر را انتخاب نمایید.',
-				'chosen_placeholder_multi'  => 'گزینه های مورد نظر را انتخاب نمایید.',
-				'chosen_no_results_text'    => 'هیچ گزینه ای وجود ندارد.',
-			]
-		);
+		wp_localize_script( 'pwoosms-frontend-js', 'pwoosms', [
+			'ajax_url'                  => admin_url( 'admin-ajax.php' ),
+			'chosen_placeholder_single' => 'گزینه مورد نظر را انتخاب نمایید.',
+			'chosen_placeholder_multi'  => 'گزینه های مورد نظر را انتخاب نمایید.',
+			'chosen_no_results_text'    => 'هیچ گزینه ای وجود ندارد.',
+		] );
 
 		wp_enqueue_script( 'pwoosms-frontend-js' );
 
+		wp_register_script( 'repeatable-sms-tabs', PWSMS_URL . '/assets/js/product-tab.js', [ 'pwoosms-frontend-js' ], PWSMS_VERSION );
+		wp_enqueue_script( 'repeatable-sms-tabs' );
+		wp_register_style( 'repeatable-sms-tabs-styles', PWSMS_URL . '/assets/css/product-tab.css', '', PWSMS_VERSION );
+		wp_enqueue_style( 'repeatable-sms-tabs-styles' );
+
 		if ( ! PWSMS()->get_option( 'force_enable_buyer' ) ) {
+
 			wc_enqueue_js( "
 					jQuery( '#buyer_sms_status_field' ).hide();
 					jQuery( 'input[name=buyer_sms_notify]' ).change( function () {
-						if ( jQuery( this ).is( ':checked' ) )
+						if ( jQuery( this ).is( ':checked' ) ){
 							jQuery( '#buyer_sms_status_field' ).show();
-						else
+						} else {
 							jQuery( '#buyer_sms_status_field' ).hide();
+						}
 					} ).change();
 				" );
 
-			wp_register_script( 'repeatable-sms-tabs', PWSMS_URL . '/assets/js/product-tab.js',
-				[ 'pwoosms-frontend-js' ], PWSMS_VERSION );
-			wp_enqueue_script( 'repeatable-sms-tabs' );
-			wp_register_style( 'repeatable-sms-tabs-styles', PWSMS_URL . '/assets/css/product-tab.css', '',
-				PWSMS_VERSION );
-			wp_enqueue_style( 'repeatable-sms-tabs-styles' );
 		}
 	}
 
 	public function tab_nav() {
+		$screen = get_current_screen();
+        
+		if ( $screen->post_type !== 'product' || empty( $_GET['post'] ) ) {
+			return;
+		}
+
 		echo '<li class="pwoosms_tabs"><a href="#pwoosms"><span>پیامک</span></a></li>';
 	}
 
@@ -110,13 +114,13 @@ class Tab {
 		}
 		?>
 
-		<div id="pwoosms" class="panel wc-metaboxes-wrapper woocommerce_options_panel">
+        <div id="pwoosms" class="panel wc-metaboxes-wrapper woocommerce_options_panel">
 			<?php
 			$this->notification_settings( $product_id );
 			do_action( 'pwoosms_product_sms_tab', $product_id );
 			$this->product_admin_settings( $product_id );
 			?>
-		</div>
+        </div>
 		<?php
 	}
 
@@ -124,9 +128,9 @@ class Tab {
 
 		if ( $this->enable_notification ) { ?>
 
-			<div class="pwoosms-tab-product-admin">
-				<p><strong>تنظیمات خبرنامه محصول: </strong></p>
-			</div>
+            <div class="pwoosms-tab-product-admin">
+                <p><strong>تنظیمات خبرنامه محصول: </strong></p>
+            </div>
 
 			<?php
 			$this->product_metas[] = 'enable_notif_sms';
@@ -279,8 +283,7 @@ class Tab {
 				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
 			] );
 
-			echo '<input type="hidden" name="sms_notification_metas" value="' . esc_attr( implode( ',',
-					$this->product_metas ) ) . '">';
+			echo '<input type="hidden" name="sms_notification_metas" value="' . esc_attr( implode( ',', $this->product_metas ) ) . '">';
 
 			echo '<hr>';
 		}
@@ -290,17 +293,17 @@ class Tab {
 
 		if ( $this->enable_product_admin_sms ) { ?>
 
-			<div class="pwoosms-tab-product-admin">
-				<p><strong>تنظیمات فروشندگان و مدیران محصول: </strong></p>
-			</div>
+            <div class="pwoosms-tab-product-admin">
+                <p><strong>تنظیمات فروشندگان و مدیران محصول: </strong></p>
+            </div>
 
 			<?php
 			$all_statuses   = PWSMS()->get_all_product_admin_statuses();
 			$default_status = PWSMS()->get_option( 'product_admin_meta_order_status' );
 
-			$product        = wc_get_product( $product_id );
+			$product = wc_get_product( $product_id );
 
-			if ( ! PWSMS()->is_wc_product( $product )) {
+			if ( ! PWSMS()->is_wc_product( $product ) ) {
 				return '';
 			}
 
@@ -358,9 +361,9 @@ class Tab {
 			foreach ( $tab_data as $tab ) {
 				?>
 
-				<section class="button-holder-sms">
-					<a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
-				</section>
+                <section class="button-holder-sms">
+                    <a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
+                </section>
 
 				<?php
 				woocommerce_wp_text_input( [
@@ -390,9 +393,9 @@ class Tab {
 			?>
 
 
-			<div id="duplicate_this_row_sms">
+            <div id="duplicate_this_row_sms">
 
-				<a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
+                <a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
 
 				<?php
 				woocommerce_wp_text_input( [
@@ -413,16 +416,16 @@ class Tab {
 				] );
 				?>
 
-				<section class="button-holder-sms"></section>
+                <section class="button-holder-sms"></section>
 
-			</div>
+            </div>
 
-			<p>
-				<a href="#" class="button-secondary" id="add_another_sms_tab">
-					<span class="dashicons dashicons-plus-alt"></span>
-					افزودن فروشنده
-				</a>
-			</p>
+            <p>
+                <a href="#" class="button-secondary" id="add_another_sms_tab">
+                    <span class="dashicons dashicons-plus-alt"></span>
+                    افزودن فروشنده
+                </a>
+            </p>
 
 			<?php echo '<input type="hidden" value="' . esc_attr( count( $tab_data ) ) . '" id="sms_tab_counter" name="sms_tab_counter" >';
 		}
@@ -431,7 +434,7 @@ class Tab {
 	public function update_tab_data( $product_id = 0 ) {
 		$product = wc_get_product( $product_id );
 
-		if ( ! PWSMS()->is_wc_product( $product )) {
+		if ( ! PWSMS()->is_wc_product( $product ) ) {
 			return;
 		}
 

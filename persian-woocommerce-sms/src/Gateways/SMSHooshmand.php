@@ -2,10 +2,8 @@
 
 namespace PW\PWSMS\Gateways;
 
+
 use nusoap_client;
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
 
 class SMSHooshmand implements GatewayInterface {
     use GatewayTrait;
@@ -19,7 +17,6 @@ class SMSHooshmand implements GatewayInterface {
     }
 
     public function send() {
-        $response = false;
         $username = $this->username;
         $password = $this->password;
         $from     = $this->senderNumber;
@@ -31,13 +28,11 @@ class SMSHooshmand implements GatewayInterface {
 
         $to = $this->mobile;
 
-        /*PWSMS()->nusoap();*/
-
         $client = new nusoap_client( "http://smswbs.ir/class/sms/webservice/server.php?wsdl" );
 
         $client->soap_defencoding = 'UTF-8';
         $client->decode_utf8      = true;
-        $client->setCredentials( $username, $password, "basic" );
+        $client->setCredentials( $username, $password );
 
         $i = sizeOf( $to );
         while ( $i -- ) {
