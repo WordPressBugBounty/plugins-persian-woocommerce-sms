@@ -8,7 +8,7 @@ Tags: sms,ووکامرس فارسی,woocommerce,persian woocommerce,پیامک
 Requires at least: 5.8
 Tested up to: 6.7.1
 Requires PHP: 7.4
-Stable tag: 7.0.8
+Stable tag: 7.0.9
 
 افزونه کامل و حرفه ای برای اطلاع رسانی پیامکی سفارشات و رویداد های محصولات ووکامرس
 
@@ -126,6 +126,7 @@ Stable tag: 7.0.8
  * ModirPayamak.com 
  * FarazSMS.com
  * GhasedakSMS.com 
+ * Mediana.ir
 
 == Installation ==
 1. Upload `persian-woocommerce-sms` folder to the `/wp-content/plugins/` directory
@@ -384,5 +385,5 @@ Stable tag: 7.0.8
 * نسخه اولیه
 
 == Upgrade Notice ==
-= 7.0.8 =
-* رفع چند خطا و افزوده شدن وبسرویس های جدید
+= 7.0.9 =
+* افزوده شدن وبسرویس مدیانا
