@@ -2,8 +2,6 @@
 
 namespace PW\PWSMS\Product;
 
-use function Symfony\Component\Translation\t;
-
 defined( 'ABSPATH' ) || exit;
 
 class Tab {
@@ -91,7 +89,7 @@ class Tab {
 
 	public function tab_nav() {
 		$screen = get_current_screen();
-        
+
 		if ( $screen->post_type !== 'product' || empty( $_GET['post'] ) ) {
 			return;
 		}
@@ -178,7 +176,7 @@ class Tab {
 			echo '<p class="pwoosms-tab-help-toggle" style="cursor: pointer"></span>شورت کد های مورد استفاده در متن پیامک‌ها<span class="dashicons dashicons-editor-help"></p>';
 
 			echo '<div class="pwoosms-tab-help" style="display: none;">
-				<p><code>{product_id}</code> : آیدی محصول ، <code>{sku}</code> : شناسه محصول ، <code>{product_title}</code> : عنوان محصول ، <code>{regular_price}</code> قیمت اصلی ، <code>{onsale_price}</code> : قیمت فروش فوق العاده<br><code>{onsale_from}</code> : تاریخ شروع فروش فوق العاده ، <code>{onsale_to}</code> : تاریخ اتمام فروش فوق العاده ، <code>{stock}</code> : موجودی انبار</p>
+				<p><code>{product_id}</code> : آیدی محصول ، <code>{sku}</code> : شناسه محصول ، <code>{product_title}</code> : عنوان محصول ، <code>{product_title_full}</code> : عنوان محصول همراه متغیر ، <code>{regular_price}</code> قیمت اصلی ، <code>{onsale_price}</code> : قیمت فروش فوق العاده<br><code>{onsale_from}</code> : تاریخ شروع فروش فوق العاده ، <code>{onsale_to}</code> : تاریخ اتمام فروش فوق العاده ، <code>{stock}</code> : موجودی انبار</p>
 			</div>';
 
 			echo '<div class="setting-div"></div>';
@@ -291,144 +289,147 @@ class Tab {
 
 	private function product_admin_settings( $product_id ) {
 
-		if ( $this->enable_product_admin_sms ) { ?>
+		if ( ! $this->enable_product_admin_sms ) {
+			return;
+		}
+		?>
 
-            <div class="pwoosms-tab-product-admin">
-                <p><strong>تنظیمات فروشندگان و مدیران محصول: </strong></p>
-            </div>
+        <div class="pwoosms-tab-product-admin">
+            <p><strong>تنظیمات فروشندگان و مدیران محصول: </strong></p>
+        </div>
 
-			<?php
-			$all_statuses   = PWSMS()->get_all_product_admin_statuses();
-			$default_status = PWSMS()->get_option( 'product_admin_meta_order_status' );
+		<?php
+		$all_statuses   = PWSMS()->get_all_product_admin_statuses();
+		$default_status = PWSMS()->get_option( 'product_admin_meta_order_status' );
 
-			$product = wc_get_product( $product_id );
+		$product = wc_get_product( $product_id );
 
-			if ( ! PWSMS()->is_wc_product( $product ) ) {
-				return '';
+		if ( ! PWSMS()->is_wc_product( $product ) ) {
+			return '';
+		}
+
+		/*فروشندگان ست شده با متا*/
+		$meta_tab_data = [];
+
+		$meta_mobile = PWSMS()->user_mobile_meta( $product_id );
+		if ( ! empty( $meta_mobile['meta'] ) ) {
+			$meta_tab_data[] = $meta_mobile;
+		}
+
+		$meta_mobile = PWSMS()->get_post_mobile_meta( $product_id );
+		if ( ! empty( $meta_mobile['meta'] ) ) {
+			$meta_tab_data[] = $meta_mobile;
+		}
+
+		foreach ( $meta_tab_data as $tab ) {
+
+			$meta  = $tab['meta'];
+			$label = 'شماره موبایل';
+
+			if ( $meta == 'user' ) {
+				$label = $label . '<span style="color: steelblue">' . ' (User Meta)' . '</span>';
 			}
 
-			/*فروشندگان ست شده با متا*/
-			$meta_tab_data = [];
-
-			$meta_mobile = PWSMS()->user_mobile_meta( $product_id );
-			if ( ! empty( $meta_mobile['meta'] ) ) {
-				$meta_tab_data[] = $meta_mobile;
+			if ( $meta == 'post' ) {
+				$label = $label . '<span style="color: steelblue">' . ' (Post Meta)' . '</span>';
 			}
 
-			$meta_mobile = PWSMS()->get_post_mobile_meta( $product_id );
-			if ( ! empty( $meta_mobile['meta'] ) ) {
-				$meta_tab_data[] = $meta_mobile;
-			}
+			woocommerce_wp_text_input( [
+				'id'          => 'pwoosms_tab_mobile_meta_' . $meta,
+				'class'       => 'pwoosms_tab_mobile',
+				'label'       => $label,
+				'value'       => $tab['mobile'],
+				'placeholder' => 'با کاما جدا کنید',
+			] );
 
-			foreach ( $meta_tab_data as $tab ) {
+			PWSMS()->multi_select_admin_field( [
+				'id'      => 'pwoosms_tab_status_meta_' . $meta,
+				'class'   => 'pwoosms_tab_status',
+				'label'   => 'وضعیت سفارش',
+				'value'   => PWSMS()->prepare_admin_product_status( $tab['statuses'] ),
+				'default' => $default_status,
+				'options' => $all_statuses,
+				'style'   => 'width:70%;height:10.5em;',
+			] );
+		}
+		if ( ! empty( $meta_tab_data ) ) {
+			echo '<div class="setting-div"></div>';
+		}
 
-				$meta  = $tab['meta'];
-				$label = 'شماره موبایل';
-
-				if ( $meta == 'user' ) {
-					$label = $label . '<span style="color: steelblue">' . ' (User Meta)' . '</span>';
-				}
-
-				if ( $meta == 'post' ) {
-					$label = $label . '<span style="color: steelblue">' . ' (Post Meta)' . '</span>';
-				}
-
-				woocommerce_wp_text_input( [
-					'id'          => 'pwoosms_tab_mobile_meta_' . $meta,
-					'class'       => 'pwoosms_tab_mobile',
-					'label'       => $label,
-					'value'       => $tab['mobile'],
-					'placeholder' => 'با کاما جدا کنید',
-				] );
-
-				PWSMS()->multi_select_admin_field( [
-					'id'      => 'pwoosms_tab_status_meta_' . $meta,
-					'class'   => 'pwoosms_tab_status',
-					'label'   => 'وضعیت سفارش',
-					'value'   => PWSMS()->prepare_admin_product_status( $tab['statuses'] ),
-					'default' => $default_status,
-					'options' => $all_statuses,
-					'style'   => 'width:70%;height:10.5em;',
-				] );
-			}
-			if ( ! empty( $meta_tab_data ) ) {
-				echo '<div class="setting-div"></div>';
-			}
-
-			/*فروشندگان وارد شده دستی*/
-			$i        = 1;
-			$tab_data = array_filter( (array) $product->get_meta( '_pwoosms_product_admin_data', true ) );
-			foreach ( $tab_data as $tab ) {
-				?>
-
-                <section class="button-holder-sms">
-                    <a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
-                </section>
-
-				<?php
-				woocommerce_wp_text_input( [
-					'id'          => 'pwoosms_tab_mobile_' . $i,
-					'class'       => 'pwoosms_tab_mobile',
-					'label'       => 'شماره موبایل',
-					'value'       => $tab['mobile'],
-					'placeholder' => 'با کاما جدا کنید',
-				] );
-
-				PWSMS()->multi_select_admin_field( [
-					'id'      => 'pwoosms_tab_status_' . $i,
-					'class'   => 'pwoosms_tab_status',
-					'label'   => 'وضعیت سفارش',
-					'value'   => PWSMS()->prepare_admin_product_status( $tab['statuses'] ),
-					'default' => $default_status,
-					'options' => $all_statuses,
-					'style'   => 'width:70%;height:10.5em;',
-				] );
-
-				if ( $i != count( $tab_data ) ) {
-					echo '<div class="pwoosms-tab-divider"></div>';
-				}
-
-				$i ++;
-			}
+		/*فروشندگان وارد شده دستی*/
+		$i        = 1;
+		$tab_data = array_filter( (array) $product->get_meta( '_pwoosms_product_admin_data', true ) );
+		foreach ( $tab_data as $tab ) {
 			?>
 
-
-            <div id="duplicate_this_row_sms">
-
+            <section class="button-holder-sms">
                 <a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
+            </section>
 
-				<?php
-				woocommerce_wp_text_input( [
-					'id'          => 'hidden_duplicator_row_mobile',
-					'class'       => 'pwoosms_tab_mobile',
-					'label'       => 'شماره موبایل',
-					'placeholder' => 'با کاما جدا کنید',
-				] );
+			<?php
+			woocommerce_wp_text_input( [
+				'id'          => 'pwoosms_tab_mobile_' . $i,
+				'class'       => 'pwoosms_tab_mobile',
+				'label'       => 'شماره موبایل',
+				'value'       => $tab['mobile'],
+				'placeholder' => 'با کاما جدا کنید',
+			] );
 
-				PWSMS()->multi_select_admin_field( [
-					'id'      => 'hidden_duplicator_row_statuses',
-					'class'   => 'pwoosms_tab_status',
-					'label'   => 'وضعیت سفارش',
-					'value'   => '',
-					'default' => $default_status,
-					'options' => $all_statuses,
-					'style'   => 'width:70%;height:10.5em;',
-				] );
-				?>
+			PWSMS()->multi_select_admin_field( [
+				'id'      => 'pwoosms_tab_status_' . $i,
+				'class'   => 'pwoosms_tab_status',
+				'label'   => 'وضعیت سفارش',
+				'value'   => PWSMS()->prepare_admin_product_status( $tab['statuses'] ),
+				'default' => $default_status,
+				'options' => $all_statuses,
+				'style'   => 'width:70%;height:10.5em;',
+			] );
 
-                <section class="button-holder-sms"></section>
+			if ( $i != count( $tab_data ) ) {
+				echo '<div class="pwoosms-tab-divider"></div>';
+			}
 
-            </div>
-
-            <p>
-                <a href="#" class="button-secondary" id="add_another_sms_tab">
-                    <span class="dashicons dashicons-plus-alt"></span>
-                    افزودن فروشنده
-                </a>
-            </p>
-
-			<?php echo '<input type="hidden" value="' . esc_attr( count( $tab_data ) ) . '" id="sms_tab_counter" name="sms_tab_counter" >';
+			$i ++;
 		}
+		?>
+
+
+        <div id="duplicate_this_row_sms">
+
+            <a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
+
+			<?php
+			woocommerce_wp_text_input( [
+				'id'          => 'hidden_duplicator_row_mobile',
+				'class'       => 'pwoosms_tab_mobile',
+				'label'       => 'شماره موبایل',
+				'placeholder' => 'با کاما جدا کنید',
+			] );
+
+			PWSMS()->multi_select_admin_field( [
+				'id'      => 'hidden_duplicator_row_statuses',
+				'class'   => 'pwoosms_tab_status',
+				'label'   => 'وضعیت سفارش',
+				'value'   => '',
+				'default' => $default_status,
+				'options' => $all_statuses,
+				'style'   => 'width:70%;height:10.5em;',
+			] );
+			?>
+
+            <section class="button-holder-sms"></section>
+
+        </div>
+
+        <p>
+            <a href="#" class="button-secondary" id="add_another_sms_tab">
+                <span class="dashicons dashicons-plus-alt"></span>
+                افزودن فروشنده
+            </a>
+        </p>
+
+		<?php echo '<input type="hidden" value="' . esc_attr( count( $tab_data ) ) . '" id="sms_tab_counter" name="sms_tab_counter" >';
+
 	}
 
 	public function update_tab_data( $product_id = 0 ) {

@@ -332,7 +332,7 @@ class ListTable extends WP_List_Table {
 
 		if ( ! empty( $_REQUEST['id'] ) ) {
 			$post_id = array_map( 'intval', is_array( $_REQUEST['id'] ) ? $_REQUEST['id'] : explode( ',', (string) $_REQUEST['id'] ) );
-			$sql     .= ( isset( $s ) ? ' AND' : ' WHERE' ) . ' (`post_id` IN (' . implode( ',', sanitize_text_field( $post_id ) ) . '))';
+			$sql     .= ( isset( $s ) ? ' AND' : ' WHERE' ) . ' (`post_id` IN (' . implode( ',', is_array( $post_id ) ? $post_id : [ $post_id ] ) . '))';
 		}
 
 		if ( ! empty( $_REQUEST['orderby'] ) ) {

@@ -29,8 +29,7 @@ class Helper {
 
 		if ( $args['required'] ) {
 			$args['class'][] = 'validate-required';
-			$required        = ' <abbr class="required" title="' . esc_attr__( 'required',
-					'woocommerce' ) . '">*</abbr>';
+			$required        = ' <abbr class="required" title="' . esc_attr__( 'required', 'woocommerce' ) . '">*</abbr>';
 		} else {
 			$required = '';
 		}
@@ -47,19 +46,13 @@ class Helper {
 			if ( ! empty( $args['options'] ) ) {
 				$options = '';
 				foreach ( $args['options'] as $option_key => $option_text ) {
-					$options .= '<option value="' . esc_attr( $option_key ) . '" ' . selected( in_array( $option_key,
-							$value ), 1, false ) . '>' . esc_attr( $option_text ) . '</option>';
+					$options .= '<option value="' . esc_attr( $option_key ) . '" ' . selected( in_array( $option_key, $value ), 1, false ) . '>' . esc_attr( $option_text ) . '</option>';
 				}
-				$field = '<p class="form-row ' . esc_attr( implode( ' ',
-						$args['class'] ) ) . '" id="' . esc_attr( $key ) . '_field">';
+				$field = '<p class="form-row ' . esc_attr( implode( ' ', $args['class'] ) ) . '" id="' . esc_attr( $key ) . '_field">';
 				if ( $args['label'] ) {
-					$field .= '<label for="' . esc_attr( $key ) . '" class="' . implode( ' ',
-							$args['label_class'] ) . '">' . $args['label'] . $required . '</label>';
+					$field .= '<label for="' . esc_attr( $key ) . '" class="' . implode( ' ', $args['label_class'] ) . '">' . $args['label'] . $required . '</label>';
 				}
-				$field .= '<select name="' . esc_attr( $key ) . '[]" id="' . esc_attr( $key ) . '" class="select" multiple="multiple" ' . implode( ' ',
-						$custom_attributes ) . '>'
-				          . $options
-				          . ' </select>';
+				$field .= '<select name="' . esc_attr( $key ) . '[]" id="' . esc_attr( $key ) . '" class="select" multiple="multiple" ' . implode( ' ', $custom_attributes ) . '>' . $options . ' </select>';
 
 				if ( $args['description'] ) {
 					$field .= '<span class="description">' . ( $args['description'] ) . '</span>';
@@ -72,17 +65,13 @@ class Helper {
 		if ( $args['type'] == "pwoosms_multicheckbox" ) {
 			$value = is_array( $value ) ? $value : [ $value ];
 			if ( ! empty( $args['options'] ) ) {
-				$field .= '<p class="form-row ' . esc_attr( implode( ' ',
-						$args['class'] ) ) . '" id="' . esc_attr( $key ) . '_field">';
+				$field .= '<p class="form-row ' . esc_attr( implode( ' ', $args['class'] ) ) . '" id="' . esc_attr( $key ) . '_field">';
 				if ( $args['label'] ) {
-					$field .= '<label for="' . esc_attr( current( array_keys( $args['options'] ) ) ) . '" class="' . implode( ' ',
-							$args['label_class'] ) . '">' . $args['label'] . $required . '</label>';
+					$field .= '<label for="' . esc_attr( current( array_keys( $args['options'] ) ) ) . '" class="' . implode( ' ', $args['label_class'] ) . '">' . $args['label'] . $required . '</label>';
 				}
 				foreach ( $args['options'] as $option_key => $option_text ) {
-					$field .= '<input type="checkbox" class="input-checkbox" value="' . esc_attr( $option_key ) . '" name="' . esc_attr( $key ) . '[]" id="' . esc_attr( $key ) . '_' . esc_attr( $option_key ) . '"' . checked( in_array( $option_key,
-							$value ), 1, false ) . ' />';
-					$field .= '<label for="' . esc_attr( $key ) . '_' . esc_attr( $option_key ) . '" class="checkbox ' . implode( ' ',
-							$args['label_class'] ) . '">' . $option_text . '</label><br>';
+					$field .= '<input type="checkbox" class="input-checkbox" value="' . esc_attr( $option_key ) . '" name="' . esc_attr( $key ) . '[]" id="' . esc_attr( $key ) . '_' . esc_attr( $option_key ) . '"' . checked( in_array( $option_key, $value ), 1, false ) . ' />';
+					$field .= '<label for="' . esc_attr( $key ) . '_' . esc_attr( $option_key ) . '" class="checkbox ' . implode( ' ', $args['label_class'] ) . '">' . $option_text . '</label><br>';
 				}
 				if ( $args['description'] ) {
 					$field .= '<span class="description">' . ( $args['description'] ) . '</span>';
@@ -130,8 +119,7 @@ class Helper {
 			$statuses['wc-pending'] = $pending ? $pending_label : $pending_label . ' (بعد از تغییر وضعیت سفارش)';
 		}
 		if ( empty( $statuses['wc-created'] ) ) {
-			$statuses = array_merge( [ 'wc-created' => $pending ? 'بعد از ثبت سفارش' : $pending_label . ' (بلافاصله بعد از ثبت سفارش)' ],
-				$statuses );
+			$statuses = array_merge( [ 'wc-created' => $pending ? 'بعد از ثبت سفارش' : $pending_label . ' (بلافاصله بعد از ثبت سفارش)' ], $statuses );
 		}
 
 		$opt_statuses = [];
@@ -295,11 +283,11 @@ class Helper {
 	public function product_prop( $product, $prop ) {
 		$method = 'get_' . $prop;
 
-		return method_exists( $product,
-			$method ) ? $product->$method() : ( ! empty( $product->{$prop} ) ? $product->{$prop} : '' );
+		return method_exists( $product, $method ) ? $product->$method() : ( ! empty( $product->{$prop} ) ? $product->{$prop} : '' );
 	}
 
 	public function is_wc_product( $product ) {
+
 		if ( empty( $product ) || ! is_a( $product, WC_Product::class ) ) {
 			return false;
 		}
@@ -384,8 +372,7 @@ class Helper {
 		echo '<select multiple="multiple" class="' . esc_attr( $field['class'] ) . '" name="' . esc_attr( $field['id'] ) . '[]" id="' . esc_attr( $field['id'] ) . '" ' . '>';
 
 		foreach ( $field['options'] as $status_value => $status_name ) {
-			echo '<option value="' . esc_attr( $status_value ) . '"' . selected( in_array( $status_value,
-					$field['value'] ), true, true ) . '>' . esc_attr( $status_name ) . '</option>';
+			echo '<option value="' . esc_attr( $status_value ) . '"' . selected( in_array( $status_value, $field['value'] ), true, true ) . '>' . esc_attr( $status_name ) . '</option>';
 		}
 
 		echo '</select>';
@@ -400,6 +387,7 @@ class Helper {
 		$all_product_list = $this->all_items( $order );
 		$all_product_ids  = ! empty( $all_product_list['product_ids'] ) ? $all_product_list['product_ids'] : [];
 		$all_items        = ! empty( $all_product_list['items'] ) ? $all_product_list['items'] : [];
+		$all_items_full   = ! empty( $all_product_list['items_full'] ) ? $all_product_list['items_full'] : [];
 		$all_items_qty    = ! empty( $all_product_list['items_qty'] ) ? $all_product_list['items_qty'] : [];
 
 		$vendor_product_ids = ! empty( $vendor_items_array['product_ids'] ) ? $vendor_items_array['product_ids'] : [];
@@ -419,25 +407,11 @@ class Helper {
 
 		$country = WC()->countries;
 
-		$bill_country = ( isset( $country->countries[ $this->order_prop( $order,
-				'billing_country' ) ] ) ) ? $country->countries[ $this->order_prop( $order,
-			'billing_country' ) ] : $this->order_prop( $order, 'billing_country' );
-		$bill_state   = ( $this->order_prop( $order, 'billing_country' ) && $this->order_prop( $order,
-				'billing_state' ) && isset( $country->states[ $this->order_prop( $order,
-					'billing_country' ) ][ $this->order_prop( $order,
-					'billing_state' ) ] ) ) ? $country->states[ $this->order_prop( $order,
-			'billing_country' ) ][ $this->order_prop( $order, 'billing_state' ) ] : $this->order_prop( $order,
-			'billing_state' );
+		$bill_country = ( isset( $country->countries[ $this->order_prop( $order, 'billing_country' ) ] ) ) ? $country->countries[ $this->order_prop( $order, 'billing_country' ) ] : $this->order_prop( $order, 'billing_country' );
+		$bill_state   = ( $this->order_prop( $order, 'billing_country' ) && $this->order_prop( $order, 'billing_state' ) && isset( $country->states[ $this->order_prop( $order, 'billing_country' ) ][ $this->order_prop( $order, 'billing_state' ) ] ) ) ? $country->states[ $this->order_prop( $order, 'billing_country' ) ][ $this->order_prop( $order, 'billing_state' ) ] : $this->order_prop( $order, 'billing_state' );
 
-		$ship_country = ( isset( $country->countries[ $this->order_prop( $order,
-				'shipping_country' ) ] ) ) ? $country->countries[ $this->order_prop( $order,
-			'shipping_country' ) ] : $this->order_prop( $order, 'shipping_country' );
-		$ship_state   = ( $this->order_prop( $order, 'shipping_country' ) && $this->order_prop( $order,
-				'shipping_state' ) && isset( $country->states[ $this->order_prop( $order,
-					'shipping_country' ) ][ $this->order_prop( $order,
-					'shipping_state' ) ] ) ) ? $country->states[ $this->order_prop( $order,
-			'shipping_country' ) ][ $this->order_prop( $order, 'shipping_state' ) ] : $this->order_prop( $order,
-			'shipping_state' );
+		$ship_country = ( isset( $country->countries[ $this->order_prop( $order, 'shipping_country' ) ] ) ) ? $country->countries[ $this->order_prop( $order, 'shipping_country' ) ] : $this->order_prop( $order, 'shipping_country' );
+		$ship_state   = ( $this->order_prop( $order, 'shipping_country' ) && $this->order_prop( $order, 'shipping_state' ) && isset( $country->states[ $this->order_prop( $order, 'shipping_country' ) ][ $this->order_prop( $order, 'shipping_state' ) ] ) ) ? $country->states[ $this->order_prop( $order, 'shipping_country' ) ][ $this->order_prop( $order, 'shipping_state' ) ] : $this->order_prop( $order, 'shipping_state' );
 
 		$tags = [
 			'{b_first_name}'  => $this->order_prop( $order, 'billing_first_name' ),
@@ -467,9 +441,10 @@ class Helper {
 			'{status}'        => $this->status_name( $order_status, true ),
 			'{price}'         => $price,
 
-			'{all_items}'     => implode( ' - ', $all_items ),
-			'{all_items_qty}' => implode( ' - ', $all_items_qty ),
-			'{count_items}'   => count( $all_items ),
+			'{all_items}'      => implode( ' - ', $all_items ),
+			'{all_items_full}' => implode( ' - ', $all_items_full ),
+			'{all_items_qty}'  => implode( ' - ', $all_items_qty ),
+			'{count_items}'    => count( $all_items ),
 
 			'{vendor_items}'       => implode( ' - ', $vendor_items ),
 			'{vendor_items_qty}'   => implode( ' - ', $vendor_items_qty ),
@@ -479,17 +454,15 @@ class Helper {
 			'{transaction_id}'  => $order->get_transaction_id(),
 			'{payment_method}'  => $payment_method,
 			'{shipping_method}' => $shipping_method,
-			'{description}'     => nl2br( esc_html( $order->get_customer_note() ) ),
+			'{description}'     => nl2br( esc_html( $order->get_customer_note() ) )
 		];
 
-		$content = apply_filters( 'pwoosms_order_sms_body_before_replace', $content, array_keys( $tags ),
-			array_values( $tags ), $order->get_id(), $order, $all_product_ids, $vendor_product_ids );
+		$content = apply_filters( 'pwoosms_order_sms_body_before_replace', $content, array_keys( $tags ), array_values( $tags ), $order->get_id(), $order, $all_product_ids, $vendor_product_ids );
 
 		$content = str_ireplace( array_keys( $tags ), array_values( $tags ), $content );
 		$content = str_ireplace( [ '<br>', '<br/>', '<br />', '&nbsp;' ], [ '', '', '', ' ' ], $content );
 
-		$content = apply_filters( 'pwoosms_order_sms_body_after_replace', $content, $order->get_id(), $order,
-			$all_product_ids, $vendor_product_ids );
+		$content = apply_filters( 'pwoosms_order_sms_body_after_replace', $content, $order->get_id(), $order, $all_product_ids, $vendor_product_ids );
 
 		return $content;
 	}
@@ -511,8 +484,7 @@ class Helper {
 	public function all_items( $order ) {
 
 		$order_products = $this->get_prodcut_lists( $order );
-
-		$items = [];
+		$items          = [];
 		foreach ( (array) $order_products as $item_datas ) {
 			foreach ( (array) $item_datas as $item_data ) {
 				$this->prepare_items( $items, $item_data );
@@ -559,11 +531,76 @@ class Helper {
 	public function prepare_items( &$items, $item_data ) {
 
 		if ( ! empty( $item_data['id'] ) ) {
-			$title                = $this->maybe_variable_product_title( $item_data['id'] );
-			$items['items'][]     = $title;
-			$items['items_qty'][] = $title . ' (' . $item_data['qty'] . ')';
-			$items['price'][]     = $item_data['total'];
+			$title                 = $this->product_title( $item_data['id'] );
+			$title_full            = $this->product_title_full( $item_data['id'] );
+			$items['items'][]      = $title;
+			$items['items_full'][] = $title_full;
+			$items['items_qty'][]  = $title . ' (' . $item_data['qty'] . ')';
+			$items['price'][]      = $item_data['total'];
 		}
+	}
+
+	/**
+	 * This method will return product title only
+	 * The variable product is without variations in title
+	 *
+	 * @param WC_Product|int $product
+	 *
+	 * @return string
+	 */
+	public function product_title( $product ): string {
+		$product_id = $this->product_ID( $product );
+
+		if ( ! is_object( $product ) ) {
+			$product = wc_get_product( $product );
+		}
+
+		if ( ! PWSMS()->is_wc_product( $product ) ) {
+			return '-';
+		}
+
+		$parent_id = $this->product_prop( $product, 'parent_id' );
+
+		if ( ! empty( $parent_id ) ) {
+
+			$parent = wc_get_product( $parent_id );
+
+			if ( ! PWSMS()->is_wc_product( $parent ) ) {
+				return '-';
+			}
+
+			$product_title = get_the_title( $parent_id );
+
+		} else {
+			$product_title = get_the_title( $product_id );
+		}
+
+		return html_entity_decode( urldecode( $product_title ) );
+	}
+
+
+	/**
+	 * This method will return the full product title (variable products with variations in title)
+	 * As it returns the variables in product title
+	 *
+	 * @param WC_Product|int $product
+	 *
+	 * @return string
+	 */
+	public function product_title_full( $product ) {
+		$product_id = $this->product_ID( $product );
+
+		if ( ! is_object( $product ) ) {
+			$product = wc_get_product( $product );
+		}
+
+		if ( ! PWSMS()->is_wc_product( $product ) ) {
+			return '-';
+		}
+
+		$product_title = get_the_title( $product_id );
+
+		return html_entity_decode( urldecode( $product_title ) );
 	}
 
 	public function maybe_variable_product_title( $product ) {
@@ -610,7 +647,7 @@ class Helper {
 				}
 			}
 
-			$product_title = get_the_title( $parent_id );
+			$product_title = get_the_title( $product_id );
 
 			if ( ! empty( $variable_title ) ) {
 				$product_title .= ' (' . implode( ' - ', $variable_title ) . ')';
@@ -704,10 +741,8 @@ class Helper {
 
 			$mobile = sanitize_text_field( $mobile );
 
-			$mobile = str_ireplace( [ '۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹' ],
-				[ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ], $mobile ); //farsi
-			$mobile = str_ireplace( [ '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩' ],
-				[ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ], $mobile ); //arabi
+			$mobile = str_ireplace( [ '۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹' ], [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ], $mobile ); //farsi
+			$mobile = str_ireplace( [ '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩' ], [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ], $mobile ); //arabi
 
 			return $mobile;
 		}
@@ -769,8 +804,7 @@ class Helper {
 	}
 
 	public function has_notif_condition( $key, $product_id ) {
-		return $this->get_option( 'enable_notif_sms_main' ) && $this->maybe_bool( $this->get_product_meta_value( $key,
-				$product_id ) );
+		return $this->get_option( 'enable_notif_sms_main' ) && $this->maybe_bool( $this->get_product_meta_value( $key, $product_id ) );
 	}
 
 	public function get_product_meta_value( $key, $product_id ) {
@@ -785,8 +819,7 @@ class Helper {
 
 		$sms_set = $product->get_meta( '_is_sms_set', true );
 
-		if ( ( is_string( $sms_set ) && $this->maybe_bool( $sms_set ) ) || ( is_array( $sms_set ) && in_array( $key,
-					$sms_set ) ) ) {
+		if ( ( is_string( $sms_set ) && $this->maybe_bool( $sms_set ) ) || ( is_array( $sms_set ) && in_array( $key, $sms_set ) ) ) {
 			return $product->get_meta( '_' . $key, true );
 
 		}
@@ -796,10 +829,8 @@ class Helper {
 
 	public function replace_tags( $key, $product_id, $parent_product_id ) {
 
-		$sale_price_dates_from = ( $date = $this->product_sale_price_time( $product_id, 'from' ) ) ? date_i18n( 'Y-m-d',
-			$date ) : '';
-		$sale_price_dates_to   = ( $date = $this->product_sale_price_time( $product_id, 'to' ) ) ? date_i18n( 'Y-m-d',
-			$date ) : '';
+		$sale_price_dates_from = ( $date = $this->product_sale_price_time( $product_id, 'from' ) ) ? date_i18n( 'Y-m-d', $date ) : '';
+		$sale_price_dates_to   = ( $date = $this->product_sale_price_time( $product_id, 'to' ) ) ? date_i18n( 'Y-m-d', $date ) : '';
 
 		$product        = wc_get_product( $product_id );
 		$parent_product = wc_get_product( $parent_product_id );
@@ -814,21 +845,21 @@ class Helper {
 		}
 
 		$tags = [
-			'{product_id}'    => $parent_product_id,
-			'{sku}'           => $sku,
-			'{product_title}' => $this->maybe_variable_product_title( $product ),
-			'{regular_price}' => strip_tags( wc_price( $this->product_prop( $product, 'regular_price' ) ) ),
-			'{onsale_price}'  => strip_tags( wc_price( $this->product_prop( $product, 'sale_price' ) ) ),
-			'{onsale_from}'   => $this->maybe_jalali_date( $sale_price_dates_from ),
-			'{onsale_to}'     => $this->maybe_jalali_date( $sale_price_dates_to ),
-			'{stock}'         => $this->product_stock_qty( $product ),
+			'{product_id}'         => $parent_product_id,
+			'{sku}'                => $sku,
+			'{product_title}'      => $this->product_title( $product ),
+			'{product_title_full}' => $this->product_title_full( $product ),
+			'{regular_price}'      => strip_tags( wc_price( $this->product_prop( $product, 'regular_price' ) ) ),
+			'{onsale_price}'       => strip_tags( wc_price( $this->product_prop( $product, 'sale_price' ) ) ),
+			'{onsale_from}'        => $this->maybe_jalali_date( $sale_price_dates_from ),
+			'{onsale_to}'          => $this->maybe_jalali_date( $sale_price_dates_to ),
+			'{stock}'              => $this->product_stock_qty( $product ),
 		];
+
 
 		$content = $this->get_product_meta_value( $key, $parent_product_id );
 
-		return str_replace( [ '<br>', '<br>', '<br />', '&nbsp;' ],
-			[ '', '', '', ' ' ],
-			str_replace( array_keys( $tags ), array_values( $tags ), $content ) );
+		return str_replace( [ '<br>', '<br>', '<br />', '&nbsp;' ], [ '', '', '', ' ' ], str_replace( array_keys( $tags ), array_values( $tags ), $content ) );
 	}
 
 	public function product_sale_price_time( $product, $type = '' ) {
@@ -1080,7 +1111,7 @@ class Helper {
 	}
 
 	public function send_sms( $data ) {
-       // TODO: Set mobile string handling in better way
+		// TODO: Set mobile string handling in better way
 		$message = ! empty( $data['message'] ) ? esc_textarea( $data['message'] ) : '';
 
 		$mobile = ! empty( $data['mobile'] ) ? $data['mobile'] : '';
@@ -1159,8 +1190,7 @@ class Helper {
 	public function get_sms_gateways() {
 
 		$gateways          = [];
-		$excluded_gateways = [
-			//'PW\PWSMS\Gateways\IppanelSms' => 'ippanelsms',
+		$excluded_gateways = [//'PW\PWSMS\Gateways\IppanelSms' => 'ippanelsms',
 		];
 		// Gateways are static as namespace and directory
 		$namespace = 'PW\PWSMS\Gateways';
@@ -1225,11 +1255,7 @@ class Helper {
 	 * Check if HPOS enabled.
 	 */
 	public function is_wc_order_hpos_enabled() {
-		return function_exists( 'wc_get_container' ) ?
-			wc_get_container()
-				->get( CustomOrdersTableController::class )
-				->custom_orders_table_usage_is_enabled()
-			: false;
+		return function_exists( 'wc_get_container' ) ? wc_get_container()->get( CustomOrdersTableController::class )->custom_orders_table_usage_is_enabled() : false;
 	}
 
 	public function extract_last_ten_digits( $phone_number ) {

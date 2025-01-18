@@ -2,6 +2,9 @@
 
 namespace PW\PWSMS\Gateways;
 
+use SoapClient;
+use SoapFault;
+
 class Modirpayamak implements GatewayInterface {
 	use GatewayTrait;
 
@@ -76,29 +79,17 @@ class Modirpayamak implements GatewayInterface {
 			}
 
 		} else {
-			// Non-pattern message
-			$payload = [
-				'op'      => 'send',
-				'uname'   => $username,
-				'pass'    => $password,
-				'from'    => $sender_number,
-				'to'      => implode( ",", $recipient_numbers ),
-				'message' => $message_content,
-			];
 
-			// Loop over recipients to send messages
-			foreach ( $recipient_numbers as $recipient ) {
-				$response = wp_remote_post( $this->api_url, [
-					'method'  => 'POST',
-					'body'    => json_encode( $payload ),
-					'timeout' => 30,
-					'headers' => [
-						'Content-Type' => 'application/json',
-					],
-				] );
-				// Handle response for each recipient
-				$this->handle_response( $response, $recipient );
+			try {
+				$client = new SoapClient( "http://ippanel.com/class/sms/wsdlservice/server.php?wsdl" );
+				$client->SendSMS( $sender_number, $recipient_numbers, $message_content, $username, $password, '', 'send' );
+
+				return true;
+
+			} catch ( SoapFault $ex ) {
+				return $ex->faultstring;
 			}
+			
 		}
 
 		// Check for failed numbers and return error message
@@ -113,13 +104,9 @@ class Modirpayamak implements GatewayInterface {
 			}
 
 			// Format the grouped data
-			return implode( ', ', array_map(
-				function ( string $message, array $numbers ) {
-					return implode( ',', $numbers ) . ': ' . $message;
-				},
-				array_keys( $grouped ),
-				$grouped
-			) );
+			return implode( ', ', array_map( function ( string $message, array $numbers ) {
+				return implode( ',', $numbers ) . ': ' . $message;
+			}, array_keys( $grouped ), $grouped ) );
 
 		}
 

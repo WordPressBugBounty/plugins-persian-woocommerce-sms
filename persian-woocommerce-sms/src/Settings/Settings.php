@@ -578,6 +578,7 @@ class Settings {
 			<code>{email}</code> = ایمیل مشتری   ،
 			<code>{status}</code> = وضعیت سفارش   ، <br>
 			<code>{all_items}</code> = محصولات سفارش   ،
+            <code>{all_items_full}</code> = محصولات سفارش با نام کامل متغیر   ،
 			<code>{all_items_qty}</code> = محصولات سفارش بهمراه تعداد   ،
 			<code>{count_items}</code> = تعداد محصولات سفارش   ،<br>
 			<code>{price}</code> = مبلغ سفارش   ،

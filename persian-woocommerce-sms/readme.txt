@@ -8,7 +8,7 @@ Tags: sms,ووکامرس فارسی,woocommerce,persian woocommerce,پیامک
 Requires at least: 5.8
 Tested up to: 6.7.1
 Requires PHP: 7.4
-Stable tag: 7.0.9
+Stable tag: 7.0.10
 
 افزونه کامل و حرفه ای برای اطلاع رسانی پیامکی سفارشات و رویداد های محصولات ووکامرس
 
