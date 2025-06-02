@@ -25,17 +25,79 @@ class MetaBox {
 		$this->enable_product_admin_sms = PWSMS()->get_option( 'enable_product_admin_sms' );//مدیر محصول
 
 		if ( $this->enable_metabox || $this->enable_notification || $this->enable_product_admin_sms ) {
-			add_action( 'add_meta_boxes', [ $this, 'add_metabox' ] );
-			add_action( 'wp_ajax_pwoosms_metabox', [ $this, 'ajax_callback' ] );
+			add_action( 'add_meta_boxes', [ $this, 'send_sms_metabox' ] );
+			add_action( 'add_meta_boxes', [ $this, 'send_post_tracking_code_metabox' ] );
+
+			add_action( 'wp_ajax_pwoosms_metabox', [ $this, 'send_sms_ajax_callback' ] );
 		}
 	}
 
-	public function add_metabox() {
+	/**
+	 * Sends the post tracking code to user in order
+	 *
+	 */
+	public function send_post_tracking_code_metabox() {
+		$screen = PWSMS()->is_wc_order_hpos_enabled() ? wc_get_page_screen_id( 'shop-order' ) : 'shop_order';
+
+
+		add_meta_box( 'send_post_tracking_code_to_buyer', 'ارسال کد رهگیری پستی', [
+			$this,
+			'send_post_tracking_code_metabox_html',
+		], [
+			'shop_order',
+			$screen,
+		], 'side', 'high' );
+
+	}
+
+	public function send_post_tracking_code_metabox_html( $post_or_order_object ) {
+		$order_id = $post_or_order_object instanceof WC_Order ? $post_or_order_object->get_id() : $post_or_order_object->ID;
+
+		$mobile = PWSMS()->buyer_mobile( $order_id );
+
+		if ( empty( $mobile ) ) {
+			echo '<p>شماره ای برای ارسال پیامک وجود ندارد.</p>';
+
+			return;
+		}
+
+		if ( ! PWSMS()->validate_mobile( $mobile ) ) {
+			echo '<p>شماره موبایل مشتری معتبر نیست.</p>';
+
+			return;
+		}
+		?>
+        <style>
+            #send_post_tracking_code_to_buyer #pwoosms_message {
+                height: 30px !important;
+            }
+
+            #send_post_tracking_code_to_buyer .select2 {
+                width: 100% !important;
+            }
+
+        </style>
+		<?php
+		ob_start(); ?>
+        <p>
+            <label for="select_group">ارائه دهنده خدمات پست</label><br>
+            <select name="select_group" class="wc-enhanced-select" id="select_group" style="width: 100%;">
+                <option value="https://tracking.post.ir/">شرکت ملی پست</option>
+                <option value="https://tipaxco.com/tracking">تیپاکس</option>
+            </select>
+        </p>
+        <br>
+		<?php
+		$html_below = ob_get_clean();
+
+		$this->metabox_html( $order_id, 'shop_order', '<p>کد رهگیری</p>', $html_below );
+	}
+
+
+	public function send_sms_metabox() {
 
 		if ( $this->enable_metabox ) {
-			$screen = PWSMS()->is_wc_order_hpos_enabled()
-				? wc_get_page_screen_id( 'shop-order' )
-				: 'shop_order';
+			$screen = PWSMS()->is_wc_order_hpos_enabled() ? wc_get_page_screen_id( 'shop-order' ) : 'shop_order';
 
 
 			add_meta_box( 'send_sms_to_buyer', 'ارسال پیامک به مشتری', [
@@ -58,7 +120,7 @@ class MetaBox {
 		}
 	}
 
-	public function ajax_callback() {
+	public function send_sms_ajax_callback() {
 
 		check_ajax_referer( 'pwoosms_metabox', 'security' );
 
@@ -71,16 +133,55 @@ class MetaBox {
 		switch ( $_POST['post_type'] ) {
 
 			case 'shop_order':
-				$this->order_metabox_result( intval( $_POST['post_id'] ), $message );
+				if ( isset( $_POST['group'] ) ) { // Tracking post code action
+					$this->order_post_tracking_metabox_result( intval( $_POST['post_id'] ), $message, sanitize_text_field( $_POST['group'] ?? '' ) );
+				} else { // Normal SMS sending
+					$this->order_metabox_result( intval( $_POST['post_id'] ), $message );
+				}
 				break;
 
 			case 'product':
-				$this->product_metabox_result( intval( $_POST['post_id'] ), $message,
-					sanitize_text_field( $_POST['group'] ?? '' ) );
+				$this->product_metabox_result( intval( $_POST['post_id'] ), $message, sanitize_text_field( $_POST['group'] ?? '' ) );
 				break;
 
 			default:
 				wp_send_json_error( [ 'message' => 'خطای ایجکس رخ داده است.' ] );
+		}
+	}
+
+	public function order_post_tracking_metabox_result( $order_id, $tracking_code, $group ) {
+		$order = wc_get_order( $order_id );
+
+		if ( ! PWSMS()->is_wc_order( $order ) ) {
+			return;
+		}
+
+		$mobile  = PWSMS()->buyer_mobile( $order_id );
+		$message = PWSMS()->get_option( 'sms_body_set-post-tracking-code' );
+
+		$data = [
+			'post_id' => $order_id,
+			'type'    => 3,
+			'mobile'  => $mobile,
+			'message' => PWSMS()->replace_short_codes( $message, 'set-post-tracking-code', $order, [ 'post_tracking_code' => $tracking_code, 'post_tracking_url' => $group ] ),
+		];
+
+		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+
+			$order->add_order_note( sprintf( 'پیامک با موفقیت به مشتری با شماره موبایل %s ارسال شد.<br>متن پیامک: %s', $mobile, $message ) );
+			wp_send_json_success( [
+				'message'    => 'پیامک با موفقیت ارسال شد.',
+				'order_note' => PWSMS()->order_note_metabox( $order ),
+			] );
+
+		} else {
+
+			$order->add_order_note( sprintf( 'پیامک به مشتری با شماره موبایل %s ارسال نشد.<br>متن پیامک: %s<br>پاسخ وبسرویس: %s', $mobile, $message, $result ) );
+			wp_send_json_error( [
+				'message'    => sprintf( 'ارسال پیامک با خطا مواجه شد. %s', $result ),
+				'order_note' => PWSMS()->order_note_metabox( $order ),
+			] );
+
 		}
 	}
 
@@ -103,8 +204,7 @@ class MetaBox {
 
 		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
 
-			$order->add_order_note( sprintf( 'پیامک با موفقیت به مشتری با شماره موبایل %s ارسال شد.<br>متن پیامک: %s',
-				$mobile, $message ) );
+			$order->add_order_note( sprintf( 'پیامک با موفقیت به مشتری با شماره موبایل %s ارسال شد.<br>متن پیامک: %s', $mobile, $message ) );
 			wp_send_json_success( [
 				'message'    => 'پیامک با موفقیت ارسال شد.',
 				'order_note' => PWSMS()->order_note_metabox( $order ),
@@ -112,8 +212,7 @@ class MetaBox {
 
 		} else {
 
-			$order->add_order_note( sprintf( 'پیامک به مشتری با شماره موبایل %s ارسال نشد.<br>متن پیامک: %s<br>پاسخ وبسرویس: %s',
-				$mobile, $message, $result ) );
+			$order->add_order_note( sprintf( 'پیامک به مشتری با شماره موبایل %s ارسال نشد.<br>متن پیامک: %s<br>پاسخ وبسرویس: %s', $mobile, $message, $result ) );
 			wp_send_json_error( [
 				'message'    => sprintf( 'ارسال پیامک با خطا مواجه شد. %s', $result ),
 				'order_note' => PWSMS()->order_note_metabox( $order ),
@@ -196,7 +295,7 @@ class MetaBox {
 
 	private function metabox_html( int $post_id, $post_type, $html_above = '', $html_below = '' ) { ?>
 
-		<div id="pwoosms_metabox_result"></div>
+        <div id="pwoosms_metabox_result"></div>
 
 		<?php
 		$safemetabox = [
@@ -217,23 +316,23 @@ class MetaBox {
 
 		?>
 
-		<p>
+        <p>
             <textarea rows="5" cols="20" class="input-text" id="pwoosms_message"
                       name="pwoosms_message" style="width: 100%; height: 78px;" title=""></textarea>
-		</p>
+        </p>
 
 		<?php echo wp_kses( $html_below, $safemetabox ); ?>
 
-		<div class="wide" id="pwoosms_divider" style="text-align: left">
-			<input type="submit" class="button save_order button-primary" name="pwoosms_submit"
-			       id="pwoosms_submit" value="ارسال پیامک">
-		</div>
+        <div class="wide" id="pwoosms_divider" style="text-align: left">
+            <input type="submit" class="pwoosms_submit button save_order button-primary" name="pwoosms_submit"
+                   id="pwoosms_submit" value="ارسال پیامک">
+        </div>
 
-		<div class="pwoosms_loading">
-			<img src="<?php echo PWSMS_URL . '/assets/images/ajax-loader.gif'; ?>">
-		</div>
+        <div class="pwoosms_loading">
+            <img src="<?php echo PWSMS_URL . '/assets/images/ajax-loader.gif'; ?>">
+        </div>
 
-		<style type="text/css">
+        <style type="text/css">
             .pwoosms_loading {
                 position: absolute;
                 background: rgba(255, 255, 255, 0.5);
@@ -276,29 +375,34 @@ class MetaBox {
                 border-top: 1px solid #e9e9e9;
                 padding-top: 5px;
             }
-		</style>
+        </style>
 
-		<script type="text/javascript">
+        <script type="text/javascript">
+
             jQuery(document).ready(function ($) {
-                $('#pwoosms_submit').on('click', function (e) {
+                $('.pwoosms_submit').on('click', function (e) {
                     e.preventDefault();
                     var notes = $('#woocommerce-order-notes .inside');
-                    var result = $('div#pwoosms_metabox_result');
-                    var loading = $('.pwoosms_loading');
-                    loading.show();
-                    loading.clone().prependTo(notes);
+
                     var self = $(this);
                     var post_type = '<?php echo esc_attr( $post_type ); ?>';
-                    result.removeClass('fault', 'success');
-                    self.attr('disabled', true);
-                    $.post('<?php echo admin_url( "admin-ajax.php" );?>', {
+                    var loading = self.closest('.postbox').find('.pwoosms_loading');
+                    loading.show();
+                    loading.clone().prependTo(notes);
+                    var result = self.closest('.postbox').find('#pwoosms_metabox_result');
+
+                    var pwsms_ajax_data = {
                         action: 'pwoosms_metabox',
                         security: '<?php echo wp_create_nonce( 'pwoosms_metabox' );?>',
                         post_id: '<?php echo intval( $post_id );?>',
                         post_type: post_type,
                         message: $('#pwoosms_message').val(),
                         group: $('#select_group').val()
-                    }, function (res) {
+                    };
+
+                    result.removeClass('fault', 'success');
+                    self.attr('disabled', true);
+                    $.post('<?php echo admin_url( "admin-ajax.php" );?>', pwsms_ajax_data, function (res) {
                         result.addClass(res.success ? 'success' : 'fault').html(res.data.message).show();
                         self.attr('disabled', false);
                         if (typeof res.data.order_note != "undefined" && res.data.order_note.length) {
@@ -308,7 +412,9 @@ class MetaBox {
                     });
                 });
             });
-		</script>
+
+
+        </script>
 		<?php
 	}
 
@@ -317,12 +423,12 @@ class MetaBox {
 		$product_id = $post->ID;
 
 		ob_start(); ?>
-		<p>
-			<label for="select_group">ارسال پیامک به:</label><br>
-			<select name="select_group" class="wc-enhanced-select" id="select_group" style="width: 100%;">
+        <p>
+            <label for="select_group">ارسال پیامک به:</label><br>
+            <select name="select_group" class="wc-enhanced-select regular-input" id="select_group" style="width: 100% !important;">
 
 				<?php if ( $this->enable_product_admin_sms ) { ?>
-					<option value="_product_admins">به مدیران این محصول</option>
+                    <option value="_product_admins">به مدیران این محصول</option>
 				<?php }
 
 				if ( $this->enable_notification ) {
@@ -330,18 +436,18 @@ class MetaBox {
 					$groups = Contacts::get_groups( $product_id, false, true );
 
 					if ( ! empty( $groups ) ) { ?>
-						<optgroup label="به مشترکین گروه های زیر:">
+                        <optgroup label="به مشترکین گروه های زیر:">
 							<?php foreach ( $groups as $code => $text ) { ?>
-								<option
-									value="<?php echo esc_attr( $code ); ?>"><?php echo esc_attr( $text ); ?></option>
+                                <option
+                                        value="<?php echo esc_attr( $code ); ?>"><?php echo esc_attr( $text ); ?></option>
 							<?php } ?>
-						</optgroup>
+                        </optgroup>
 					<?php }
 				}
 				?>
 
-			</select>
-		</p>
+            </select>
+        </p>
 		<?php
 		$html_above = ob_get_clean();
 

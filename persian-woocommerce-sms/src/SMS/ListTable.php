@@ -285,8 +285,8 @@ class ListTable extends WP_List_Table {
 	protected function fetch_data( $per_page = 20, $offset = 0 ) {
 		$wpdb = $GLOBALS['wpdb'];
 
-		$orderby = ! empty( $_REQUEST['orderby'] ) ? esc_sql( $_REQUEST['orderby'] ) : 'date';
-		$order   = ! empty( $_REQUEST['order'] ) ? esc_sql( $_REQUEST['order'] ) : 'desc';
+		$orderby = ! empty( $_GET['orderby'] ) ? sanitize_key( $_GET['orderby'] ) : 'date';
+		$order   = ! empty( $_GET['order'] ) ? sanitize_key( $_GET['order'] ) : 'desc';
 
 		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}woocommerce_ir_sms_archive ORDER BY $orderby $order LIMIT %d OFFSET %d", $per_page, $offset );
 
@@ -335,8 +335,8 @@ class ListTable extends WP_List_Table {
 			$sql     .= ( isset( $s ) ? ' AND' : ' WHERE' ) . ' (`post_id` IN (' . implode( ',', is_array( $post_id ) ? $post_id : [ $post_id ] ) . '))';
 		}
 
-		if ( ! empty( $_REQUEST['orderby'] ) ) {
-			$sql .= $wpdb->prepare( ' ORDER BY %s', sanitize_text_field( $_REQUEST['orderby'] ) );
+		if ( ! empty( $_GET['orderby'] ) ) {
+			$sql .= $wpdb->prepare( ' ORDER BY %s', sanitize_key( $_GET['orderby'] ) );
 			$sql .= $_REQUEST['order'] == 'DESC' ? ' DESC' : ' ASC';
 		} else {
 			$sql .= ' ORDER BY id DESC';
@@ -485,8 +485,9 @@ class ListTable extends WP_List_Table {
 	}
 
 	protected function usort_reorder( $a, $b ) {
-		$orderby = ( ! empty( $_REQUEST['orderby'] ) ) ? $_REQUEST['orderby'] : 'date';
-		$order   = ( ! empty( $_REQUEST['order'] ) ) ? $_REQUEST['order'] : 'desc';
+
+		$orderby = ( ! empty( $_GET['orderby'] ) ) ? sanitize_key( $_GET['orderby'] ) : 'date';
+		$order   = ( ! empty( $_GET['order'] ) ) ? sanitize_key( $_GET['order'] ) : 'desc';
 		$result  = strcmp( $a[ $orderby ], $b[ $orderby ] );
 
 		return ( $order === 'asc' ) ? $result : - $result;

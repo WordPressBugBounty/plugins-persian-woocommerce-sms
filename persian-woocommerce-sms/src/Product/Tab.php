@@ -185,8 +185,8 @@ class Tab {
 			woocommerce_wp_checkbox( [
 				'cbvalue'     => 'on',
 				'desc_tip'    => true,
-				'label'       => 'زمانیکه که محصول حراج شد',
-				'description' => 'با فعالسازی این گزینه، در صورت حراج نبودن محصول، گزینه "زمانیکه که محصول حراج شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+				'label'       => 'زمانیکه محصول حراج شد',
+				'description' => 'با فعالسازی این گزینه، در صورت حراج نبودن محصول، گزینه "زمانیکه محصول حراج شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
 				'id'          => end( $this->product_metas ),
 				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
 			] );
@@ -214,8 +214,8 @@ class Tab {
 			woocommerce_wp_checkbox( [
 				'cbvalue'     => 'on',
 				'desc_tip'    => true,
-				'label'       => 'زمانیکه که محصول موجود شد',
-				'description' => 'با فعالسازی این گزینه، در صورت ناموجود بودن محصول، گزینه "زمانیکه که محصول موجود شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+				'label'       => 'زمانیکه محصول موجود شد',
+				'description' => 'با فعالسازی این گزینه، در صورت ناموجود بودن محصول، گزینه "زمانیکه محصول موجود شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
 				'id'          => end( $this->product_metas ),
 				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
 			] );
@@ -243,7 +243,7 @@ class Tab {
 				'cbvalue'     => 'on',
 				'desc_tip'    => true,
 				'label'       => 'زمانیکه محصول رو به اتمام است',
-				'description' => 'با فعالسازی این گزینه، در صورتی که موجودی انبار زیاد بود، گزینه "زمانیکه که محصول رو به اتمام است" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+				'description' => 'با فعالسازی این گزینه، در صورتی که موجودی انبار زیاد بود، گزینه "زمانیکه محصول رو به اتمام است" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
 				'id'          => end( $this->product_metas ),
 				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
 			] );

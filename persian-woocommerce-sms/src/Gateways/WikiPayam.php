@@ -6,48 +6,49 @@ use PW\PWSMS\PWSMS;
 use SoapClient;
 use SoapFault;
 
-class Asanak implements GatewayInterface {
+class WikiPayam implements GatewayInterface {
 	use GatewayTrait;
 
 	public string $api_url = 'https://sms.asanak.ir/webservice/v2rest';
 
 	public static function id() {
-		return 'asanak';
+		return 'wikipayam';
 	}
 
 	public static function name() {
-		return 'asanak.ir';
+		return 'wikipayam.ir';
 	}
 
 	public function send() {
-		$username = $this->username;
-		$password = $this->password;
-		$from     = $this->senderNumber;
-		$to       = $this->mobile;
-		$massage  = $this->message;
+		$authToken = ! empty( $this->username ) ? trim( $this->username ) : trim( $this->password );
+		$from      = $this->senderNumber;
+		$to        = $this->mobile;
+		$message   = $this->message;
 
-		if ( empty( $username ) || empty( $password ) ) {
+		if ( empty( $authToken ) ) {
 			return false;
 		}
 
 		$to  = implode( ',', $to );
 		$to  = str_ireplace( '+98', '0', $to );
-		$url = $this->api_url . '/sendsms';
+		$url = 'https://wikipayam.ir/api/v1/sms/send';
 
-		$data = [
-			'username'    => $username,
-			'password'    => $password,
-			'destination' => $to,
-			'source'      => $from,
-			'message'     => $massage,
-		];
+		$data = json_encode( [
+			[
+				'sender'   => $from,
+				'receiver' => $to,
+				'message'  => $message,
+			]
+		] );
 
 		$args = [
 			'body'    => $data,
 			'headers' => [
-				'cache-control' => 'no-cache',
-				'Content-Type'  => 'application/x-www-form-urlencoded'
+				'Accept'        => 'application/json',
+				'Authorization' => 'Bearer ' . $authToken,
+				'Content-Type'  => 'application/json',
 			],
+			'timeout' => 15,
 		];
 
 		$remote = wp_remote_post( $url, $args );
@@ -61,10 +62,6 @@ class Asanak implements GatewayInterface {
 
 		if ( json_last_error() ) {
 			return 'پاسخ نامعتبر از سمت وبسرویس.';
-		}
-
-		if ( isset( $response->meta ) && isset( $response->meta->status ) && $response->meta->status == 200 ) {
-			return true;
 		}
 
 		return $response;

@@ -6,9 +6,9 @@ Donate link: https://woosupport.ir
 plugin URI: https://woosupport.ir
 Tags: sms,ووکامرس فارسی,woocommerce,persian woocommerce,پیامک
 Requires at least: 5.8
-Tested up to: 6.7.1
+Tested up to: 6.8.1
 Requires PHP: 7.4
-Stable tag: 7.0.10
+Stable tag: 7.1.0
 
 افزونه کامل و حرفه ای برای اطلاع رسانی پیامکی سفارشات و رویداد های محصولات ووکامرس
 
@@ -29,7 +29,7 @@ Stable tag: 7.0.10
 
 
 = درگاه های پیامک =
- * MeliPayamak.com
+ *  MeliPayamak.com
  * ParsGreen.com
  * ParandSMS.com
  * GAMAPayamak.com
@@ -127,6 +127,10 @@ Stable tag: 7.0.10
  * FarazSMS.com
  * GhasedakSMS.com 
  * Mediana.ir
+ * PanelChi
+ * Asanak
+ * NMTSMS
+ * PersianSMS
 
 == Installation ==
 1. Upload `persian-woocommerce-sms` folder to the `/wp-content/plugins/` directory
@@ -150,6 +154,10 @@ Stable tag: 7.0.10
 14. Screen shot 14
 
 == Changelog ==
+= 7.1.0 =
+* افزوده شدن قابلیت ارسال پیامک کد رهگیری مرسولات پستی (جدید)
+* رفع خطا در صفحه خبرنامه
+* رفع خطای چند وبسرویس پیامکی
 = 7.0.8 =
 * افزوده شدن وبسرویس های جدید و رفع چند مورد خطا
 = 7.0.7 =
@@ -385,5 +393,5 @@ Stable tag: 7.0.10
 * نسخه اولیه
 
 == Upgrade Notice ==
-= 7.0.9 =
-* افزوده شدن وبسرویس مدیانا
+= 7.1.0 =
+* افزوده شدن قابلیت ارسال کد رهگیری پستی با پیامک (وارد تنظیمات شوید / پیامک مشتریان)

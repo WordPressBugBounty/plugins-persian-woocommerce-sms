@@ -8,7 +8,7 @@ class IPPanel implements GatewayInterface {
 	/**
 	 * @var string
 	 */
-	public string $api_url = 'https://ippanel.com/api/select';
+	public string $api_url = 'https://ippanel.com/services.jspd';
 
 	/**
 	 * @var array
@@ -51,6 +51,7 @@ class IPPanel implements GatewayInterface {
 				$pattern_data[ $split_parameter[0] ] = $split_parameter[1];
 			}
 
+
 			// Loop over recipients to send pattern messages
 			foreach ( $recipient_numbers as $recipient ) {
 				$payload = [
@@ -78,27 +79,60 @@ class IPPanel implements GatewayInterface {
 		} else {
 			// Non-pattern message
 			$payload = [
-				'op'      => 'send',
+				'op'      => 'sendsocial',
+				'type'    => '',
 				'uname'   => $username,
 				'pass'    => $password,
 				'from'    => $sender_number,
-				'to'      => implode( ",", $recipient_numbers ),
+				'to'      => $recipient_numbers,
 				'message' => $message_content,
 			];
 
-			// Loop over recipients to send messages
-			foreach ( $recipient_numbers as $recipient ) {
-				$response = wp_remote_post( $this->api_url, [
-					'method'  => 'POST',
-					'body'    => json_encode( $payload ),
-					'timeout' => 30,
-					'headers' => [
-						'Content-Type' => 'application/json',
-					],
-				] );
-				// Handle response for each recipient
-				$this->handle_response( $response, $recipient );
+
+			$remote = wp_remote_post( $this->api_url, [
+				'method'      => 'POST',
+				'body'        => json_encode($payload),
+				'timeout'     => 30,
+				'httpversion' => '1.1',
+				'headers'     => [
+					'Content-Type' => 'application/json',
+				],
+			] );
+
+			if ( is_wp_error( $remote ) ) {
+				return $remote->get_error_message();
 			}
+
+			$response_message = wp_remote_retrieve_response_message( $remote );
+			$response_code    = wp_remote_retrieve_response_code( $remote );
+
+			if ( empty( $response_code ) || 200 != $response_code ) {
+				return $response_code . ' -> ' . $response_message;
+			}
+
+			$response = wp_remote_retrieve_body( $remote );
+
+			if ( empty( $response ) ) {
+				return 'بدون پاسخ دریافتی از سمت وب سرویس.';
+			}
+
+			$response_data = json_decode( $response, true );
+			if ( ! empty( json_last_error() ) ) {
+				return 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
+
+			}
+
+			if ( isset( $response_data['status'] ) && strtolower( $response_data['status'] ) == 'ok' ) {
+				return true;
+			}
+
+
+			// If all data has been controlled but status is not ok, There should be an unknown error
+			return 'خطای ناشناختته در ارسال پیامک.';
+
+			// Handle response for each recipient
+			//$this->handle_response( $response, $recipient_numbers );
+
 		}
 
 		// Check for failed numbers and return error message
@@ -113,13 +147,9 @@ class IPPanel implements GatewayInterface {
 			}
 
 			// Format the grouped data
-			return implode( ', ', array_map(
-				function ( string $message, array $numbers ) {
-					return implode( ',', $numbers ) . ': ' . $message;
-				},
-				array_keys( $grouped ),
-				$grouped
-			) );
+			return implode( ', ', array_map( function ( string $message, array $numbers ) {
+				return implode( ',', $numbers ) . ': ' . $message;
+			}, array_keys( $grouped ), $grouped ) );
 
 		}
 

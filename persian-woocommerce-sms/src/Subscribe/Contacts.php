@@ -214,6 +214,9 @@ class Contacts {
 	}
 
 	private static function prepare_groups( $groups ) {
+		if ( empty( $groups ) ) {
+			return '';
+		}
 
 		if ( ! is_array( $groups ) ) {
 			$groups = explode( ',', (string) $groups );
@@ -231,24 +234,24 @@ class Contacts {
 
 		$updated = get_option( 'pwoosms_table_contacts_updated' );
 		if ( ! $updated ) { ?>
-			<div class="notice notice-info below-h2">
-				<p>
-					<strong>
-						در حال انتقال دیتابیس مشترکین خبرنامه سایت شما از جدول post_meta به یک جدول مستقل هستیم.
-						این عمل با توجه به حجم مشترکین شما ممکن است کمی زمانبر باشد.
-						لطفا لحظات دیگری پس از انتقال کامل مشترکین مراجعه نمایید.
-					</strong>
-				</p>
-			</div>
+            <div class="notice notice-info below-h2">
+                <p>
+                    <strong>
+                        در حال انتقال دیتابیس مشترکین خبرنامه سایت شما از جدول post_meta به یک جدول مستقل هستیم.
+                        این عمل با توجه به حجم مشترکین شما ممکن است کمی زمانبر باشد.
+                        لطفا لحظات دیگری پس از انتقال کامل مشترکین مراجعه نمایید.
+                    </strong>
+                </p>
+            </div>
 			<?php return;
 		} elseif ( $updated == '1' ) { ?>
-			<div class="notice notice-success is-dismissible below-h2">
-				<p>
-					<strong>
-						انتقال دیتابیس مشترکین خبرنامه سایت شما از جدول post_meta به یک جدول مستقل با موفقیت انجام شد.
-					</strong>
-				</p>
-			</div>
+            <div class="notice notice-success is-dismissible below-h2">
+                <p>
+                    <strong>
+                        انتقال دیتابیس مشترکین خبرنامه سایت شما از جدول post_meta به یک جدول مستقل با موفقیت انجام شد.
+                    </strong>
+                </p>
+            </div>
 			<?php update_option( 'pwoosms_table_contacts_updated', '2' );
 		}
 
@@ -285,7 +288,7 @@ class Contacts {
 
 			$add_url = add_query_arg( $query_args,
 				admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=contacts' ) ); ?>
-			<a class="page-title-action" href="<?php echo esc_url( $add_url ); ?>">افزودن مشترک جدید</a>
+            <a class="page-title-action" href="<?php echo esc_url( $add_url ); ?>">افزودن مشترک جدید</a>
 
 			<?php
 			// Check if the GET parameters exist and sanitize them
@@ -295,23 +298,23 @@ class Contacts {
 			$edit       = isset( $_GET['edit'] ) ? htmlspecialchars( $_GET['edit'], ENT_QUOTES, 'UTF-8' ) : '';
 
 			if ( ! empty( $product_id ) || ! empty( $add ) || ! empty( $edit ) ) : ?>
-				<a class="page-title-action"
-				   href="<?php echo esc_url( remove_query_arg( [ 'product_id', 'add', 'edit' ] ) ); ?>">
-					بازگشت به لیست همه مشترکین
-				</a>
+                <a class="page-title-action"
+                   href="<?php echo esc_url( remove_query_arg( [ 'product_id', 'add', 'edit' ] ) ); ?>">
+                    بازگشت به لیست همه مشترکین
+                </a>
 			<?php endif; ?>
 
 
-			<form method="post">
-				<input type="hidden" name="page" value="WoocommerceIR_SMS_Contacts_list_table">
+            <form method="post">
+                <input type="hidden" name="page" value="WoocommerceIR_SMS_Contacts_list_table">
 				<?php
 				$list->search_box( 'جستجوی تلفن/ شناسه محصول', 'search_id' );
 				$list->display();
 				?>
-			</form>
+            </form>
 		<?php } ?>
 
-		<script type="text/javascript">
+        <script type="text/javascript">
             jQuery(document).ready(function ($) {
                 $('.delete a, a.delete, .button.action').on('click', function (e) {
                     var action1 = $('select[name="action"]').val();
@@ -324,7 +327,7 @@ class Contacts {
                     }
                 });
             });
-		</script>
+        </script>
 		<?php
 	}
 
@@ -355,9 +358,7 @@ class Contacts {
 				$error = 'شماره موبایل وارد شده معتبر نیست.';
 			}
 
-
-			$groups = self::prepare_groups( $_POST['groups'] );
-
+			$groups = self::prepare_groups( $_POST['groups'] ?? '' );
 
 			if ( empty( $groups ) ) {
 				$error = 'انتخاب حداقل یک گروه الزامی است.';
@@ -392,9 +393,9 @@ class Contacts {
 			}
 
 			if ( ! empty( $error ) ) { ?>
-				<div class="notice notice-error below-h2">
-					<p><strong>خطا: </strong><?php echo esc_attr( $error ); ?></p>
-				</div>
+                <div class="notice notice-error below-h2">
+                    <p><strong>خطا: </strong><?php echo esc_attr( $error ); ?></p>
+                </div>
 				<?php
 			}
 		} else {
@@ -406,28 +407,28 @@ class Contacts {
 		$contact_groups = array_map( 'trim', $contact_groups );
 
 		if ( ! empty( $saved ) || ! empty( $_GET['added'] ) ) { ?>
-			<div class="notice notice-success below-h2">
-				<p><strong>مشترک ذخیره شد.</strong>
-					<a href="<?php echo esc_url( $return_url ); ?>">بازگشت به لیست مشترکین</a>
-				</p>
-			</div>
+            <div class="notice notice-success below-h2">
+                <p><strong>مشترک ذخیره شد.</strong>
+                    <a href="<?php echo esc_url( $return_url ); ?>">بازگشت به لیست مشترکین</a>
+                </p>
+            </div>
 			<?php
 		}
 
 		$title = $operation == 'edit' ? 'ویرایش مشترک خبرنامه محصول "%s"' : 'افزودن مشترک جدید برای خبرنامه محصول "%s"'; ?>
-		<h3><?php printf( $title, get_the_title( $product_id ) ); ?></h3>
+        <h3><?php printf( $title, get_the_title( $product_id ) ); ?></h3>
 
-		<form action="<?php echo esc_url( remove_query_arg( [ 'added' ] ) ); ?>" method="post">
-			<table class="form-table">
-				<tbody>
-				<tr>
-					<th><label for="mobile">شماره موبایل</label></th>
-					<td><input type="text" id="mobile" name="mobile" value="<?php echo esc_attr( $mobile ); ?>"
-					           style="text-align: left; direction: ltr"></td>
-				</tr>
-				<tr>
-					<th><label for="mobile">گروه ها</label></th>
-					<td>
+        <form action="<?php echo esc_url( remove_query_arg( [ 'added' ] ) ); ?>" method="post">
+            <table class="form-table">
+                <tbody>
+                <tr>
+                    <th><label for="mobile">شماره موبایل</label></th>
+                    <td><input type="text" id="mobile" name="mobile" value="<?php echo esc_attr( $mobile ); ?>"
+                               style="text-align: left; direction: ltr"></td>
+                </tr>
+                <tr>
+                    <th><label for="mobile">گروه ها</label></th>
+                    <td>
 						<?php
 						$all_groups    = (array) Contacts::get_groups( $product_id, false, false );
 						$active_groups = (array) Contacts::get_groups( $product_id, false, true );
@@ -436,9 +437,9 @@ class Contacts {
 							$group = strval( $group );
 
 							?>
-							<label for="groups_<?php echo esc_attr( $group ); ?>">
-								<input type="checkbox" name="groups[]" id="groups_<?php echo esc_attr( $group ); ?>"
-								       value="<?php echo esc_attr( $group ); ?>" <?php checked( in_array( $group,
+                            <label for="groups_<?php echo esc_attr( $group ); ?>">
+                                <input type="checkbox" name="groups[]" id="groups_<?php echo esc_attr( $group ); ?>"
+                                       value="<?php echo esc_attr( $group ); ?>" <?php checked( in_array( $group,
 									$contact_groups ) ) ?>>
 								<?php
 								echo esc_attr( $label );
@@ -446,24 +447,24 @@ class Contacts {
 									echo ' (غیرفعال)';
 								}
 								?>
-							</label><br>
+                            </label><br>
 						<?php
 						endforeach;
 						?>
-					</td>
-				</tr>
-				</tbody>
-			</table>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
 
 			<?php
 			wp_nonce_field( 'pwoosms_contact_nonce', '_wpnonce' );
 			$title = $operation == 'edit' ? 'بروز رسانی مشترک' : 'افزودن مشترک';
 			?>
 
-			<p class="submit">
-				<input name="submit" class="button button-primary" value="<?php echo esc_attr( $title ); ?>"
-				       type="submit">
-				<a href="<?php echo esc_url( $return_url ); ?>" class="button button-secondary">بازگشت</a>
+            <p class="submit">
+                <input name="submit" class="button button-primary" value="<?php echo esc_attr( $title ); ?>"
+                       type="submit">
+                <a href="<?php echo esc_url( $return_url ); ?>" class="button button-secondary">بازگشت</a>
 
 				<?php if ( ! empty( $contact_id ) ) :
 
@@ -473,13 +474,13 @@ class Contacts {
 						'_wpnonce' => wp_create_nonce( 'pwoosms_delete_contact' ),
 					], $return_url ); ?>
 
-					<a class="delete" href="<?php echo esc_url( $delete_url ); ?>"
-					   style="text-decoration: none; color: red">حذف
-						این مشترک</a>
+                    <a class="delete" href="<?php echo esc_url( $delete_url ); ?>"
+                       style="text-decoration: none; color: red">حذف
+                        این مشترک</a>
 				<?php endif; ?>
-			</p>
+            </p>
 
-		</form>
+        </form>
 		<?php
 	}
 
@@ -514,29 +515,29 @@ class Contacts {
 		}
 		?>
 
-		<table class="form-table">
-			<tbody>
-			<tr>
-				<th>
-					<label for="select_product_id">یک محصول انتخاب کنید</label>
-				</th>
-				<td>
-					<select id="select_product_id" class="wc-product-search">
-						<option value="">یک محصول انتخاب کنید</option>
-					</select>
-				</td>
-			</tr>
-			</tbody>
-		</table>
+        <table class="form-table">
+            <tbody>
+            <tr>
+                <th>
+                    <label for="select_product_id">یک محصول انتخاب کنید</label>
+                </th>
+                <td>
+                    <select id="select_product_id" class="wc-product-search">
+                        <option value="">یک محصول انتخاب کنید</option>
+                    </select>
+                </td>
+            </tr>
+            </tbody>
+        </table>
 
-		<script type="text/javascript">
+        <script type="text/javascript">
             jQuery(document).ready(function ($) {
                 $('select#select_product_id').on('change', function () {
 					<?php $url = esc_url_raw( remove_query_arg( [ 'add' ] ) ); ?>
                     document.location = '<?php echo str_replace( '&amp;', '&', esc_js( $url ) ); ?>' + "&add=" + encodeURIComponent($(this).val());
                 });
             });
-		</script>
+        </script>
 		<?php
 	}
 }

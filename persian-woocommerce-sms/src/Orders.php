@@ -2,6 +2,8 @@
 
 namespace PW\PWSMS;
 
+use PW\PWSMS\Helper;
+use PWS_Tapin;
 use WC_Order;
 
 defined( 'ABSPATH' ) || exit;
@@ -39,6 +41,9 @@ class Orders {
 			add_action( 'woocommerce_resume_order', function () {
 				remove_action( 'woocommerce_checkout_order_processed', [ $this, 'send_order_sms' ], 99 );
 			} );
+
+			/*هنگامی که بارکد پستی مرسوله در تاپین ثبت شد*/
+			add_action( 'pws_save_order_post_barcode', [ $this, 'send_order_post_tracking_code' ], 100, 2 );
 
 			add_filter( 'woocommerce_form_field_pwoosms_multiselect', [
 				Helper::class,
@@ -158,7 +163,7 @@ class Orders {
 
 		$force_buyer = PWSMS()->get_option( 'force_enable_buyer' );
 
-		if ( ! $force_buyer && ! empty( $_POST['buyer_sms_notify'] ) && empty( $_POST[ $mobile_meta ] ) ) {
+		if ( $force_buyer && ! empty( $_POST['buyer_sms_notify'] ) && empty( $_POST[ $mobile_meta ] ) ) {
 			wc_add_notice( 'برای دریافت پیامک می بایست شماره موبایل را وارد نمایید.', 'error' );
 		}
 
@@ -259,6 +264,30 @@ class Orders {
 			*/
 		}
 		echo '</p>';
+	}
+
+	public function send_order_post_tracking_code( WC_Order $order, $tracking_code ) {
+
+		if ( ! class_exists( 'PWS_Tapin' ) || PWS_Tapin::is_enable() ) {
+			return;
+		}
+
+		$order_id     = $order->get_id();
+		$order_status = $order->get_status();
+		$mobile       = PWSMS()->buyer_mobile( $order_id );
+		$message      = PWSMS()->get_option( 'sms_body_set-post-tracking-code' );
+		$data         = [
+			'post_id' => $order_id,
+			'mobile'  => $mobile,
+			'type'    => 4,
+			'message' => PWSMS()->replace_short_codes( $message, $order_status, $order, [ 'post_tracking_code' => $tracking_code, 'post_tracking_url' => 'https://radgir.net' ] ),
+		];
+
+		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+			$order->add_order_note( sprintf( 'پیامک کد رهگیری مرسوله با موفقیت به مشتری با شماره %s ارسال گردید.', $mobile ) );
+		} else {
+			$order->add_order_note( sprintf( 'پیامک کد رهگیری بخاطر خطا به مشتری با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
+		}
 	}
 
 	public function send_order_sms( int $order_id, $old_status = '', $new_status = 'created' ) {

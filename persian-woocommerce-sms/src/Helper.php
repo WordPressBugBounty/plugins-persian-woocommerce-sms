@@ -8,6 +8,7 @@ use PW\PWSMS\Gateways\GatewayInterface;
 use PW\PWSMS\Gateways\Logger;
 use PW\PWSMS\Settings\Settings;
 use PW\PWSMS\SMS\Archive;
+use PWS_Tapin;
 use ReflectionClass;
 use WC_Meta_Box_Order_Notes;
 use WC_Order;
@@ -126,6 +127,12 @@ class Helper {
 		foreach ( (array) $statuses as $status_val => $status_name ) {
 			$opt_statuses[ $this->modify_status( $status_val ) ] = $status_name;
 		}
+
+
+		// Based on settings page engineering, We assume that setting the props are semi status
+		// It's actually an event!
+		// Post Barcode set status
+		$opt_statuses['set-post-tracking-code'] = 'هنگام ثبت بارکد پستی';
 
 		return $opt_statuses;
 	}
@@ -338,10 +345,6 @@ class Helper {
 			$quantity = $this->product_prop( $product, 'total_stock' );
 		}
 
-		if ( empty( $quantity ) ) {
-			$quantity = (int) $product->get_meta( '_stock', true );
-		}
-
 		return ! empty( $quantity ) ? $quantity : 0;
 	}
 
@@ -456,6 +459,14 @@ class Helper {
 			'{shipping_method}' => $shipping_method,
 			'{description}'     => nl2br( esc_html( $order->get_customer_note() ) )
 		];
+
+		// Some tags maybe dependent on specific conditions
+		$post_tracking_code = $vendor_items_array['post_tracking_code'] ?? $this->order_prop( $order, 'post_barcode' );
+		$post_tracking_url  = $vendor_items_array['post_tracking_url'] ?? 'https://radgir.net';
+
+		$tags['{post_tracking_code}'] = $post_tracking_code;
+		$tags['{post_tracking_url}']  = $post_tracking_url;
+
 
 		$content = apply_filters( 'pwoosms_order_sms_body_before_replace', $content, array_keys( $tags ), array_values( $tags ), $order->get_id(), $order, $all_product_ids, $vendor_product_ids );
 
@@ -1172,6 +1183,7 @@ class Helper {
 	}
 
 	/**
+	 *
 	 * Return the current active gateway
 	 *
 	 * @return GatewayInterface

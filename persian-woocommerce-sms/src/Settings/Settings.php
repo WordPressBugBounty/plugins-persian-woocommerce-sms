@@ -456,7 +456,7 @@ class Settings {
 				[
 					'name'    => 'enable_onsale',
 					'label'   => 'زمانیکه محصول حراج شد',
-					'desc'    => 'با فعالسازی این گزینه، در صورت حراج نبودن محصول، گزینه "زمانیکه که محصول حراج شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+					'desc'    => 'با فعالسازی این گزینه، در صورت حراج نبودن محصول، گزینه "زمانیکه محصول حراج شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
 					'type'    => 'checkbox',
 					'default' => 'no',
 				],
@@ -481,8 +481,8 @@ class Settings {
 				],
 				[
 					'name'    => 'enable_notif_no_stock',
-					'label'   => 'زمانیکه که محصول موجود شد',
-					'desc'    => 'با فعالسازی این گزینه، در صورت ناموجود بودن محصول، گزینه "زمانیکه که محصول موجود شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+					'label'   => 'زمانیکه محصول موجود شد',
+					'desc'    => 'با فعالسازی این گزینه، در صورت ناموجود بودن محصول، گزینه "زمانیکه محصول موجود شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
 					'type'    => 'checkbox',
 					'default' => 'no',
 				],
@@ -515,7 +515,7 @@ class Settings {
 				[
 					'name'    => 'enable_notif_low_stock',
 					'label'   => 'زمانیکه محصول رو به اتمام است',
-					'desc'    => 'با فعالسازی این گزینه، در صورتی که موجودی انبار زیاد بود، گزینه "زمانیکه که محصول رو به اتمام است" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+					'desc'    => 'با فعالسازی این گزینه، در صورتی که موجودی انبار زیاد بود، گزینه "زمانیکه محصول رو به اتمام است" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
 					'type'    => 'checkbox',
 					'default' => 'no',
 				],
@@ -611,7 +611,9 @@ class Settings {
 			<code>{sh_address_1}</code> = آدرس 1   ،
 			<code>{sh_address_2}</code> = آدرس 2   ،
 			<code>{sh_postcode}</code> = کد پستی   ،<br><br>
-		
+            <code>{post_tracking_code}</code> = کد رهگیری پستی,
+            <code>{post_tracking_url}</code> = آدرس اینترنتی رهگیری پستی
+
 			{$product_admin_shortcodes}
 		
 			{$shortcode_list}
@@ -694,6 +696,10 @@ class Settings {
 					'default' => "سلام {b_first_name} {b_last_name}\nسفارش {order_id} دریافت شد و هم اکنون در وضعیت " . $_status_name . " می‌باشد.\nآیتم های سفارش : {all_items}\nمبلغ سفارش : {price}\nشماره تراکنش : {transaction_id}",
 				],
 			];
+
+			if ( 'set-post-tracking-code' == $status_val ) {
+				$text[0]['default'] = "{b_first_name} {b_last_name}\nسفارش {order_id} با کد رهگیری  {post_tracking_code} برای شما ارسال شد. پیگیری خرید {post_tracking_url}";
+			}
 
 			$settings = array_merge( $settings, $text );
 		}
