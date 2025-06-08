@@ -67,7 +67,7 @@ class MetaBox {
 			return;
 		}
 		?>
-        <style>
+		<style>
             #send_post_tracking_code_to_buyer #pwoosms_message {
                 height: 30px !important;
             }
@@ -76,17 +76,17 @@ class MetaBox {
                 width: 100% !important;
             }
 
-        </style>
+		</style>
 		<?php
 		ob_start(); ?>
-        <p>
-            <label for="select_group">ارائه دهنده خدمات پست</label><br>
-            <select name="select_group" class="wc-enhanced-select" id="select_group" style="width: 100%;">
-                <option value="https://tracking.post.ir/">شرکت ملی پست</option>
-                <option value="https://tipaxco.com/tracking">تیپاکس</option>
-            </select>
-        </p>
-        <br>
+		<p>
+			<label for="select_group">ارائه دهنده خدمات پست</label><br>
+			<select name="select_group" class="wc-enhanced-select" id="select_group" style="width: 100%;">
+				<option value="https://tracking.post.ir/">شرکت ملی پست</option>
+				<option value="https://tipaxco.com/tracking">تیپاکس</option>
+			</select>
+		</p>
+		<br>
 		<?php
 		$html_below = ob_get_clean();
 
@@ -295,7 +295,7 @@ class MetaBox {
 
 	private function metabox_html( int $post_id, $post_type, $html_above = '', $html_below = '' ) { ?>
 
-        <div id="pwoosms_metabox_result"></div>
+		<div id="pwoosms_metabox_result"></div>
 
 		<?php
 		$safemetabox = [
@@ -316,23 +316,23 @@ class MetaBox {
 
 		?>
 
-        <p>
+		<p>
             <textarea rows="5" cols="20" class="input-text" id="pwoosms_message"
                       name="pwoosms_message" style="width: 100%; height: 78px;" title=""></textarea>
-        </p>
+		</p>
 
 		<?php echo wp_kses( $html_below, $safemetabox ); ?>
 
-        <div class="wide" id="pwoosms_divider" style="text-align: left">
-            <input type="submit" class="pwoosms_submit button save_order button-primary" name="pwoosms_submit"
-                   id="pwoosms_submit" value="ارسال پیامک">
-        </div>
+		<div class="wide" id="pwoosms_divider" style="text-align: left">
+			<input type="submit" class="pwoosms_submit button save_order button-primary" name="pwoosms_submit"
+			       id="pwoosms_submit" value="ارسال پیامک">
+		</div>
 
-        <div class="pwoosms_loading">
-            <img src="<?php echo PWSMS_URL . '/assets/images/ajax-loader.gif'; ?>">
-        </div>
+		<div class="pwoosms_loading">
+			<img src="<?php echo PWSMS_URL . '/assets/images/ajax-loader.gif'; ?>">
+		</div>
 
-        <style type="text/css">
+		<style type="text/css">
             .pwoosms_loading {
                 position: absolute;
                 background: rgba(255, 255, 255, 0.5);
@@ -375,36 +375,36 @@ class MetaBox {
                 border-top: 1px solid #e9e9e9;
                 padding-top: 5px;
             }
-        </style>
+		</style>
 
-        <script type="text/javascript">
+		<script type="text/javascript">
 
             jQuery(document).ready(function ($) {
-                $('.pwoosms_submit').on('click', function (e) {
+                $('.pwoosms_submit').unbind().click(function (e) {
                     e.preventDefault();
                     var notes = $('#woocommerce-order-notes .inside');
 
-                    var self = $(this);
                     var post_type = '<?php echo esc_attr( $post_type ); ?>';
-                    var loading = self.closest('.postbox').find('.pwoosms_loading');
+                    var loading = $(this).closest('.postbox').find('.pwoosms_loading');
                     loading.show();
                     loading.clone().prependTo(notes);
-                    var result = self.closest('.postbox').find('#pwoosms_metabox_result');
+                    var result = $(this).closest('.postbox').find('#pwoosms_metabox_result');
 
                     var pwsms_ajax_data = {
                         action: 'pwoosms_metabox',
                         security: '<?php echo wp_create_nonce( 'pwoosms_metabox' );?>',
                         post_id: '<?php echo intval( $post_id );?>',
                         post_type: post_type,
-                        message: $('#pwoosms_message').val(),
-                        group: $('#select_group').val()
+                        message: $(this).closest('.postbox').find('#pwoosms_message').val(),
+                        group: $(this).closest('.postbox').find('#select_group').val()
                     };
 
                     result.removeClass('fault', 'success');
-                    self.attr('disabled', true);
+                    $(this).attr('disabled', true);
+
                     $.post('<?php echo admin_url( "admin-ajax.php" );?>', pwsms_ajax_data, function (res) {
                         result.addClass(res.success ? 'success' : 'fault').html(res.data.message).show();
-                        self.attr('disabled', false);
+                        $(this).attr('disabled', false);
                         if (typeof res.data.order_note != "undefined" && res.data.order_note.length) {
                             notes.html(res.data.order_note);
                         }
@@ -413,8 +413,8 @@ class MetaBox {
                 });
             });
 
+		</script>
 
-        </script>
 		<?php
 	}
 
@@ -423,12 +423,12 @@ class MetaBox {
 		$product_id = $post->ID;
 
 		ob_start(); ?>
-        <p>
-            <label for="select_group">ارسال پیامک به:</label><br>
-            <select name="select_group" class="wc-enhanced-select regular-input" id="select_group" style="width: 100% !important;">
+		<p>
+			<label for="select_group">ارسال پیامک به:</label><br>
+			<select name="select_group" class="wc-enhanced-select regular-input" id="select_group" style="width: 100% !important;">
 
 				<?php if ( $this->enable_product_admin_sms ) { ?>
-                    <option value="_product_admins">به مدیران این محصول</option>
+					<option value="_product_admins">به مدیران این محصول</option>
 				<?php }
 
 				if ( $this->enable_notification ) {
@@ -436,18 +436,18 @@ class MetaBox {
 					$groups = Contacts::get_groups( $product_id, false, true );
 
 					if ( ! empty( $groups ) ) { ?>
-                        <optgroup label="به مشترکین گروه های زیر:">
+						<optgroup label="به مشترکین گروه های زیر:">
 							<?php foreach ( $groups as $code => $text ) { ?>
-                                <option
-                                        value="<?php echo esc_attr( $code ); ?>"><?php echo esc_attr( $text ); ?></option>
+								<option
+									value="<?php echo esc_attr( $code ); ?>"><?php echo esc_attr( $text ); ?></option>
 							<?php } ?>
-                        </optgroup>
+						</optgroup>
 					<?php }
 				}
 				?>
 
-            </select>
-        </p>
+			</select>
+		</p>
 		<?php
 		$html_above = ob_get_clean();
 
