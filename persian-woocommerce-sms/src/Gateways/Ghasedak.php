@@ -128,7 +128,7 @@ class Ghasedak implements GatewayInterface {
 	private function send_simple_sms( array $recipients, string $from, string $message_content, string $api_key ) {
 		$date_time           = new DateTime();
 		$date_string         = $date_time->format( 'c' );
-		$client_reference_id = rand( 1, 1000000 );
+		$client_reference_id = wp_rand( 1, 1000000 );
 
 		$single_api_url = $this->api_url . '/Send/Bulk';
 

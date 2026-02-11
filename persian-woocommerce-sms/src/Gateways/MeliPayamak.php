@@ -2,56 +2,88 @@
 
 namespace PW\PWSMS\Gateways;
 
-use nusoap_client;
-use PW\PWSMS\PWSMS;
-use soapclient;
+use SoapClient;
 use SoapFault;
+use PW\PWSMS\PWSMS;
 
 class MeliPayamak implements GatewayInterface {
 	use GatewayTrait;
 
 	public const ERRORS = [
-		- 1 => 'خطای نامشخصی رخ داده است. با پشتیبانی تماس بگیرید.',
-		0   => 'پنل اس ام اس امکان اتصال به وب سرویس را ندارد / نام کاربری یا رمز عبور وارد شده صحیح نیست.',
-		2   => ' موجودی و اعتبار پنل اس ام اس کافی نیست.',
-		3   => 'محدودیت در ارسال روزانه',
-		4   => ' محدودیت در حجم و تعداد ارسال پیامک',
-		5   => 'شماره فرستنده یا سرشماره پیامکی معتبر نمی‌باشد.',
+		-7  => 'خطایی در شماره فرستنده پیامک رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
+		-6  => 'خطای داخلی رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
+		-5  => 'تعداد متغیرهای پترن با متن ارسالی مطابقت ندارد.',
+		-4  => 'کد پترن صحیح نیست یا تایید نشده است.',
+		-3  => 'سرشماره تعریف نشده یا تعداد گیرندگان مجاز نیست.',
+		-2  => 'در هر بار ارسال، تنها یک گیرنده مجاز است.',
+		-1  => 'دسترسی به وب‌سرویس غیرفعال است.',
+		0   => 'نام کاربری یا رمز عبور اشتباه است.',
+		2   => 'اعتبار کافی نیست.',
+		3   => 'محدودیت در ارسال روزانه.',
+		4   => 'محدودیت تعداد یا حجم پیامک.',
+		5   => 'شماره فرستنده معتبر نیست.',
 		6   => 'سامانه در حال بروزرسانی است.',
-		7   => 'متن پیامک حاوی کلمه یا کلمات فیلتر شده است.',
-		8   => 'عدم رسیدن به حداقل تعداد ارسال پیامک',
-		9   => 'ارسال از خطوط عمومی از طریق وب سرویس امکان‌پذیر نمی‌باشد.',
-		10  => 'پنل اس ام اس کاربر فعال نمی‌باشد و یا پنل پیامک کاربر مسدود شده است.',
-		11  => 'ارسال نشده / شماره موبایل گیرنده در لیست سیاه مخابرات قرار دارد.',
-		12  => 'مدارک پنل اس ام اس کاربر کامل نمی‌باشد.',
-		14  => 'سرشماره فرستنده پیامک، امکان ارسال لینک را ندارد.',
-		15  => 'درصورتیکه در رکورد درخواست ارسال پیامک از طریق وبسرویس، بیش از 1 شماره موبایل درخواست دهید و عبارت «لغو11» را در انتهای متن پیامک ننوشته باشید، با خطای 15 مواجه خواهید شد.',
-		35  => 'وجود شماره موبایل گیرنده در لیست سیاه مخابرات است.'
+		7   => 'متن پیامک شامل کلمات فیلتر شده است.',
+		8   => 'تعداد پیامک کمتر از حداقل مجاز.',
+		9   => 'ارسال از خطوط عمومی غیرمجاز است.',
+		10  => 'پنل غیرفعال یا مسدود است.',
+		11  => 'شماره گیرنده در لیست سیاه است.',
+		12  => 'مدارک پنل ناقص است.',
+		14  => 'ارسال لینک از این سرشماره مجاز نیست.',
+		15  => 'ارسال به چند شماره بدون لغو11 مجاز نیست.',
+		35  => 'شماره در لیست سیاه مخابرات است.'
 	];
 
 	public static function id() {
-		return 'melipayamak';
+		return 'melipayamak_unified';
 	}
 
 	public static function name() {
-		return 'melipayamak.com';
+		return 'melipayamak.com (ترکیبی)';
 	}
 
+	public function get_credit( string $username, string $password ) {
+		try {
+			$client  = new SoapClient( "http://api.payamak-panel.com/post/Users.asmx?wsdl", [ 'encoding' => 'UTF-8' ] );
+			$request = [ 'username' => $username, 'password' => $password ];
+			$result  = $client->GetUserCredit2( $request )->GetUserCredit2Result;
+			return is_numeric( $result ) ? (int) $result : 0;
+		} catch ( SoapFault $e ) {
+			return 'خطا در دریافت موجودی: ' . $e->getMessage();
+		}
+	}
+
+
 	public function send() {
-		$response = false;
 		$username = $this->username;
 		$password = $this->password;
 		$from     = $this->senderNumber;
-		$to       = $this->mobile;
-		$massage  = $this->message;
+		$to       = (array) $this->mobile;
+		$message  = trim( $this->message );
 
-		if ( empty( $username ) || empty( $password ) ) {
+		if ( empty( $username ) || empty( $password ) || empty( $message ) ) {
 			return false;
 		}
 
+		// Get the credit and show notice if lower than expected
+		$credit = $this->get_credit( $username, $password );
+		if ( is_numeric( $credit ) && $credit < 100000 ) {
+			add_action( 'admin_notices', function () use ( $credit ) {
+				echo '<div class="notice notice-warning"><p><strong>پیامک حرفه ای ووکامرس:</strong> موجودی پنل پیامک کمتر از 100,000 ریال است (موجودی فعلی: ' . number_format( $credit ) . ' ریال).</p></div>';
+			} );
+		}
+
+		// Detect pattern-based message
+		if ( str_contains( $message, '@' ) && str_contains( $message, '##' ) ) {
+			return $this->send_pattern( $username, $password, $from, $to, $message );
+		}
+
+		return $this->send_simple( $username, $password, $from, $to, $message );
+	}
+
+	private function send_simple( $username, $password, $from, $to, $message ) {
 		try {
-			// The address should be written with the https protocol by default.
-			$client = new \SoapClient( "https://api.payamak-panel.com/post/Send.asmx?wsdl", [
+			$client     = new SoapClient( "https://api.payamak-panel.com/post/Send.asmx?wsdl", [
 				'encoding'     => 'UTF-8',
 				'cache_wsdl'   => WSDL_CACHE_MEMORY,
 				'compression'  => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP,
@@ -62,30 +94,60 @@ class MeliPayamak implements GatewayInterface {
 				'trace'        => true
 			] );
 
-			$encoding   = "UTF-8";
-			$parameters = [
+			$params = [
 				'username' => $username,
 				'password' => $password,
 				'from'     => $from,
 				'to'       => $to,
-				'text'     => iconv( $encoding, 'UTF-8//TRANSLIT', $massage ),
+				'text'     => iconv( 'UTF-8', 'UTF-8//TRANSLIT', $message ),
 				'isflash'  => false,
-				'udh'      => "",
+				'udh'      => '',
 				'recId'    => [ 0 ],
 				'status'   => 0,
 			];
 
-			$sms_response = $client->SendSms( $parameters )->SendSmsResult;
+			$result = $client->SendSms( $params )->SendSmsResult;
+
+			return $result == 1 ? true : ( self::ERRORS[ $result ] ?? $result );
+
 		} catch ( SoapFault $ex ) {
-			$sms_response = $ex->getMessage();
+			return $ex->getMessage();
 		}
+	}
 
-		if ( $sms_response == 1 ) {
-			return true; // Success
+	private function send_pattern( $username, $password, $from, $to, $message ) {
+		$parts     = explode( '@', $message );
+		$text_data = array_pop( $parts );
+		$body_id   = array_pop( $parts );
+		$params    = explode( '##', $text_data );
+		$key       = array_pop( $params );
+
+		if ( trim( $key ) === 'shared' && count( $to ) < 5 ) {
+			// Shared pattern send to each recipient
+			try {
+				foreach ( $to as $mobile ) {
+					$client   = new SoapClient( "https://api.payamak-panel.com/post/send.asmx?wsdl", [ 'encoding' => 'UTF-8' ] );
+					$response = $client->SendByBaseNumber2( [
+						'username' => $username,
+						'password' => $password,
+						'text'     => reset( $params ),
+						'to'       => $mobile,
+						'bodyId'   => $body_id,
+					] )->SendByBaseNumber2Result;
+
+					if ( $response <= 20 ) {
+						return self::ERRORS[ $response ] ?? $response;
+					}
+				}
+				return true;
+
+			} catch ( SoapFault $ex ) {
+				return $ex->getMessage();
+			}
+
 		} else {
-			$response = self::ERRORS[ $sms_response ] ?? $sms_response;
+			// Fallback to standard simple send
+			return $this->send_simple( $username, $password, $from, $to, $message );
 		}
-
-		return $response;
 	}
 }

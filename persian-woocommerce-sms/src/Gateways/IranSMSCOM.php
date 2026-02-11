@@ -6,15 +6,15 @@ use PW\PWSMS\PWSMS;
 use SoapClient;
 use SoapFault;
 
-class WebOne implements GatewayInterface {
+class IranSMSCOM implements GatewayInterface {
     use GatewayTrait;
 
     public static function id() {
-        return 'webone';
+        return 'iransmscom';
     }
 
     public static function name() {
-        return 'webone-sms.com';
+        return 'iransms.com';
     }
 
     public function send() {
@@ -22,33 +22,32 @@ class WebOne implements GatewayInterface {
         $password = $this->password;
         $from     = $this->senderNumber;
         $to       = $this->mobile;
-        $message  = $this->message;
+        $massage  = $this->message;
 
         if ( empty( $username ) || empty( $password ) ) {
             return false;
         }
 
         try {
-            $client       = new SoapClient( "http://payamakapi.ir/SendService.svc?wsdl" );
+            $client       = new SoapClient( "http://87.107.52.205/post/send.asmx?wsdl" );
             $encoding     = "UTF-8";
             $parameters   = [
-                'userName'       => $username,
-                'password'       => $password,
-                'fromNumber'     => $from,
-                'toNumbers'      => $to,
-                'messageContent' => iconv( $encoding, 'UTF-8//TRANSLIT', $message ),
-                'isflash'        => false,
-                'udh'            => "",
-                'recId'          => [ 0 ],
-                'status'         => 0,
+                'username' => $username,
+                'password' => $password,
+                'from'     => $from,
+                'to'       => $to,
+                'text'     => iconv( $encoding, 'UTF-8//TRANSLIT', $massage ),
+                'isflash'  => false,
+                'udh'      => "",
+                'recId'    => [ 0 ],
+                'status'   => 0,
             ];
-            $sms_response = $client->SendSms( $parameters )->SendSMSResult;
-
+            $sms_response = $client->SendSms( $parameters )->SendSmsResult;
         } catch ( SoapFault $ex ) {
             $sms_response = $ex->getMessage();
         }
 
-        if ( strval( $sms_response ) == '0' ) {
+        if ( $sms_response == 1 ) {
             return true; // Success
         } else {
             $response = $sms_response;

@@ -5,7 +5,7 @@ namespace PW\PWSMS\Gateways;
 use SoapClient;
 use SoapFault;
 
-class Modirpayamak implements GatewayInterface {
+class ModirPayamak implements GatewayInterface {
 	use GatewayTrait;
 
 	/**

@@ -1,7 +1,7 @@
 <?php
 
 namespace PW\PWSMS\Gateways;
-
+/*TODO : Remove this file*/
 class IPPanel implements GatewayInterface {
 	use GatewayTrait;
 
@@ -20,7 +20,7 @@ class IPPanel implements GatewayInterface {
 	}
 
 	public static function name() {
-		return 'ippanel.com';
+		return 'ippanel.com (نام کاربری و کلمه عبور)';
 	}
 
 	public function send() {
@@ -166,8 +166,11 @@ class IPPanel implements GatewayInterface {
 		$response_data = json_decode( $response_body, true );
 
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
-
-			$this->failed_numbers[ $recipient ] = 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
+			if ( is_string( $response_body ) ) {
+				$this->failed_numbers[ $recipient ] = $response_body;
+			} else {
+				$this->failed_numbers[ $recipient ] = 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
+			}
 
 			return;
 

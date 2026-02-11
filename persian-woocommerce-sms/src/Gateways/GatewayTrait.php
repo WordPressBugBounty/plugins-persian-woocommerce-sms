@@ -8,30 +8,47 @@ defined( 'ABSPATH' ) || exit;
 
 trait GatewayTrait {
 
-    public array $mobile = [];
-    public string $message = '';
-    public string $username;
-    public string $password;
-    public string $senderNumber;
+	public array $mobile = [];
+	public string $message = '';
+	public string $username;
+	public string $password;
+	public string $senderNumber;
 
-    public function __construct() {
-        $this->username     = PWSMS()->get_option( 'sms_gateway_username' );
-        $this->password     = PWSMS()->get_option( 'sms_gateway_password' );
-        $this->senderNumber = PWSMS()->get_option( 'sms_gateway_sender' );
-    }
+	public function __construct() {
+		$this->username     = PWSMS()->get_option( 'sms_gateway_username' );
+		$this->password     = PWSMS()->get_option( 'sms_gateway_password' );
+		$this->senderNumber = PWSMS()->get_option( 'sms_gateway_sender' );
+	}
 
-    /**
-     * @return string
-     */
-    public function get_message(): string {
-        return $this->message;
-    }
+	/**
+	 * @return string
+	 */
+	public function get_message(): string {
+		return $this->message;
+	}
 
-    /**
-     * @param string $message
-     */
-    public function set_message( string $message ): void {
-        $this->message = $message;
-    }
+	/**
+	 * @param string $message
+	 */
+	public function set_message( string $message ): void {
+		$this->message = $message;
+	}
 
+	/**
+	 * Returns the API token (API key can be in username or password)
+	 *
+	 * @return string (Empty string if nothing provided)
+	 */
+	public function get_token(): string {
+		$username = trim( $this->username );
+		$password = trim( $this->password );
+		if ( empty( $username ) && empty( $password ) ) {
+			return '';
+		}
+		if ( ! empty( $username ) ) {
+			return $username;
+		}
+
+		return $password;
+	}
 }

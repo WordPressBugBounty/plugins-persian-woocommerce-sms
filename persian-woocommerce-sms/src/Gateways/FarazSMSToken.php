@@ -2,13 +2,14 @@
 
 namespace PW\PWSMS\Gateways;
 
-class FarazSMS implements GatewayInterface {
+class FarazSMSToken implements GatewayInterface {
+
 	use GatewayTrait;
 
 	/**
 	 * @var string
 	 */
-	public string $api_url = 'https://ippanel.com/api/select';
+	public string $api_url = 'https://api.iranpayamak.com';
 
 	/**
 	 * @var array
@@ -16,94 +17,60 @@ class FarazSMS implements GatewayInterface {
 	public array $failed_numbers = [];
 
 	public static function id() {
-		return 'farazsmsippanel';
+		return 'farazsms';
 	}
 
 	public static function name() {
-		return 'farazsms.com (نام کاربری و کلمه عبور)';
+		return 'farazsms.com (کلید دسترسی)';
 	}
 
+	/**
+	 * Main send method: detects pattern or simple SMS and sends accordingly
+	 */
 	public function send() {
-		$username          = trim( $this->username );
-		$password          = trim( $this->password );
 		$message_content   = trim( $this->message );
 		$sender_number     = trim( $this->senderNumber );
-		$recipient_numbers = $this->mobile;
+		$recipient_numbers = is_array( $this->mobile ) ? $this->mobile : [ $this->mobile ];
+
 		if ( empty( $sender_number ) ) {
 			$sender_number = '+983000505';
 		}
 
-		$this->failed_numbers = []; // Reset the property for each send operation
+		$this->failed_numbers = []; // Reset for each send operation
 
-		// Replace "pcode" with "patterncode" in the message
-		$message_content = str_replace( 'pcode', 'patterncode', $message_content );
-
-		// Handle pattern-based message
-		if ( substr( $message_content, 0, 11 ) === "patterncode" ) {
+		// Detect pattern message (starts with "patterncode:")
+		if ( substr( $message_content, 0, 12 ) === "patterncode:" ) {
+			// Parse pattern code and data
 			$message_content = str_replace( [ "\r\n", "\n" ], ';', $message_content );
 			$message_parts   = explode( ';', $message_content );
 			$pattern_code    = explode( ':', $message_parts[0] )[1];
 			unset( $message_parts[0] );
-
 			$pattern_data = [];
 			foreach ( $message_parts as $parameter ) {
-				$split_parameter                     = explode( ':', $parameter, 2 );
-				$pattern_data[ $split_parameter[0] ] = $split_parameter[1];
+				$split_parameter = explode( ':', $parameter, 2 );
+				if ( count( $split_parameter ) === 2 ) {
+					$pattern_data[ $split_parameter[0] ] = $split_parameter[1];
+				}
 			}
-
-			// Loop over recipients to send pattern messages
+			// Send pattern SMS to each recipient
 			foreach ( $recipient_numbers as $recipient ) {
-				$payload = [
-					'op'          => 'pattern',
-					'user'        => $username,
-					'pass'        => $password,
-					'fromNum'     => $sender_number,
-					'toNum'       => $recipient,
-					'patternCode' => $pattern_code,
-					'inputData'   => [ $pattern_data ],
-				];
-
-				$response = wp_remote_post( $this->api_url, [
-					'method'  => 'POST',
-					'body'    => json_encode( $payload ),
-					'timeout' => 30,
-					'headers' => [
-						'Content-Type' => 'application/json',
-					],
-				] );
-				// Handle response for each recipient
-				$this->handle_response( $response, $recipient );
+				$result = $this->send_pattern_sms( $recipient, $pattern_code, $pattern_data, $sender_number );
+				if ( ! $result ) {
+					$this->failed_numbers[ $recipient ] = 'ارسال پیامک الگو ناموفق بود.';
+				}
 			}
-
 		} else {
-			// Non-pattern message
-			$payload = [
-				'op'      => 'send',
-				'uname'   => $username,
-				'pass'    => $password,
-				'from'    => $sender_number,
-				'to'      => implode( ",", $recipient_numbers ),
-				'message' => $message_content,
-			];
-
-			// Loop over recipients to send messages
-			foreach ( $recipient_numbers as $recipient ) {
-				$response = wp_remote_post( $this->api_url, [
-					'method'  => 'POST',
-					'body'    => json_encode( $payload ),
-					'timeout' => 30,
-					'headers' => [
-						'Content-Type' => 'application/json',
-					],
-				] );
-				// Handle response for each recipient
-				$this->handle_response( $response, $recipient );
+			// Send simple SMS to all recipients
+			$result = $this->send_simple_sms( $recipient_numbers, $message_content, $sender_number );
+			if ( ! $result ) {
+				foreach ( $recipient_numbers as $recipient ) {
+					$this->failed_numbers[ $recipient ] = 'ارسال پیامک ساده ناموفق بود.';
+				}
 			}
 		}
 
 		// Check for failed numbers and return error message
 		if ( ! empty( $this->failed_numbers ) ) {
-			// Group numbers by their messages
 			$grouped = [];
 			foreach ( $this->failed_numbers as $number => $message ) {
 				if ( ! isset( $grouped[ $message ] ) ) {
@@ -112,7 +79,6 @@ class FarazSMS implements GatewayInterface {
 				$grouped[ $message ][] = $number;
 			}
 
-			// Format the grouped data
 			return implode( ', ', array_map(
 				function ( string $message, array $numbers ) {
 					return implode( ',', $numbers ) . ': ' . $message;
@@ -120,13 +86,150 @@ class FarazSMS implements GatewayInterface {
 				array_keys( $grouped ),
 				$grouped
 			) );
-
 		}
 
-		// If no failed numbers, return true for success
 		return true;
 	}
 
+
+	/**
+	 * Send a simple SMS to one or more recipients
+	 */
+	public function send_simple_sms( $to, $message, $from = null ) {
+		$token = $this->get_token();
+
+		if ( empty( $token ) ) {
+			return 'کلید وبسرویس را در بخش تنظیمات وبسرویس تعریف کنید.';
+		}
+
+		if ( empty( $from ) ) {
+			return 'شماره ارسال کننده خالی است.';
+		}
+
+		// Ensure recipients is always an array
+		$recipients = is_array( $to ) ? $to : [ $to ];
+
+		// Build payload for multipart/form-data
+
+		$payload = [
+			'text'          => $message,
+			'recipients'    => $recipients,
+			'from'          => $from,
+			'line_number'   => $from,
+			'number_format' => 'english',
+		];
+
+		$args = [
+			'headers' => [
+				'Accept'  => 'application/json',
+				'Api-Key' => $token,
+			],
+			'body'    => $payload,
+		];
+
+		$response = wp_remote_post( $this->api_url . '/ws/v1/sms/simple', $args );
+
+		if ( is_wp_error( $response ) ) {
+			return $response->get_error_message();
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( $code !== 201 && $code !== 200 ) {
+			// Try to extract error message from response
+			if ( isset( $body['messages'] ) ) {
+				return is_array( $body['messages'] ) ? implode( ', ', $body['messages'] ) : $body['messages'];
+			}
+
+			return 'خطای HTTP: ' . $code;
+		}
+
+		if ( isset( $body['status'] ) && $body['status'] !== 'success' ) {
+			if ( isset( $body['messages'] ) ) {
+				return is_array( $body['messages'] ) ? implode( ', ', $body['messages'] ) : $body['messages'];
+			}
+
+			return 'ارسال پیامک ناموفق بود.';
+		}
+
+		return true;
+	}
+
+	/**
+	 * Send a pattern (template) SMS
+	 * // Todo: the pattern has error in webservice
+	 */
+	public function send_pattern_sms( $to, $pattern_code, $attributes, $from = null ) {
+		$token = $this->get_token();
+		if ( empty( $token ) ) {
+			return 'کلید وبسرویس را در بخش تنظیمات وبسرویس تعریف کنید.';
+		}
+		if ( empty( $from ) ) {
+			return 'شماره ارسال کننده خالی است.';
+		}
+
+		// اطمینان از آرایه بودن گیرندگان
+		$recipients = is_array( $to ) ? $to : [ $to ];
+		$results    = [];
+
+		foreach ( $recipients as $recipient ) {
+			// Todo: in https://docs.iranpayamak.com/send-simple-sms-13909967e0 with server respond has difference so from and number_format provided with both keys
+			$payload = [
+				'code'          => $pattern_code,
+				'recipient'     => $recipient,
+				'attributes'    => $attributes,
+				'line_number'   => $from,
+				'from'          => $from,
+				'number_format' => 'english',
+				'numberFormat'  => 'english'
+			];
+
+
+			$response = wp_remote_post(
+				rtrim( $this->api_url, '/' ) . '/ws/v1/sms/pattern',
+				[
+					'method'  => 'POST',
+					'body'    => json_encode( $payload ),
+					'timeout' => 30,
+					'headers' => [
+						'Content-Type' => 'application/json',
+						'Accept'       => 'application/json',
+						'Api-Key'      => $token,
+					],
+				]
+			);
+
+			if ( is_wp_error( $response ) ) {
+				$results[ $recipient ] = $response->get_error_message();
+				continue;
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+			$body = json_decode( $body, true );
+
+			if ( ( $code !== 201 && $code !== 200 ) || ( isset( $body['status'] ) && $body['status'] == 'error' ) ) {
+				$results[ $recipient ] = isset( $body['messages'] ) ? ( is_array( $body['messages'] ) ? implode( ', ', $body['messages'] ) : $body['messages'] ) : 'خطای HTTP: ' . $code;
+				continue;
+			}
+
+
+			if ( isset( $body['status'] ) && $body['status'] !== 'success' ) {
+				$results[ $recipient ] = isset( $body['messages'] ) ? ( is_array( $body['messages'] ) ? implode( ', ', $body['messages'] ) : $body['messages'] ) : 'ارسال پیامک ناموفق بود.';
+				continue;
+			}
+
+			$results[ $recipient ] = true;
+		}
+
+		// اگر فقط یک گیرنده بود، مقدار همان را برگردان
+		if ( count( $results ) === 1 ) {
+			return array_shift( $results );
+		}
+
+		return $results;
+	}
 
 	/**
 	 * Handle the response for each recipient.

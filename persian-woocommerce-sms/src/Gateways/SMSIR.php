@@ -15,7 +15,7 @@ class SMSIR implements GatewayInterface {
     }
 
     public static function name() {
-        return 'SMS.ir';
+        return 'SMS.ir (نام کاربری و کلمه عبور)';
     }
 
     public function send() {

@@ -6,8 +6,8 @@ namespace PW\PWSMS\Gateways;
 class Mediana implements GatewayInterface {
 	use GatewayTrait;
 
-	public string $api_url = 'https://api.mediana.ir/sms/v1';
-	public array $auth;
+	public string $api_url = 'https://api.mediana.ir/sms/v1/send';
+	public array $headers;
 
 	public static function id() {
 		return 'mediana';
@@ -19,20 +19,19 @@ class Mediana implements GatewayInterface {
 
 	public function send() {
 		$recipients      = $this->mobile;
-		$api_key         = ! empty( $this->username ) ? trim( $this->username ) : trim( $this->password );
+		$api_key         = ! empty( trim( $this->username ) ) ? trim( $this->username ) : trim( $this->password );
 		$from            = trim( $this->senderNumber );
-		$message_content = $this->message;
+		$message_content = trim( $this->message );
 
-		if ( empty( $api_key ) ) {
-			return 'لطفاً مشخصات ورود به حساب وبسرویس را ثبت نمایید.';
+		if ( empty( $api_key ) || ! str_contains( $api_key, 'Bearer' ) ) {
+			return 'لطفا کلید API اتصال به وبسرویس را به درستی ثبت نمایید. (به همراه Bearer در ابتدای کلید)';
 		}
 
-		if ( empty( $this->password ) ) {
-			$this->auth = [ 'apikey' => $api_key ];
-		} else {
-			$this->auth = [ 'Authorization' => 'Basic ' . base64_encode( $this->username . ":" . $this->password ) ];
-		}
-
+		$this->headers = [
+			'Content-Type'  => 'application/json',
+			'Accept'        => '*/*',
+			'Authorization' => $api_key
+		];
 
 		// Replace "pcode" with "patterncode" in the message
 		$message_content = str_replace( 'pcode', 'patterncode', $message_content );
@@ -48,15 +47,11 @@ class Mediana implements GatewayInterface {
 	}
 
 	private function send_pattern_sms( array $recipients, string $message_content ) {
-		$pattern_api_url = $this->api_url . '/send/pattern';
-
-		// Replace "pcode" with "patterncode" in the message
-		$message_content = str_replace( 'pcode', 'patterncode', $message_content );
+		$pattern_api_url = $this->api_url . '/pattern';
 
 		// Replace new lines with semicolons and split
-		$message_content = str_replace( [ "\r\n", "\n" ], ';', $message_content );
-		$message_parts   = explode( ';', $message_content );
-		$pattern_code    = explode( ':', $message_parts[0] )[1];
+		$message_parts = explode( ';', str_replace( [ "\r\n", "\n" ], ';', $message_content ) );
+		$pattern_code  = explode( ':', $message_parts[0] )[1];
 		unset( $message_parts[0] ); // Remove the first element containing the pattern code
 
 		// Initialize the pattern data array
@@ -69,15 +64,9 @@ class Mediana implements GatewayInterface {
 		}
 
 		// Check for required fields
-		if ( empty( $this->auth ) || empty( $pattern_code ) || empty( $recipients ) ) {
-			return 'اطلاعات پنل، یا پیامک به درستی وارد نشده.';
+		if ( empty( $pattern_code ) || empty( $recipients ) ) {
+			return 'اطلاعات ارسال پیامک به درستی وارد نشده.';
 		}
-
-		$headers = [
-			           'Content-Type' => 'application/json',
-			           'Accept'       => 'application/json',
-
-		           ] + $this->auth;
 
 		$data = [
 			'patternCode' => trim( $pattern_code ),
@@ -86,7 +75,7 @@ class Mediana implements GatewayInterface {
 		];
 
 		$remote = wp_remote_post( $pattern_api_url, [
-			'headers' => $headers,
+			'headers' => $this->headers,
 			'body'    => wp_json_encode( $data ),
 		] );
 
@@ -108,6 +97,7 @@ class Mediana implements GatewayInterface {
 		}
 
 		$response_data = json_decode( $response, true );
+
 		if ( ! empty( json_last_error() ) || ! is_array( $response_data ) ) {
 			return 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
 		}
@@ -121,7 +111,7 @@ class Mediana implements GatewayInterface {
 
 
 	private function send_simple_sms( array $recipients, string $from, string $message_content ) {
-		$single_api_url = $this->api_url . '/send/sms';
+		$single_api_url = $this->api_url . '/sms';
 
 		// Check for required fields
 		if ( empty( $message_content ) || empty( $recipients ) ) {
@@ -129,25 +119,20 @@ class Mediana implements GatewayInterface {
 		}
 
 		$data = [
-			//'pluginType'  => 'woocommerce',
 			'recipients'  => $recipients,
 			'messageText' => $message_content,
 		];
 
-		if ( empty( trim( $from ) ) ) {
-			$data['type'] = 'Informational';
+		if ( empty( $from ) ) {
+			$this->senderNumber = 'Informational'; // Show in SMS archive.
+			$data['type']       = $this->senderNumber;
 		} else {
 			$data['sendingNumber'] = $from;
 		}
 
-		$headers = [
-			           'Content-Type' => 'application/json',
-			           'Accept'       => 'application/json',
-		           ] + $this->auth;
-
 		$remote = wp_remote_post( $single_api_url, [
-			'headers' => $headers,
-			'body'    => wp_json_encode( $data ),
+			'headers' => $this->headers,
+			'body'    => json_encode( $data ),
 		] );
 
 		if ( is_wp_error( $remote ) ) {
