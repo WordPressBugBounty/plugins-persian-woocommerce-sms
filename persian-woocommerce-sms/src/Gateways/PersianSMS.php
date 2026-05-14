@@ -3,19 +3,15 @@
 namespace PW\PWSMS\Gateways;
 
 use Exception;
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
 
-class PersianSMS implements GatewayInterface {
-	use GatewayTrait;
+class PersianSMS extends Gateway {
 
-	public static function id() {
+	public static function id(): string {
 		return 'persian-sms';
 	}
 
-	public static function name() {
-		return 'persian-sms.com';
+	public static function name(): string {
+		return 'Persian-SMS.com - پرشین اس ام اس';
 	}
 
 	public function send() {

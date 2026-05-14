@@ -4,19 +4,15 @@
 namespace PW\PWSMS\Gateways;
 
 use Exception;
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
 
-class NMTSMS implements GatewayInterface {
-	use GatewayTrait;
+class NMTSMS extends Gateway {
 
-	public static function id() {
+	public static function id(): string {
 		return 'nmtsms';
 	}
 
-	public static function name() {
-		return 'nmtsms.ir (خدماتی)';
+	public static function name(): string {
+		return 'NMTSMS.ir - نگین مرمر تجارت';
 	}
 
 
@@ -45,13 +41,13 @@ class NMTSMS implements GatewayInterface {
 				'body'    => json_encode( $body ),
 				'headers' => [
 					"Content-Type" => "application/json; charset=utf-8",
-					"Accept"       => "application/json"
+					"Accept"       => "application/json",
 				],
 			] );
 
 			$response = wp_remote_retrieve_body( $remote );
 
-			if ( empty( $response ) || is_wp_error($response)  ) {
+			if ( empty( $response ) || is_wp_error( $response ) ) {
 				throw new Exception( "اتصال به وبسرویس برقرار نیست. لطفاً دوباره تلاش کنید." );
 			}
 

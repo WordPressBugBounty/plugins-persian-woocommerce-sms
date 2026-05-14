@@ -2,19 +2,14 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
+class NikSMS extends Gateway {
 
-class NikSMS implements GatewayInterface {
-	use GatewayTrait;
-
-	public static function id() {
+	public static function id(): string {
 		return 'nicsms';
 	}
 
-	public static function name() {
-		return 'niksms.com';
+	public static function name(): string {
+		return 'NikSMS.com - نیک اس ام اس';
 	}
 
 	public function send() {

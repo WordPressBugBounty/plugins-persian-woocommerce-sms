@@ -3,46 +3,41 @@
 namespace PW\PWSMS\Gateways;
 
 
-use PW\PWSMS\PWSMS;
+class Logger extends Gateway {
 
-class Logger implements GatewayInterface {
-	use GatewayTrait;
-
-	public static function id() {
+	public static function id(): string {
 		return 'logger';
 	}
 
-	public static function name() {
-		return 'pwsms.log';
+	public static function name(): string {
+		return 'pwsms.log - مخصوص وبمستران و توسعه دهندگان';
 	}
 
-	public function send() {
+	public function send(): bool {
 
-		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			return 'برای استفاده از درگاه گزارشی وردپرس، لطفا WP_DEBUG را فعال کنید.';
-		}
-
-		$this->logVariables( $this->username, $this->password, $this->senderNumber, $this->mobile, $this->message );
+		$this->logVariables( [
+			'username'     => $this->username,
+			'password'     => $this->password,
+			'senderNumber' => $this->senderNumber,
+			'mobile'       => $this->mobile,
+			'message'      => $this->message,
+		] );
 
 		return true;
 	}
 
-	protected function logVariables( ...$args ) {
+	protected function logVariables( $args ) {
 
-		foreach ( $args as $index => $arg ) {
-			self::log( PHP_EOL . "Arg $index: " . print_r( $arg, true ) );
+		self::log( PHP_EOL . '######## ' . date( 'Y-m-d H:i:s' ) );
+
+		foreach ( $args as $key => $value ) {
+			self::log( "$key: " . print_r( $value, true ) );
 		}
 
-		self::log( '######################################################' );
 	}
 
 	protected function log( $message ) {
-
-		if ( is_array( $message ) || is_object( $message ) ) {
-			$message = print_r( $message, true );
-		}
-
-		error_log( date( 'Y-m-d H:i:s' ) . ' - ' . $message . PHP_EOL, 3, wp_upload_dir()['basedir'] . '/wc-logs/pwsms.log' );
+		error_log( $message . PHP_EOL, 3, wp_upload_dir()['basedir'] . '/wc-logs/pwsms.log' );
 	}
 
 }

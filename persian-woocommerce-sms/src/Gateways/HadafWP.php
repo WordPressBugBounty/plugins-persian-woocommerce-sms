@@ -3,60 +3,59 @@
 namespace PW\PWSMS\Gateways;
 
 
-use PW\PWSMS\PWSMS;
 use SoapClient;
 use SoapFault;
 
-class HadafWP implements GatewayInterface {
-    use GatewayTrait;
+class HadafWP extends Gateway {
 
-    public static function id(  ) {
-        return 'hadafwp';
-    }
-    public static function name() {
-        return 'sms.hadafwp.com';
-    }
+	public static function id(): string {
+		return 'hadafwp';
+	}
 
-    public function send() {
+	public static function name(): string {
+		return 'SMS.HadafWP.com - هدف وردپرس';
+	}
 
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
-        $to       = $this->mobile;
-        $massage  = $this->message;
+	public function send() {
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
+		$to       = $this->mobile;
+		$massage  = $this->message;
 
-        try {
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-            $client = new SoapClient( "http://sms.hadafwp.com/Post/Send.asmx?wsdl" );
+		try {
 
-            $encoding     = "UTF-8";
-            $parameters   = [
-                'username' => $username,
-                'password' => $password,
-                'from'     => $from,
-                'to'       => $to,
-                'text'     => iconv( $encoding, 'UTF-8//TRANSLIT', $massage ),
-                'isflash'  => false,
-                'udh'      => "",
-                'recId'    => [ 0 ],
-                'status'   => 0,
-            ];
-            $sms_response = $client->SendSms( $parameters )->SendSmsResult;
-        } catch ( SoapFault $ex ) {
-            $sms_response = $ex->getMessage();
-        }
+			$client = new SoapClient( "http://sms.hadafwp.com/Post/Send.asmx?wsdl" );
 
-        if ( $sms_response == 1 ) {
-            return true; // Success
-        } else {
-            $response = $sms_response;
-        }
+			$encoding     = "UTF-8";
+			$parameters   = [
+				'username' => $username,
+				'password' => $password,
+				'from'     => $from,
+				'to'       => $to,
+				'text'     => iconv( $encoding, 'UTF-8//TRANSLIT', $massage ),
+				'isflash'  => false,
+				'udh'      => "",
+				'recId'    => [ 0 ],
+				'status'   => 0,
+			];
+			$sms_response = $client->SendSms( $parameters )->SendSmsResult;
+		} catch ( SoapFault $ex ) {
+			$sms_response = $ex->getMessage();
+		}
 
-        return $response;
-    }
+		if ( $sms_response == 1 ) {
+			return true; // Success
+		} else {
+			$response = $sms_response;
+		}
+
+		return $response;
+	}
 
 }

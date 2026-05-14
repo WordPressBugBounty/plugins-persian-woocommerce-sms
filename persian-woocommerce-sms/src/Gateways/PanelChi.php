@@ -2,105 +2,157 @@
 
 namespace PW\PWSMS\Gateways;
 
-class PanelChi implements GatewayInterface {
-	use GatewayTrait;
+class PanelChi extends Gateway {
 
-	/**
-	 * @var string
-	 */
-	public string $api_url = 'http://185.141.171.123/wbs/send.php?wsdl';
-
-	/**
-	 * @var array
-	 */
+	public string $api_url = 'https://api.panelchi.com/sms';
+	public string $api_key;
 	public array $failed_numbers = [];
 
-	public static function id() {
+	public static function id(): string {
 		return 'panelchi';
 	}
 
-	public static function name() {
-		return 'panelchi.com';
+	public static function name(): string {
+		return 'PanelChi.com - پنل چی';
 	}
 
 	public function send() {
+		$this->api_key = $this->get_token();
 
-		$message_content   = trim( $this->message );
-		$sender_number     = trim( $this->senderNumber );
-		$recipient_numbers = $this->mobile;
-
-		if ( empty( $sender_number ) ) {
-			$sender_number = '+9810001';
+		if ( empty( $this->api_key ) ) {
+			return 'کلید API را در بخش تنظیمات وب‌سرویس تعریف کنید.';
 		}
 
-		$this->failed_numbers = []; // Reset the property for each send operation
-
-		// Replace "pcode" with "patterncode" in the message
-		$message_content = str_replace( 'pcode', 'patterncode', $message_content );
-
-		// Set token statically or from property
-		$token = ! empty( $this->username ) ? trim( $this->username ) : trim( $this->password ); // Fixed typo: $this->$password → $this->password
-
-		$soap = new \SoapClient( $this->api_url );
-
-		if ( substr( $message_content, 0, 11 ) === "patterncode" ) {
-			// Handle pattern-based message
-			$message_content = str_replace( [ "\r\n", "\n" ], ';', $message_content );
-			$message_parts   = explode( ';', $message_content );
-			if ( count( $message_parts ) == 1 ) {
-				$message_parts = explode( ' ', $message_content );
-			}
-
-			$pattern_code = explode( ':', $message_parts[0] )[1];
-			unset( $message_parts[0] );
-
-			$pattern_data = [];
-			foreach ( $message_parts as $parameter ) {
-				$split_parameter                     = explode( ':', $parameter, 2 );
-				$pattern_data[ $split_parameter[0] ] = $split_parameter[1];
-			}
-
-			foreach ( $recipient_numbers as $recipient ) {
-				$params = [
-					'fromNum'   => $sender_number,
-					'toNum'     => [ $recipient ],
-					'Content'   => json_encode( $pattern_data, JSON_UNESCAPED_UNICODE ),
-					'patternID' => $pattern_code,
-					'Type'      => 0,
-					'token'     => $token,
-				];
-
-				$array = $soap->__soapCall( 'SendSMSByPattern', [ $params ] );
-
-				// Handle response for each recipient
-				$this->handle_response( $array, $recipient );
-			}
-
-		} else {
-			// Handle regular message
-			foreach ( $recipient_numbers as $recipient ) {
-				$params = [
-					'fromNum' => $sender_number,
-					'toNum'   => [ $recipient ],
-					'Content' => $message_content,
-					'Type'    => 0,
-					'token'   => $token,
-				];
-
-				$array = $soap->__soapCall( 'SendSMS', [ $params ] );
-
-				// Handle response for each recipient
-				$this->handle_response( $array, $recipient );
-			}
+		if ( ! str_starts_with( $this->api_key, 'Bearer' ) ) {
+			$this->api_key = 'Bearer ' . $this->api_key;
 		}
 
-		// Check for failed numbers and return error message
+		if ( $this->is_pattern() ) {
+			return $this->send_pattern_sms();
+		}
+
+		return $this->send_normal_sms();
+	}
+
+	private function send_pattern_sms() {
+
+		$pattern = $this->parse_pattern();
+
+		$headers = [
+			'Content-Type'  => 'application/json',
+			'Accept'        => 'application/json',
+			'Authorization' => $this->api_key,
+		];
+
+		foreach ( $this->mobile as $recipient ) {
+
+			$payload = [
+				'sourceNumber' => $this->senderNumber,
+				'recipient'    => $recipient,
+				'pattern'      => $pattern['code'],
+				'variables'    => $pattern['vars'],
+			];
+
+			$remote = wp_remote_post( $this->api_url . '/pattern', [
+				'headers' => $headers,
+				'body'    => wp_json_encode( $payload ),
+			] );
+
+			if ( is_wp_error( $remote ) ) {
+				$this->failed_numbers[ $recipient ] = $remote->get_error_message();
+				continue;
+			}
+
+			$response_message = wp_remote_retrieve_response_message( $remote );
+			$response_code    = wp_remote_retrieve_response_code( $remote );
+
+			if ( empty( $response_code ) ) {
+				$this->failed_numbers[ $recipient ] = $response_code . ' -> ' . $response_message;
+				continue;
+			}
+
+			$response = wp_remote_retrieve_body( $remote );
+
+			if ( empty( $response ) ) {
+				$this->failed_numbers[ $recipient ] = 'پاسخی از وب‌سرویس دریافت نشد.';
+				continue;
+			}
+
+			$response_data = json_decode( $response, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				$this->failed_numbers[ $recipient ] = 'قالب پاسخ دریافتی از وب‌سرویس نامعتبر است.';
+				continue;
+			}
+
+			if ( ! isset( $response_data['data']['uid'] ) ) {
+				$this->failed_numbers[ $recipient ] = 'شناسه پیامک ارسالی، از سمت وبسرویس، یافت نشد.';
+				continue;
+			}
+
+			$this->failed_numbers[ $recipient ] = 'خطای وب‌سرویس: ' . ( $response_data['message'] ?? $response_data['error'] ?? 'خطایی ناشناخته رخ داده است.' );
+		}
+
+		return $this->format_failed_numbers();
+	}
+
+	private function send_normal_sms() {
+
+		$payload = [
+			'sourceNumber' => $this->senderNumber,
+			'recipients'   => $this->mobile,
+			'message'      => $this->message,
+		];
+
+		$headers = [
+			'Content-Type'  => 'application/json',
+			'Accept'        => 'application/json',
+			'Authorization' => $this->api_key,
+		];
+
+		$remote = wp_remote_post( $this->api_url . '/send', [
+			'headers' => $headers,
+			'body'    => wp_json_encode( $payload ),
+		] );
+
+		if ( is_wp_error( $remote ) ) {
+			return $remote->get_error_message();
+		}
+
+		$response_message = wp_remote_retrieve_response_message( $remote );
+		$response_code    = wp_remote_retrieve_response_code( $remote );
+
+		if ( empty( $response_code ) ) {
+			return $response_code . ' -> ' . $response_message;
+		}
+
+		$response = wp_remote_retrieve_body( $remote );
+
+		if ( empty( $response ) ) {
+			return 'پاسخی از وب‌سرویس دریافت نشد.';
+		}
+
+		$response_data = json_decode( $response, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
+			return 'قالب پاسخ دریافتی از وب‌سرویس نامعتبر است.';
+		}
+
+		if ( isset( $response_data['data']['uid'] ) ) {
+			return true;
+		}
+
+		return 'خطای وب‌سرویس: ' . ( $response_data['message'] ?? $response_data['error'] ?? 'خطایی ناشناخته رخ داده است.' );
+	}
+
+	private function format_failed_numbers() {
+
 		if ( empty( $this->failed_numbers ) ) {
 			return true;
 		}
 
-		// Group numbers by their messages
 		$grouped = [];
+
 		foreach ( $this->failed_numbers as $number => $message ) {
 			if ( ! isset( $grouped[ $message ] ) ) {
 				$grouped[ $message ] = [];
@@ -108,48 +160,8 @@ class PanelChi implements GatewayInterface {
 			$grouped[ $message ][] = $number;
 		}
 
-		// Format the grouped data
-		return implode( ', ', array_map(
-			function ( string $message, array $numbers ) {
-				return implode( ',', $numbers ) . ': ' . $message;
-			},
-			array_keys( $grouped ),
-			$grouped
-		) );
-
-
-	}
-
-
-	/**
-	 * Handle the response for each recipient.
-	 *
-	 * @param mixed $response
-	 * @param string $recipient
-	 */
-	private function handle_response( $response, $recipient ) {
-
-		if ( is_wp_error( $response ) ) {
-			$this->failed_numbers[ $recipient ] = $response->get_error_message();
-
-			return;
-		}
-
-		if ( empty( $response ) ) {
-
-			$this->failed_numbers[ $recipient ] = 'بدون پاسخ دریافتی از سمت وب سرویس.';
-
-			return;
-		}
-
-		$response_data = $response[0];
-
-		if ( ( is_numeric( $response_data ) && $response_data > 100 ) || ( isset( $response_data[0] ) && $response_data[0] == '0' ) ) {
-			// Successful response, no need to do anything further.
-			return;
-		}
-
-		// Handle error based on the response
-		$this->failed_numbers[ $recipient ] = $response_data[1] ?? 'خطای ناشناخته.';
+		return implode( ', ', array_map( function ( string $message, array $numbers ) {
+			return implode( ',', $numbers ) . ': ' . $message;
+		}, array_keys( $grouped ), $grouped ) );
 	}
 }

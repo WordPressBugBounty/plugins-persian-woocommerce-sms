@@ -4,15 +4,16 @@ namespace PW\PWSMS;
 
 use Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController;
 use Exception;
-use PW\PWSMS\Gateways\GatewayInterface;
+use PW\PWSMS\Gateways\Gateway;
 use PW\PWSMS\Gateways\Logger;
 use PW\PWSMS\Settings\Settings;
 use PW\PWSMS\SMS\Archive;
-use PWS_Tapin;
 use ReflectionClass;
 use WC_Meta_Box_Order_Notes;
 use WC_Order;
 use WC_Product;
+use WeDevs\Dokan\Utilities\OrderUtil;
+use WeDevs\Dokan\Vendor\Vendor;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -24,35 +25,158 @@ class Helper {
 	private static $_instance = false;
 	private static $all_options = [];
 
+	/**
+	 * Remove the contacts from subscription when specific event triggered on them
+	 *
+	 * @param string[] $mobiles Array of mobile numbers (strings).
+	 * @param string $group Group to remove.
+	 * @param int $post_id Product/post ID.
+	 *
+	 * @return bool True on success (operation attempted), false on invalid input.
+	 */
+	public static function remove_contacts_group( array $mobiles, $group, $post_id ) {
+		global $wpdb;
+
+		if ( empty( $mobiles ) || empty( $group ) || empty( $post_id ) ) {
+			return false;
+		}
+
+		$table   = $wpdb->prefix . 'woocommerce_ir_sms_contacts';
+		$mobiles = array_unique( array_values( array_filter( array_map( 'trim', $mobiles ), 'strlen' ) ) );
+
+		if ( empty( $mobiles ) ) {
+			return false;
+		}
+
+		// Build %s placeholders for each mobile and prepare the SELECT safely
+		$placeholders = implode( ', ', array_fill( 0, count( $mobiles ), '%s' ) );
+		$select_sql   = "SELECT id, groups FROM {$table} WHERE mobile IN ( {$placeholders} ) AND product_id = %d";
+
+		$params         = array_merge( $mobiles, [ intval( $post_id ) ] );
+		$prepared_query = $wpdb->prepare( $select_sql, $params );
+
+		$rows = $wpdb->get_results( $prepared_query );
+
+		if ( empty( $rows ) ) {
+			return true;
+		}
+
+		foreach ( $rows as $row ) {
+
+			$groups_csv = strval( $row->groups );
+
+			$groups = array_values( array_filter( array_map( 'trim', explode( ',', $groups_csv ) ), 'strlen' ) );
+
+			$remaining = array_values( array_diff( $groups, [ $group ] ) );
+
+			if ( empty( $remaining ) ) {
+
+				$wpdb->delete(
+					$table,
+					[ 'id' => intval( $row->id ) ],
+					[ '%d' ]
+				);
+
+			} else {
+
+				$new_csv = implode( ',', $remaining );
+				$wpdb->update(
+					$table,
+					[ 'groups' => $new_csv ],
+					[ 'id' => intval( $row->id ) ],
+					[ '%s' ],
+					[ '%d' ]
+				);
+
+			}
+
+		}
+
+		return true;
+	}
+
+	/**
+	 * Remove sent mobiles from the given array based on the receiver column in the database.
+	 *
+	 * @param array $mobiles Array of mobile numbers.
+	 * @param int $type The type to filter by.
+	 * @param int $post_id The post ID to filter by.
+	 *
+	 * @return array Array of unique mobile numbers.
+	 */
+	public static function remove_sent_mobiles( $mobiles, $type, $post_id ) {
+		global $wpdb;
+
+		if ( empty( $mobiles ) ) {
+			return [];
+		}
+
+		$table = $wpdb->prefix . 'woocommerce_ir_sms_archive';
+
+		// TODO : Migrate from reciever to receiver
+		// Prepare the SQL query to get receivers with the given type and post_id
+		$select_sql   = "SELECT reciever FROM {$table} WHERE type = %d AND post_id = %d";
+		$select_query = $wpdb->prepare( $select_sql, $type, $post_id );
+
+		// Get the results from the database
+		$results = $wpdb->get_col( $select_query );
+
+		// Initialize an array to store all found mobile numbers
+		$sent_mobiles = [];
+
+		// Loop through each result and extract the mobile numbers
+		foreach ( $results as $receivers ) {
+			$sent_mobiles = array_merge( $sent_mobiles, explode( ',', $receivers ) );
+		}
+
+		// Remove any duplicates from the $sent_mobiles array
+		$sent_mobiles = array_unique( $sent_mobiles );
+
+		// Exclude sent mobiles from the input array of mobiles
+		return array_diff( $mobiles, $sent_mobiles );
+	}
+
 	public static function multi_select_and_checkbox( $field, $key, $args, $value ) {
 
 		$after = ! empty( $args['clear'] ) ? '<div class="clear"></div>' : '';
 
 		if ( $args['required'] ) {
+
 			$args['class'][] = 'validate-required';
-			$required        = ' <abbr class="required" title="' . esc_attr__( 'required', 'woocommerce' ) . '">*</abbr>';
+			$required        = ' <abbr class="required" title="' . esc_attr__( 'required', 'woocommerce' ) . '">*</abbr>'; //phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+
 		} else {
 			$required = '';
 		}
 
 		$custom_attributes = [];
+
 		if ( ! empty( $args['custom_attributes'] ) && is_array( $args['custom_attributes'] ) ) {
+
 			foreach ( $args['custom_attributes'] as $attribute => $attribute_value ) {
 				$custom_attributes[] = esc_attr( $attribute ) . '="' . esc_attr( $attribute_value ) . '"';
 			}
+
 		}
 
 		if ( $args['type'] == "pwoosms_multiselect" ) {
+
 			$value = is_array( $value ) ? $value : [ $value ];
+
 			if ( ! empty( $args['options'] ) ) {
 				$options = '';
+
 				foreach ( $args['options'] as $option_key => $option_text ) {
 					$options .= '<option value="' . esc_attr( $option_key ) . '" ' . selected( in_array( $option_key, $value ), 1, false ) . '>' . esc_attr( $option_text ) . '</option>';
 				}
+
 				$field = '<p class="form-row ' . esc_attr( implode( ' ', $args['class'] ) ) . '" id="' . esc_attr( $key ) . '_field">';
+
 				if ( $args['label'] ) {
 					$field .= '<label for="' . esc_attr( $key ) . '" class="' . implode( ' ', $args['label_class'] ) . '">' . $args['label'] . $required . '</label>';
+
 				}
+
 				$field .= '<select name="' . esc_attr( $key ) . '[]" id="' . esc_attr( $key ) . '" class="select" multiple="multiple" ' . implode( ' ', $custom_attributes ) . '>' . $options . ' </select>';
 
 				if ( $args['description'] ) {
@@ -61,24 +185,33 @@ class Helper {
 
 				$field .= '</p>' . $after;
 			}
+
 		}
 
 		if ( $args['type'] == "pwoosms_multicheckbox" ) {
+
 			$value = is_array( $value ) ? $value : [ $value ];
+
 			if ( ! empty( $args['options'] ) ) {
+
 				$field .= '<p class="form-row ' . esc_attr( implode( ' ', $args['class'] ) ) . '" id="' . esc_attr( $key ) . '_field">';
+
 				if ( $args['label'] ) {
 					$field .= '<label for="' . esc_attr( current( array_keys( $args['options'] ) ) ) . '" class="' . implode( ' ', $args['label_class'] ) . '">' . $args['label'] . $required . '</label>';
 				}
+
 				foreach ( $args['options'] as $option_key => $option_text ) {
 					$field .= '<input type="checkbox" class="input-checkbox" value="' . esc_attr( $option_key ) . '" name="' . esc_attr( $key ) . '[]" id="' . esc_attr( $key ) . '_' . esc_attr( $option_key ) . '"' . checked( in_array( $option_key, $value ), 1, false ) . ' />';
 					$field .= '<label for="' . esc_attr( $key ) . '_' . esc_attr( $option_key ) . '" class="checkbox ' . implode( ' ', $args['label_class'] ) . '">' . $option_text . '</label><br>';
 				}
+
 				if ( $args['description'] ) {
 					$field .= '<span class="description">' . ( $args['description'] ) . '</span>';
 				}
+
 				$field .= '</p>' . $after;
 			}
+
 		}
 
 		return $field;
@@ -115,19 +248,21 @@ class Helper {
 
 		$statuses = wc_get_order_statuses();
 
-		$pending_label = _x( 'Pending payment', 'Order status', 'woocommerce' );
+		$pending_label = _x( 'Pending payment', 'Order status', 'woocommerce' ); //phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+
 		if ( ! empty( $statuses['wc-pending'] ) ) {
 			$statuses['wc-pending'] = $pending ? $pending_label : $pending_label . ' (بعد از تغییر وضعیت سفارش)';
 		}
+
 		if ( empty( $statuses['wc-created'] ) ) {
 			$statuses = array_merge( [ 'wc-created' => $pending ? 'بعد از ثبت سفارش' : $pending_label . ' (بلافاصله بعد از ثبت سفارش)' ], $statuses );
 		}
 
 		$opt_statuses = [];
+
 		foreach ( (array) $statuses as $status_val => $status_name ) {
 			$opt_statuses[ $this->modify_status( $status_val ) ] = $status_name;
 		}
-
 
 		// Based on settings page engineering, We assume that setting the props are semi status
 		// It's actually an event!
@@ -147,10 +282,13 @@ class Helper {
 		$order_status_settings = (array) $this->get_option( 'order_status', [] );
 
 		$allowed_statuses = [];
+
 		foreach ( (array) $statuses as $status_val => $status_name ) {
+
 			if ( in_array( $status_val, array_keys( $order_status_settings ) ) ) {
 				$allowed_statuses[ $status_val ] = $status_name;
 			}
+
 		}
 
 		return $allowed_statuses;
@@ -179,11 +317,15 @@ class Helper {
 				$sections = wp_list_pluck( $sections, 'id' );
 
 				$options = [];
+
 				foreach ( $sections as $section ) {
+
 					$section = get_option( $section );
+
 					if ( ! empty( $section ) ) {
 						$options = array_merge( $options, $section );
 					}
+
 				}
 
 				self::$all_options = $options;
@@ -223,23 +365,22 @@ class Helper {
 	}
 
 	public function product_has_prop( $product, $prop ) {
-
 		$check = true;
 
 		$product_ids = (array) $this->maybe_variable( $product );
+
 		foreach ( $product_ids as $product_id ) {
 
 			$product = wc_get_product( $product_id );
+
 			if ( ! PWSMS()->is_wc_product( $product ) ) {
 				return false;
 			}
 
 			if ( $prop == 'is_not_low_stock' ) {
-
 				if ( $check = ( PWSMS()->is_stock_managing( $product ) && $product->is_in_stock() && $this->product_stock_qty( $product_id ) > get_option( 'woocommerce_notify_low_stock_amount' ) ) ) {
 					break;
 				}
-
 			} elseif ( method_exists( $product, $prop ) ) {
 				$check = $check && $product->$prop();
 			} else {
@@ -254,10 +395,13 @@ class Helper {
 
 		$product_id = $this->product_ID( $product );
 		$product    = wc_get_product( $product_id );
+
 		if ( ! PWSMS()->is_wc_product( $product ) ) {
 			return $product_id;
 		}
+
 		if ( $product->is_type( 'variable' ) ) {
+
 			unset( $product_id );
 			$product_ids = [];
 
@@ -266,6 +410,7 @@ class Helper {
 			}
 
 			return $product_ids;//array
+
 		} else {
 
 			return $product_id;//int
@@ -309,10 +454,12 @@ class Helper {
 		}
 
 		if ( ! is_object( $product ) ) {
+
 			$product = wc_get_product( $product );
 			if ( ! PWSMS()->is_wc_product( $product ) ) {
 				return false;
 			}
+
 		}
 
 		if ( method_exists( $product, 'get_manage_stock' ) ) {
@@ -333,10 +480,13 @@ class Helper {
 	public function product_stock_qty( $product ) {
 
 		if ( ! is_object( $product ) ) {
+
 			$product = wc_get_product( $product );
+
 			if ( ! PWSMS()->is_wc_product( $product ) ) {
 				return 0;
 			}
+
 		}
 
 		if ( method_exists( $product, 'get_stock_quantity' ) ) {
@@ -353,9 +503,11 @@ class Helper {
 		if ( ! isset( $field['placeholder'] ) ) {
 			$field['placeholder'] = '';
 		}
+
 		if ( ! isset( $field['class'] ) ) {
 			$field['class'] = 'short';
 		}
+
 		if ( ! isset( $field['options'] ) ) {
 			$field['options'] = [];
 		}
@@ -363,6 +515,7 @@ class Helper {
 		if ( ! empty( $field['value'] ) ) {
 			$field['value'] = array_filter( (array) $field['value'] );
 		}
+
 		//dont use else
 		if ( empty( $field['value'] ) ) {
 			$field['value'] = isset( $field['default'] ) ? $field['default'] : [];
@@ -384,7 +537,7 @@ class Helper {
 
 	public function replace_short_codes( $content, $order_status, WC_Order $order, $vendor_items_array = [] ) {
 
-		$price = strip_tags( $this->order_prop( $order, 'formatted_order_total', [ '', false ] ) );
+		$price = wp_strip_all_tags( $this->order_prop( $order, 'formatted_order_total', [ '', false ] ) );
 		$price = html_entity_decode( $price );
 
 		$all_product_list = $this->all_items( $order );
@@ -393,14 +546,17 @@ class Helper {
 		$all_items_full   = ! empty( $all_product_list['items_full'] ) ? $all_product_list['items_full'] : [];
 		$all_items_qty    = ! empty( $all_product_list['items_qty'] ) ? $all_product_list['items_qty'] : [];
 
+		$vendor_name        = ! empty( $vendor_items_array['vendor_name'] ) ? $vendor_items_array['vendor_name'] : '';
 		$vendor_product_ids = ! empty( $vendor_items_array['product_ids'] ) ? $vendor_items_array['product_ids'] : [];
 		$vendor_items       = ! empty( $vendor_items_array['items'] ) ? $vendor_items_array['items'] : [];
 		$vendor_items_qty   = ! empty( $vendor_items_array['items_qty'] ) ? $vendor_items_array['items_qty'] : [];
 		$vendor_price       = ! empty( $vendor_items_array['price'] ) ? array_sum( (array) $vendor_items_array['price'] ) : 0;
-		$vendor_price       = strip_tags( wc_price( $vendor_price ) );
+		$vendor_price       = wp_strip_all_tags( wc_price( $vendor_price ) );
 
 		$payment_gateways = [];
+
 		if ( WC()->payment_gateways() ) {
+			// TODO: In the WC_Payment_Gateways the payment_gateways property is an array, there should be an error here
 			$payment_gateways = WC()->payment_gateways->payment_gateways();
 		}
 
@@ -415,6 +571,9 @@ class Helper {
 
 		$ship_country = ( isset( $country->countries[ $this->order_prop( $order, 'shipping_country' ) ] ) ) ? $country->countries[ $this->order_prop( $order, 'shipping_country' ) ] : $this->order_prop( $order, 'shipping_country' );
 		$ship_state   = ( $this->order_prop( $order, 'shipping_country' ) && $this->order_prop( $order, 'shipping_state' ) && isset( $country->states[ $this->order_prop( $order, 'shipping_country' ) ][ $this->order_prop( $order, 'shipping_state' ) ] ) ) ? $country->states[ $this->order_prop( $order, 'shipping_country' ) ][ $this->order_prop( $order, 'shipping_state' ) ] : $this->order_prop( $order, 'shipping_state' );
+
+		$post_tracking_code = $vendor_items_array['post_tracking_code'] ?? $this->order_prop( $order, 'post_barcode' );
+		$post_tracking_url  = $vendor_items_array['post_tracking_url'] ?? 'https://radgir.net';
 
 		$tags = [
 			'{b_first_name}'  => $this->order_prop( $order, 'billing_first_name' ),
@@ -449,24 +608,22 @@ class Helper {
 			'{all_items_qty}'  => implode( ' - ', $all_items_qty ),
 			'{count_items}'    => count( $all_items ),
 
+			'{vendor_name}'        => $vendor_name,
 			'{vendor_items}'       => implode( ' - ', $vendor_items ),
 			'{vendor_items_qty}'   => implode( ' - ', $vendor_items_qty ),
 			'{count_vendor_items}' => count( $vendor_items ),
 			'{vendor_price}'       => $vendor_price,
 
-			'{transaction_id}'  => $order->get_transaction_id(),
-			'{payment_method}'  => $payment_method,
-			'{shipping_method}' => $shipping_method,
-			'{description}'     => nl2br( esc_html( $order->get_customer_note() ) )
+			'{transaction_id}' => $order->get_transaction_id(),
+			'{payment_method}' => $payment_method,
+			'{payment_url}'    => $order->get_checkout_payment_url(),
+
+			'{shipping_method}'    => $shipping_method,
+			'{post_tracking_code}' => $post_tracking_code,
+			'{post_tracking_url}'  => $post_tracking_url,
+
+			'{description}' => nl2br( esc_html( $order->get_customer_note() ) ),
 		];
-
-		// Some tags maybe dependent on specific conditions
-		$post_tracking_code = $vendor_items_array['post_tracking_code'] ?? $this->order_prop( $order, 'post_barcode' );
-		$post_tracking_url  = $vendor_items_array['post_tracking_url'] ?? 'https://radgir.net';
-
-		$tags['{post_tracking_code}'] = $post_tracking_code;
-		$tags['{post_tracking_url}']  = $post_tracking_url;
-
 
 		$content = apply_filters( 'pwoosms_order_sms_body_before_replace', $content, array_keys( $tags ), array_values( $tags ), $order->get_id(), $order, $all_product_ids, $vendor_product_ids );
 
@@ -482,11 +639,13 @@ class Helper {
 		$method = 'get_' . $prop;
 
 		if ( method_exists( $order, $method ) ) {
+
 			if ( empty( $args ) || ! is_array( $args ) ) {
 				return $order->$method();
 			} else {
 				return call_user_func_array( [ $order, $method ], $args );
 			}
+
 		}
 
 		return ! empty( $order->{$prop} ) ? $order->{$prop} : '';
@@ -494,12 +653,15 @@ class Helper {
 
 	public function all_items( $order ) {
 
-		$order_products = $this->get_prodcut_lists( $order );
+		$order_products = $this->get_product_lists( $order );
 		$items          = [];
+
 		foreach ( (array) $order_products as $item_datas ) {
+
 			foreach ( (array) $item_datas as $item_data ) {
 				$this->prepare_items( $items, $item_data );
 			}
+
 		}
 
 		$items['product_ids'] = array_keys( $order_products );
@@ -507,7 +669,7 @@ class Helper {
 		return $items;
 	}
 
-	public function get_prodcut_lists( $order, $field = '' ) {
+	public function get_product_lists( $order, $field = '' ) {
 
 		$products = [];
 		$fields   = [];
@@ -542,13 +704,16 @@ class Helper {
 	public function prepare_items( &$items, $item_data ) {
 
 		if ( ! empty( $item_data['id'] ) ) {
+
 			$title                 = $this->product_title( $item_data['id'] );
 			$title_full            = $this->product_title_full( $item_data['id'] );
 			$items['items'][]      = $title;
 			$items['items_full'][] = $title_full;
 			$items['items_qty'][]  = $title . ' (' . $item_data['qty'] . ')';
 			$items['price'][]      = $item_data['total'];
+
 		}
+
 	}
 
 	/**
@@ -640,6 +805,7 @@ class Helper {
 			$variation_attributes = $this->product_prop( $parent, 'variation_attributes' );
 
 			$variable_title = [];
+
 			foreach ( (array) $attributes as $attribute_name => $options ) {
 
 				$attribute_name = str_ireplace( 'attribute_', '', $attribute_name );
@@ -651,11 +817,13 @@ class Helper {
 						$attribute_name = $key;
 						break;
 					}
+
 				}
 
 				if ( ! empty( $options ) && substr( strtolower( $attribute_name ), 0, 3 ) !== 'pa_' ) {
 					$variable_title[] = $attribute_name . ':' . $options;
 				}
+
 			}
 
 			$product_title = get_the_title( $product_id );
@@ -663,6 +831,7 @@ class Helper {
 			if ( ! empty( $variable_title ) ) {
 				$product_title .= ' (' . implode( ' - ', $variable_title ) . ')';
 			}
+
 		} else {
 			$product_title = get_the_title( $product_id );
 		}
@@ -705,16 +874,21 @@ class Helper {
 	public function order_date( $order ) {
 
 		$order_date = $this->order_prop( $order, 'date_paid' );
+
 		if ( empty( $order_date ) ) {
 			$order_date = $this->order_prop( $order, 'date_created' );
 		}
+
 		if ( empty( $order_date ) ) {
 			$order_date = $this->order_prop( $order, 'date_modified' );
 		}
+
 		if ( ! empty( $order_date ) ) {
+
 			if ( method_exists( $order_date, 'getOffsetTimestamp' ) ) {
 				$order_date = gmdate( 'Y-m-d H:i:s', $order_date->getOffsetTimestamp() );
 			}
+
 		} else {
 			$order_date = date_i18n( 'Y-m-d H:i:s' );
 		}
@@ -746,14 +920,37 @@ class Helper {
 	}
 
 	public function mobile_english_numbers( $mobile ) {
+
 		if ( is_array( $mobile ) ) {
 			return array_map( [ $this, __FUNCTION__ ], $mobile );
 		} else {
 
 			$mobile = sanitize_text_field( $mobile );
 
-			$mobile = str_ireplace( [ '۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹' ], [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ], $mobile ); //farsi
-			$mobile = str_ireplace( [ '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩' ], [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ], $mobile ); //arabi
+			$mobile = str_ireplace( [ '۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹' ], [
+				'0',
+				'1',
+				'2',
+				'3',
+				'4',
+				'5',
+				'6',
+				'7',
+				'8',
+				'9',
+			], $mobile ); //farsi
+			$mobile = str_ireplace( [ '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩' ], [
+				'0',
+				'1',
+				'2',
+				'3',
+				'4',
+				'5',
+				'6',
+				'7',
+				'8',
+				'9',
+			], $mobile ); //arabi
 
 			return $mobile;
 		}
@@ -799,7 +996,7 @@ class Helper {
 
 		$status = wc_get_order_status_name( $status );
 		if ( $status == 'created' ) {
-			$pending_label = _x( 'Pending payment', 'Order status', 'woocommerce' );
+			$pending_label = _x( 'Pending payment', 'Order status', 'woocommerce' ); //phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 			$status        = $pending ? $pending_label : $pending_label . ' (بلافاصله بعد از ثبت سفارش)';
 		}
 
@@ -807,6 +1004,7 @@ class Helper {
 	}
 
 	public function sanitize_text_field( $post ) {
+
 		if ( is_array( $post ) ) {
 			return array_map( [ $this, __FUNCTION__ ], $post );
 		}
@@ -832,7 +1030,6 @@ class Helper {
 
 		if ( ( is_string( $sms_set ) && $this->maybe_bool( $sms_set ) ) || ( is_array( $sms_set ) && in_array( $key, $sms_set ) ) ) {
 			return $product->get_meta( '_' . $key, true );
-
 		}
 
 		return $this->get_option( $key, '__' );
@@ -851,26 +1048,33 @@ class Helper {
 		}
 
 		$sku = $this->product_prop( $product, 'sku' );
+
 		if ( empty( $sku ) ) {
 			$sku = $this->product_prop( $parent_product, 'sku' );
 		}
 
 		$tags = [
 			'{product_id}'         => $parent_product_id,
+			'{product_url}'        => $product->get_permalink(),
 			'{sku}'                => $sku,
 			'{product_title}'      => $this->product_title( $product ),
 			'{product_title_full}' => $this->product_title_full( $product ),
-			'{regular_price}'      => strip_tags( wc_price( $this->product_prop( $product, 'regular_price' ) ) ),
-			'{onsale_price}'       => strip_tags( wc_price( $this->product_prop( $product, 'sale_price' ) ) ),
+			'{regular_price}'      => wp_strip_all_tags( wc_price( $this->product_prop( $product, 'regular_price' ) ) ),
+			'{onsale_price}'       => wp_strip_all_tags( wc_price( $this->product_prop( $product, 'sale_price' ) ) ),
 			'{onsale_from}'        => $this->maybe_jalali_date( $sale_price_dates_from ),
 			'{onsale_to}'          => $this->maybe_jalali_date( $sale_price_dates_to ),
 			'{stock}'              => $this->product_stock_qty( $product ),
-		];
 
+		];
 
 		$content = $this->get_product_meta_value( $key, $parent_product_id );
 
-		return str_replace( [ '<br>', '<br>', '<br />', '&nbsp;' ], [ '', '', '', ' ' ], str_replace( array_keys( $tags ), array_values( $tags ), $content ) );
+		return str_replace( [ '<br>', '<br>', '<br />', '&nbsp;' ], [
+			'',
+			'',
+			'',
+			' ',
+		], str_replace( array_keys( $tags ), array_values( $tags ), $content ) );
 	}
 
 	public function product_sale_price_time( $product, $type = '' ) {
@@ -882,6 +1086,7 @@ class Helper {
 		}
 
 		$product = wc_get_product( $product_id );
+
 		if ( ! PWSMS()->is_wc_product( $product ) ) {
 			return '';
 		}
@@ -890,16 +1095,17 @@ class Helper {
 		$method    = 'get_date_on_sale_' . $type;
 
 		if ( method_exists( $product, $method ) ) {
+
 			$timestamp = $product->$method();
 
 			if ( is_object( $timestamp ) && method_exists( $timestamp, 'getOffsetTimestamp' ) ) {
 				$timestamp = $timestamp->getOffsetTimestamp();
 			}
+
 		}
 
 		if ( empty( $timestamp ) ) {
 			$timestamp = $product->get_meta( '_sale_price_dates_' . $type, true );
-
 		}
 
 		return $timestamp;
@@ -909,7 +1115,9 @@ class Helper {
 
 		$product_ids = array_unique( (array) $product_ids );
 		$mobiles     = [];
+
 		foreach ( $product_ids as $product_id ) {
+
 			$product = wc_get_product( $product_id );
 
 			if ( ! PWSMS()->is_wc_product( $product ) ) {
@@ -917,9 +1125,11 @@ class Helper {
 			}
 
 			$product_admin   = (array) $product->get_meta( '_pwoosms_product_admin_data', true );
-			$product_admin[] = $this->user_mobile_meta( $product_id );
+			$product_admin[] = $this->get_user_mobile_meta( $product_id );
 			$product_admin[] = $this->get_post_mobile_meta( $product_id );
-			$product_admin   = array_filter( $product_admin );
+			$product_admin[] = $this->get_dokan_vendor_mobile( $product_id );
+
+			$product_admin = array_filter( $product_admin );
 
 			foreach ( (array) $product_admin as $data ) {
 
@@ -928,28 +1138,77 @@ class Helper {
 					$statuses = $this->prepare_admin_product_status( $data['statuses'] );
 
 					if ( empty( $status ) || in_array( $status, $statuses ) ) {
+
 						$_mobiles = array_map( 'trim', explode( ',', $data['mobile'] ) );
+
 						foreach ( $_mobiles as $_mobile ) {
 							$mobiles[ $_mobile ][] = $product_id;
 						}
+
 					}
+
 				}
+
 			}
 		}
 
 		return $mobiles;
 	}
 
-	public function user_mobile_meta( $post_id = 0 ) {
+	/**
+	 * Dokan vendor mobile
+	 * Uses the general statuses which are presented in settings
+	 *
+	 * @param int $product_id
+	 *
+	 * @return array
+	 */
+	public function get_dokan_vendor_mobile( int $product_id ): array {
+		$empty_array = [ 'meta' => 'dokan', 'mobile' => '', 'statuses' => '' ];
+
+		// Check if Dokan integration is enabled
+		if ( ! function_exists( 'dokan_get_vendor_by_product' ) || ! PWSMS()->get_option( 'product_admin_dokan_integration' ) ) {
+			return $empty_array;
+		}
+
+		// Load general statuses
+		$general_statuses = PWSMS()->get_option( 'product_admin_meta_order_status' );
+
+		$prepared_statuses = PWSMS()->prepare_admin_product_status( $general_statuses, false );
+
+		// Get vendor
+		$vendor = dokan_get_vendor_by_product( $product_id );
+
+		if ( empty( $vendor ) || ! is_object( $vendor ) ) {
+			return $empty_array;
+		}
+
+		// Get vendor mobile
+		$vendor_mobile = $vendor->get_phone();
+
+		if ( ! $this->validate_mobile( $vendor_mobile ) ) {
+			return $empty_array;
+		}
+
+		return [
+			'meta'     => 'dokan',
+			'mobile'   => $vendor_mobile,
+			'statuses' => $prepared_statuses,
+		];
+	}
+
+	public function get_user_mobile_meta( $post_id = 0 ) {
 
 		$meta        = 'user';
 		$empty_array = [ 'meta' => $meta, 'mobile' => '', 'statuses' => '' ];
 		$data        = $this->get_saved_mobile_data( $meta, $post_id, $empty_array );
+
 		if ( is_array( $data ) ) {
 			return $data;
 		}
-
+		// product_admin_user_meta usage from settings (custom meta key)
 		$meta_key = $this->get_option( "product_admin_{$meta}_meta" );
+
 		if ( empty( $meta_key ) ) {
 			unset( $empty_array['meta'] );
 
@@ -973,13 +1232,18 @@ class Helper {
 	public function get_saved_mobile_data( $meta, $post_id = 0, $empty_array = [] ) {
 
 		if ( empty( $post_id ) ) {
+
 			$screen = get_current_screen();
+
 			// Check if we are on the post editing screen
 			if ( empty( $screen ) || 'product' !== $screen->post_type ) {
 				return $empty_array;
 			}
+
 			$post_id = isset( $_GET['post'] ) ? intval( $_GET['post'] ) : 0;
+
 		}
+
 		if ( empty( $post_id ) ) {
 			return $empty_array;
 		}
@@ -1004,11 +1268,14 @@ class Helper {
 		$meta        = 'post';
 		$empty_array = [ 'meta' => $meta, 'mobile' => '', 'statuses' => '' ];
 		$data        = $this->get_saved_mobile_data( $meta, $post_id, $empty_array );
+
 		if ( is_array( $data ) ) {
 			return $data;
 		}
 
+		// product_admin_post_meta usage from settings (custom meta key)
 		$meta_key = $this->get_option( "product_admin_{$meta}_meta" );
+
 		if ( empty( $meta_key ) ) {
 			unset( $empty_array['meta'] );
 
@@ -1026,56 +1293,119 @@ class Helper {
 		];
 	}
 
-	public function validate_mobile( $mobile ) {
+	/**
+	 * Validate an Iranian mobile number after normalizing it.
+	 *
+	 * Accept numbers in these formats (based on `modify_mobile()` output):
+	 * - Local format:       09121234567
+	 * - International:      +989121234567
+	 *
+	 * @param string $mobile The raw input mobile number.
+	 *
+	 * @return bool
+	 */
+	public function validate_mobile( string $mobile = '' ): bool {
 
+		if ( empty( $mobile ) ) {
+			return false;
+		}
+
+		// Normalize the input using modify_mobile (cleans, formats)
 		$mobile = $this->modify_mobile( $mobile );
 
-		return preg_match( '/9\d{9,}?$/', trim( $mobile ) );
+		// Match local format: 09121234567
+		if ( preg_match( '/^09\d{9}$/', $mobile ) ) {
+			return true;
+		}
+
+		// Match international format: +989121234567
+		if ( preg_match( '/^\+989\d{9}$/', $mobile ) ) {
+			return true;
+		}
+
+		// Optionally, allow fallback format: 0 followed by 9 digits
+		// Example: 09121234567 or 09121234567
+		if ( preg_match( '/^0\d{10}$/', $mobile ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
+	/**
+	 * Modify and normalize a mobile phone number or an array of numbers.
+	 *
+	 * - Converts any localized digits (e.g., Persian/Arabic numerals) to English.
+	 * - Removes all non-digit characters.
+	 * - Converts numbers starting with '+', '00', or nothing into a standardized local format.
+	 * - Preserves '+' if the original number began with it.
+	 * - Handles an array of numbers recursively.
+	 *
+	 * @param string|array $mobile A single mobile number or an array of mobile numbers.
+	 *
+	 * @return string|array Modified mobile number(s) in a normalized format.
+	 */
 	public function modify_mobile( $mobile ) {
+
+		if ( empty( $mobile ) ) {
+			return is_array( $mobile ) ? [] : '';
+		}
 
 		if ( is_array( $mobile ) ) {
 			return array_map( [ $this, __FUNCTION__ ], $mobile );
 		}
 
+		// '۰۹۱۲۱۲۳۴۵۶۷' -> '09121234567'
 		$mobile = $this->mobile_english_numbers( $mobile );
 
+
+		// '0912-123-4567' -> '09121234567'
 		$modified = preg_replace( '/\D/is', '', (string) $mobile );
 
+		// '+989121234567' -> '+989121234567'
 		if ( substr( $mobile, 0, 1 ) == '+' ) {
 			return '+' . $modified;
-		} elseif ( substr( $modified, 0, 2 ) == '00' ) {
+		}
+
+		// '00989121234567' -> '+989121234567'
+		if ( substr( $modified, 0, 2 ) == '00' ) {
 			return '+' . substr( $modified, 2 );
-		} elseif ( substr( $modified, 0, 1 ) == '0' ) {
+		}
+
+		// Example: '09121234567' -> '09121234567'
+		if ( substr( $modified, 0, 1 ) == '0' ) {
 			return $modified;
-		} elseif ( ! empty( $modified ) ) {
+		}
+
+		// '9121234567' -> '09121234567'
+		if ( ! empty( $modified ) ) {
 			$modified = '0' . $modified;
 		}
 
+		// '+9809121234567' -> '09121234567'
 		return str_replace( '+980', '0', $modified );
 	}
 
 	public function prepare_admin_product_status( $statuses, $array = true ) {
 
-		$delimator = '-sv-';
+		$delimiter = '-sv-';
 
 		if ( ! is_array( $statuses ) ) {
-			$statuses = explode( $delimator, $statuses );
+			$statuses = explode( $delimiter, $statuses );
 		}
 
 		$statuses = array_map( 'trim', $statuses );
 		$statuses = array_map( [ $this, 'sanitize_text_field' ], $statuses );
 		$statuses = array_unique( array_filter( $statuses ) );
 
-		//واسه مقایسه کردن لازم میشه
+		// It's necessary for comparison
 		sort( $statuses );
 
 		if ( $array ) {
 			return $statuses;
 		}
 
-		return implode( $delimator, $statuses );
+		return implode( $delimiter, $statuses );
 	}
 
 	public function product_admin_items( $order_products, $product_ids ) {
@@ -1083,11 +1413,15 @@ class Helper {
 		$product_ids = array_unique( $product_ids );
 
 		$items = [];
+
 		foreach ( $product_ids as $product_id ) {
+
 			$item_datas = $order_products[ $product_id ];
+
 			foreach ( (array) $item_datas as $item_data ) {
 				$this->prepare_items( $items, $item_data );
 			}
+
 		}
 
 		$items['product_ids'] = $product_ids;
@@ -1116,47 +1450,53 @@ class Helper {
 	}
 
 	public function SendSMS( $data ) {
-		_doing_it_wrong( __METHOD__, 'SendSMS() is deprecated. Use send_sms() instead.', '1.0.0' );
+		_doing_it_wrong( __METHOD__, 'SendSMS() is deprecated. Use send_sms() instead.', '6' );
 
 		return $this->send_sms( $data );
 	}
 
 	public function send_sms( $data ) {
-		// TODO: Set mobile string handling in better way
+
 		$message = ! empty( $data['message'] ) ? esc_textarea( $data['message'] ) : '';
 
 		$mobile = ! empty( $data['mobile'] ) ? $data['mobile'] : '';
+
 		if ( ! is_array( $mobile ) ) {
 			$mobile = explode( ',', $mobile );
 		}
 
-		$mobile = $this->modify_mobile( $mobile );
 		$mobile = explode( ',', implode( ',', (array) $mobile ) );
 		$mobile = array_map( 'trim', $mobile );
+		$mobile = array_filter( $mobile, [ $this, 'validate_mobile' ] );
 		$mobile = array_unique( array_filter( $mobile ) );
 
-		$gateway_obj   = $this->get_sms_gateway();
+		$gateway_obj = $this->get_sms_gateway();
 		$gateway_class = get_class( $gateway_obj );
 
 		if ( empty( $mobile ) ) {
-			$result = 'شماره موبایل خالی است . ';
-		} elseif ( empty( $message ) ) {
-			$result = 'متن پیامک خالی است . ';
-		} elseif ( empty( $gateway_class ) ) {
-			$result = 'تنظیمات درگاه پیامک انجام نشده است . ';
-		} elseif ( ! class_exists( $gateway_class ) ) {
-			$result = 'درگاه پیامکی شما وجود ندارد.';
-		} else {
+			return 'شماره موبایل خالی/نامعتبر است.';
+		}
 
-			try {
+		if ( empty( $message ) ) {
+			return 'متن پیامک خالی است.';
+		}
 
-				$gateway_obj->mobile  = $mobile;
-				$gateway_obj->message = $message;
+		if ( empty( $gateway_class ) ) {
+			return 'تنظیمات درگاه پیامک انجام نشده است.';
+		}
 
-				$result = $gateway_obj->send( $data );
-			} catch ( Exception $e ) {
-				$result = $e->getMessage();
-			}
+		if ( ! class_exists( $gateway_class ) ) {
+			return 'درگاه پیامکی شما وجود ندارد.';
+		}
+
+		try {
+
+			$gateway_obj->mobile  = $mobile;
+			$gateway_obj->message = $message;
+
+			$result = $gateway_obj->send( $data );
+		} catch ( Exception $e ) {
+			$result = $e->getMessage();
 		}
 
 		if ( $result !== true && ! is_string( $result ) ) {
@@ -1186,13 +1526,13 @@ class Helper {
 	 *
 	 * Return the current active gateway
 	 *
-	 * @return GatewayInterface
+	 * @return Gateway
 	 */
 	public static function get_sms_gateway() {
 
 		$active_gateway = PWSMS()->get_option( 'sms_gateway' );
 
-		if ( ! class_exists( $active_gateway ) || ! is_subclass_of( $active_gateway, GatewayInterface::class ) ) {
+		if ( ! class_exists( $active_gateway ) || ! is_subclass_of( $active_gateway, Gateway::class ) ) {
 			$active_gateway = Logger::class;
 		}
 
@@ -1201,15 +1541,14 @@ class Helper {
 
 	public function get_sms_gateways() {
 
-		$gateways          = [];
-		$excluded_gateways = [//'PW\PWSMS\Gateways\IppanelSms' => 'ippanelsms',
-		];
+		$gateways = [];
 		// Gateways are static as namespace and directory
 		$namespace = 'PW\PWSMS\Gateways';
 		$dir       = PWSMS_DIR . '/src/Gateways';
 
 		// Scan the directory for PHP files
 		foreach ( glob( "$dir/*.php" ) as $file ) {
+
 			$class = basename( $file, '.php' );
 			// Create Full Qualified Class Name based on file names without .php
 			$fqcn           = "$namespace\\$class";
@@ -1218,6 +1557,7 @@ class Helper {
 			if ( empty( $active_gateway ) ) {
 				$active_gateway = Logger::class;
 			}
+
 			if ( class_exists( $active_gateway ) ) {
 				$active_gateway_id = $active_gateway::id();
 			} else {
@@ -1225,30 +1565,28 @@ class Helper {
 				$active_gateway_id = $active_gateway;
 			}
 
-			if ( class_exists( $fqcn ) ) {
+			try {
 				$reflectionClass = new ReflectionClass( $fqcn );
-				// Check if the target class implements GatewayInterface and exclude main classes
-				$is_normal_class = $reflectionClass->implementsInterface( GatewayInterface::class ) && ! $reflectionClass->isAbstract() && ! $reflectionClass->isTrait();
+			} catch ( Exception $e ) {
+				continue;
+			}
 
-				if ( $is_normal_class ) {
-					$id   = $fqcn::id();
-					$name = $fqcn::name();
+			// Check if the target class implements GatewayInterface and exclude main classes
+			if ( $reflectionClass->isSubclassOf( Gateway::class ) ) {
 
-					if ( $id == $active_gateway_id ) {
+				$id   = $fqcn::id();
+				$name = $fqcn::name();
 
-						// Migrate sms_gateway to the fully qualified class name
-						$this->update_option( 'sms_main_settings', 'sms_gateway', $fqcn );
-					}
-
-					$gateways[ $fqcn ] = $name;
+				if ( $id == $active_gateway_id ) {
+					// Migrate sms_gateway to the fully qualified class name
+					$this->update_option( 'sms_main_settings', 'sms_gateway', $fqcn );
 				}
+
+				$gateways[ $fqcn ] = $name;
 
 			}
 
 		}
-
-		// Purify gateways
-		$gateways = array_diff( $gateways, $excluded_gateways );
 
 		return apply_filters( 'pwoosms_sms_gateways', $gateways );
 	}
@@ -1257,8 +1595,10 @@ class Helper {
 		$section_settings = get_option( $section );
 
 		if ( $section_settings && isset( $section_settings[ $option ] ) ) {
+
 			$section_settings[ $option ] = $value;
 			update_option( $section, $section_settings );
+
 		}
 
 	}
@@ -1283,6 +1623,51 @@ class Helper {
 		return substr( $phone_number, - 10 );
 	}
 
+
+	/**
+	 * Generate admin orders dashboard link with custom query
+	 *
+	 * @param string $query
+	 *
+	 * @return string The admin orders dashboard query link
+	 */
+
+	public function get_admin_order_dashboard_url( string $query = '' ): string {
+
+		if ( $this->is_wc_order_hpos_enabled() ) {
+			$dashboard_url = 'admin.php?page=wc-orders&';
+		} else {
+			$dashboard_url = 'edit.php?post_type=shop_order&';
+		}
+
+		$dashboard_url .= $query;
+
+		return admin_url( $dashboard_url );
+	}
+
+	/**
+	 * Retrieve a valid Dokan vendor by ID.
+	 *
+	 * @param int $vendor_id
+	 *
+	 * @return Vendor|null
+	 */
+	public function get_vendor( int $vendor_id ): ?Vendor {
+		$vendor = dokan()->vendor->get( $vendor_id );
+
+		return ( $vendor && $vendor->get_id() ) ? $vendor : null;
+	}
+
+	/**
+	 * Retrieve the vendor's phone number.
+	 *
+	 * @param Vendor $vendor The vendor object.
+	 *
+	 * @return string|null The vendor phone number, or null if unavailable.
+	 */
+	public function get_vendor_phone( Vendor $vendor ): ?string {
+		return $vendor->get_phone();
+	}
 
 }
 

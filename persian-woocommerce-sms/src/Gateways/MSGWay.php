@@ -3,19 +3,15 @@
 namespace PW\PWSMS\Gateways;
 
 use Exception;
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
 
-class MSGWay implements GatewayInterface {
-	use GatewayTrait;
+class MSGWay extends Gateway {
 
-	public static function id() {
+	public static function id(): string {
 		return 'msgway';
 	}
 
-	public static function name() {
-		return 'msgway.com';
+	public static function name(): string {
+		return 'MSGWay.com - راه پیام';
 	}
 
 	public function send() {
@@ -72,7 +68,7 @@ class MSGWay implements GatewayInterface {
 					'headers' => [
 						'Content-Type' => 'application/json',
 						'apiKey'       => $api_key,
-					]
+					],
 				] );
 
 				if ( is_wp_error( $response ) ) {
@@ -92,14 +88,14 @@ class MSGWay implements GatewayInterface {
 						$results[] = [
 							'mobile'      => $mobile,
 							'status'      => 'success',
-							'referenceID' => $decoded_response['referenceID']
+							'referenceID' => $decoded_response['referenceID'],
 						];
 					} else {
 						$error_message    = $decoded_response['error']['message'] ?? 'Unknown error';
 						$results[]        = [
 							'mobile'  => $mobile,
 							'status'  => 'error',
-							'message' => $error_message
+							'message' => $error_message,
 						];
 						$failed_numbers[] = $mobile;
 					}
@@ -112,7 +108,7 @@ class MSGWay implements GatewayInterface {
 				$results[]        = [
 					'mobile'  => $mobile,
 					'status'  => 'error',
-					'message' => $e->getMessage()
+					'message' => $e->getMessage(),
 				];
 				$failed_numbers[] = $mobile;
 			}

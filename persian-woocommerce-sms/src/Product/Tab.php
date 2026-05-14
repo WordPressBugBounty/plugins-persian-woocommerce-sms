@@ -8,7 +8,6 @@ class Tab {
 
 	private $product_metas = [];
 	private $enable_notification = false;
-	private $enable_product_admin_sms = false;
 
 	public function __construct() {
 
@@ -19,9 +18,8 @@ class Tab {
 		}
 
 		$this->enable_notification      = PWSMS()->get_option( 'enable_notif_sms_main' );
-		$this->enable_product_admin_sms = PWSMS()->get_option( 'enable_product_admin_sms' );
 
-		if ( $this->enable_notification || $this->enable_product_admin_sms ) {
+		if ( $this->enable_notification ) {
 			add_action( 'admin_enqueue_scripts', [ $this, 'script' ] );
 			add_action( 'woocommerce_product_write_panel_tabs', [ $this, 'tab_nav' ] );
 			add_action( 'woocommerce_product_data_panels', [ $this, 'tab_content' ] );
@@ -31,12 +29,11 @@ class Tab {
 	}
 
 	public function update_meta_38() {
+		global $wpdb;
 
 		if ( get_option( 'pwoosms_update_product_admin_meta' ) ) {
 			return;
 		}
-
-		$wpdb = $GLOBALS['wpdb'];
 
 		$update = $wpdb->query( "UPDATE {$wpdb->postmeta} SET meta_key=REPLACE(meta_key, '_hannanstd_woo_products_tabs', '_pwoosms_product_admin_data')" );
 		if ( $update !== false ) {
@@ -66,25 +63,19 @@ class Tab {
 
 		wp_enqueue_script( 'pwoosms-frontend-js' );
 
-		wp_register_script( 'repeatable-sms-tabs', PWSMS_URL . '/assets/js/product-tab.js', [ 'pwoosms-frontend-js' ], PWSMS_VERSION );
-		wp_enqueue_script( 'repeatable-sms-tabs' );
-		wp_register_style( 'repeatable-sms-tabs-styles', PWSMS_URL . '/assets/css/product-tab.css', '', PWSMS_VERSION );
-		wp_enqueue_style( 'repeatable-sms-tabs-styles' );
+		wp_enqueue_style( 'pwsms-sweetalert2' );
+		wp_enqueue_script( 'pwsms-sweetalert2' );
 
-		if ( ! PWSMS()->get_option( 'force_enable_buyer' ) ) {
+		wp_register_script( 'pwsms-product', PWSMS_URL . '/assets/js/product.js', [ 'pwsms-sweetalert2', 'pwoosms-frontend-js' ], PWSMS_VERSION );
+		wp_enqueue_script( 'pwsms-product' );
+		wp_localize_script( 'pwsms-product', 'pwsms_product', [
+			'rest_url' => esc_url_raw( rest_url() ),
+			'nonce'    => wp_create_nonce( 'wp_rest' )
+		] );
 
-			wc_enqueue_js( "
-					jQuery( '#buyer_sms_status_field' ).hide();
-					jQuery( 'input[name=buyer_sms_notify]' ).change( function () {
-						if ( jQuery( this ).is( ':checked' ) ){
-							jQuery( '#buyer_sms_status_field' ).show();
-						} else {
-							jQuery( '#buyer_sms_status_field' ).hide();
-						}
-					} ).change();
-				" );
+		wp_register_style( 'pwsms-product', PWSMS_URL . '/assets/css/product.css', '', PWSMS_VERSION );
+		wp_enqueue_style( 'pwsms-product' );
 
-		}
 	}
 
 	public function tab_nav() {
@@ -112,13 +103,13 @@ class Tab {
 		}
 		?>
 
-        <div id="pwoosms" class="panel wc-metaboxes-wrapper woocommerce_options_panel">
+		<div id="pwoosms" class="panel wc-metaboxes-wrapper woocommerce_options_panel">
 			<?php
 			$this->notification_settings( $product_id );
 			do_action( 'pwoosms_product_sms_tab', $product_id );
 			$this->product_admin_settings( $product_id );
 			?>
-        </div>
+		</div>
 		<?php
 	}
 
@@ -126,9 +117,9 @@ class Tab {
 
 		if ( $this->enable_notification ) { ?>
 
-            <div class="pwoosms-tab-product-admin">
-                <p><strong>تنظیمات خبرنامه محصول: </strong></p>
-            </div>
+			<div class="pwoosms-tab-product-admin">
+				<p><strong>تنظیمات خبرنامه محصول: </strong></p>
+			</div>
 
 			<?php
 			$this->product_metas[] = 'enable_notif_sms';
@@ -159,7 +150,7 @@ class Tab {
 				'cbvalue'     => 'on',
 				'desc_tip'    => true,
 				'label'       => 'عضویت فقط برای اعضای سایت',
-				'description' => 'با فعالسازی این گزینه، فقط کاربران لاگین شده قادر به عضویت در خبرنامه محصول خواهند بود.',
+				'description' => 'با فعالسازی این گزینه، فقط کاربران وارد شده قادر به عضویت در خبرنامه محصول خواهند بود.',
 				'id'          => end( $this->product_metas ),
 				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
 			] );
@@ -173,7 +164,7 @@ class Tab {
 				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
 			] );
 
-			echo '<p class="pwoosms-tab-help-toggle" style="cursor: pointer"></span>شورت کد های مورد استفاده در متن پیامک‌ها<span class="dashicons dashicons-editor-help"></p>';
+			echo '<p class="pwoosms-tab-help-toggle" style="cursor: pointer"></span>شورت کد های مورد استفاده در متن پیامک ها<span class="dashicons dashicons-editor-help"></p>';
 
 			echo '<div class="pwoosms-tab-help" style="display: none;">
 				<p><code>{product_id}</code> : آیدی محصول ، <code>{sku}</code> : شناسه محصول ، <code>{product_title}</code> : عنوان محصول ، <code>{product_title_full}</code> : عنوان محصول همراه متغیر ، <code>{regular_price}</code> قیمت اصلی ، <code>{onsale_price}</code> : قیمت فروش فوق العاده<br><code>{onsale_from}</code> : تاریخ شروع فروش فوق العاده ، <code>{onsale_to}</code> : تاریخ اتمام فروش فوق العاده ، <code>{stock}</code> : موجودی انبار</p>
@@ -243,7 +234,7 @@ class Tab {
 				'cbvalue'     => 'on',
 				'desc_tip'    => true,
 				'label'       => 'زمانیکه محصول رو به اتمام است',
-				'description' => 'با فعالسازی این گزینه، در صورتی که موجودی انبار زیاد بود، گزینه "زمانیکه محصول رو به اتمام است" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+				'description' => 'با فعال سازی این گزینه، اگر موجودی محصول کم باشد، گزینه‌ی "زمانی که موجودی رو به اتمام است" در فرم عضویت خبرنامه نمایش داده می شود.',
 				'id'          => end( $this->product_metas ),
 				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
 			] );
@@ -289,14 +280,11 @@ class Tab {
 
 	private function product_admin_settings( $product_id ) {
 
-		if ( ! $this->enable_product_admin_sms ) {
-			return;
-		}
 		?>
 
-        <div class="pwoosms-tab-product-admin">
-            <p><strong>تنظیمات فروشندگان و مدیران محصول: </strong></p>
-        </div>
+		<div class="pwoosms-tab-product-admin">
+			<p><strong>تنظیمات فروشندگان و مدیران محصول: </strong></p>
+		</div>
 
 		<?php
 		$all_statuses   = PWSMS()->get_all_product_admin_statuses();
@@ -311,7 +299,7 @@ class Tab {
 		/*فروشندگان ست شده با متا*/
 		$meta_tab_data = [];
 
-		$meta_mobile = PWSMS()->user_mobile_meta( $product_id );
+		$meta_mobile = PWSMS()->get_user_mobile_meta( $product_id );
 		if ( ! empty( $meta_mobile['meta'] ) ) {
 			$meta_tab_data[] = $meta_mobile;
 		}
@@ -362,9 +350,9 @@ class Tab {
 		foreach ( $tab_data as $tab ) {
 			?>
 
-            <section class="button-holder-sms">
-                <a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
-            </section>
+			<section class="button-holder-sms">
+				<a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
+			</section>
 
 			<?php
 			woocommerce_wp_text_input( [
@@ -394,9 +382,9 @@ class Tab {
 		?>
 
 
-        <div id="duplicate_this_row_sms">
+		<div id="duplicate_this_row_sms">
 
-            <a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
+			<a href="#" onclick="return false;" class="delete_this_sms_tab sms_tab_counter">(حذف)</a>
 
 			<?php
 			woocommerce_wp_text_input( [
@@ -417,16 +405,16 @@ class Tab {
 			] );
 			?>
 
-            <section class="button-holder-sms"></section>
+			<section class="button-holder-sms"></section>
 
-        </div>
+		</div>
 
-        <p>
-            <a href="#" class="button-secondary" id="add_another_sms_tab">
-                <span class="dashicons dashicons-plus-alt"></span>
-                افزودن فروشنده
-            </a>
-        </p>
+		<p>
+			<a href="#" class="button-secondary" id="add_another_sms_tab">
+				<span class="dashicons dashicons-plus-alt"></span>
+				افزودن فروشنده
+			</a>
+		</p>
 
 		<?php echo '<input type="hidden" value="' . esc_attr( count( $tab_data ) ) . '" id="sms_tab_counter" name="sms_tab_counter" >';
 
@@ -464,9 +452,7 @@ class Tab {
 			$product->save_meta_data();
 		}
 
-		if ( $this->enable_product_admin_sms ) {
-
-			if ( isset( $_POST['sms_tab_counter'] ) ) {
+		if ( isset( $_POST['sms_tab_counter'] ) ) {
 				$tab_data = [];
 				$count    = intval( $_POST['sms_tab_counter'] );
 				for ( $i = 1; $i <= $count; $i ++ ) {
@@ -493,32 +479,43 @@ class Tab {
 				$product->save_meta_data();
 			}
 
-			/*ذخیره شماره های مربوط به متا*/
-			foreach ( [ 'user', 'post' ] as $meta ) {
-				if ( isset( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) ) {
+		/*ذخیره شماره های مربوط به متا*/
+		foreach ( [ 'user', 'post' ] as $meta ) {
 
-					$mobile = ! empty( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) ? sanitize_text_field( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) : '';
-
-					$statuses = ! empty( $_POST[ 'pwoosms_tab_status_meta_' . $meta ] ) ? sanitize_text_field( $_POST[ 'pwoosms_tab_status_meta_' . $meta ] ) : '';
-					$statuses = PWSMS()->prepare_admin_product_status( $statuses, false );
-
-					$old_value    = $meta == 'post' ? PWSMS()->get_post_mobile_meta( $product_id ) : PWSMS()->user_mobile_meta( $product_id );
-					$old_mobile   = ! empty( $old_value['mobile'] ) ? $old_value['mobile'] : '';
-					$old_statuses = ! empty( $old_value['statuses'] ) ? $old_value['statuses'] : '';
-					$old_statuses = PWSMS()->prepare_admin_product_status( $old_statuses, false );
-
-					//این شرط مهمه. نباید حذف بشه
-					if ( $mobile != $old_mobile || $statuses != $old_statuses ) {
-						$product->update_meta_data( '_pwoosms_product_admin_meta_' . $meta, [
-							'meta'     => $meta,
-							'mobile'   => PWSMS()->sanitize_text_field( $mobile ),
-							'statuses' => $statuses,
-						] );
-						$product->save_meta_data();
-					}
+				if ( ! isset( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) ) {
+					continue;
 				}
+
+				$mobile = ! empty( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) ? sanitize_text_field( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) : '';
+
+				$statuses = '';
+
+				if ( isset( $_POST[ 'pwoosms_tab_status_meta_' . $meta ] ) && is_array( $_POST[ 'pwoosms_tab_status_meta_' . $meta ] ) ) {
+					$statuses = array_map( 'sanitize_text_field', $_POST[ 'pwoosms_tab_status_meta_' . $meta ] );
+				}
+
+				$statuses = PWSMS()->prepare_admin_product_status( $statuses, false );
+
+				$old_value    = $meta == 'post' ? PWSMS()->get_post_mobile_meta( $product_id ) : PWSMS()->get_user_mobile_meta( $product_id );
+				$old_mobile   = ! empty( $old_value['mobile'] ) ? $old_value['mobile'] : '';
+				$old_statuses = ! empty( $old_value['statuses'] ) ? $old_value['statuses'] : '';
+				$old_statuses = PWSMS()->prepare_admin_product_status( $old_statuses, false );
+
+				if ( $mobile == $old_mobile && $statuses == $old_statuses ) {
+					continue;
+				}
+
+				$product->update_meta_data( '_pwoosms_product_admin_meta_' . $meta, [
+					'meta'     => $meta,
+					'mobile'   => PWSMS()->sanitize_text_field( $mobile ),
+					'statuses' => $statuses,
+				] );
+
+				$product->save_meta_data();
+
 			}
-		}
+
 	}
+
 }
 

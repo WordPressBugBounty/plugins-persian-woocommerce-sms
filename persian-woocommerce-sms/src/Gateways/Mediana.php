@@ -3,80 +3,60 @@
 namespace PW\PWSMS\Gateways;
 
 
-class Mediana implements GatewayInterface {
-	use GatewayTrait;
+class Mediana extends Gateway {
 
 	public string $api_url = 'https://api.mediana.ir/sms/v1/send';
+	public string $api_key;
 	public array $headers;
 
-	public static function id() {
+
+	public static function id(): string {
 		return 'mediana';
 	}
 
-	public static function name() {
-		return 'mediana.ir';
+	public static function name(): string {
+		return 'Mediana.ir - مدیانا';
 	}
 
 	public function send() {
-		$recipients      = $this->mobile;
-		$api_key         = ! empty( trim( $this->username ) ) ? trim( $this->username ) : trim( $this->password );
-		$from            = trim( $this->senderNumber );
-		$message_content = trim( $this->message );
 
-		if ( empty( $api_key ) || ! str_contains( $api_key, 'Bearer' ) ) {
-			return 'لطفا کلید API اتصال به وبسرویس را به درستی ثبت نمایید. (به همراه Bearer در ابتدای کلید)';
+		$this->api_key = $this->get_token();
+
+		if ( empty( $this->api_key ) ) {
+			return 'لطفا کلید API اتصال به وبسرویس را به درستی ثبت نمایید.';
+		}
+
+		if ( ! str_starts_with( $this->api_key, 'Bearer' ) ) {
+			$this->api_key = 'Bearer ' . $this->api_key;
 		}
 
 		$this->headers = [
 			'Content-Type'  => 'application/json',
 			'Accept'        => '*/*',
-			'Authorization' => $api_key
+			'Authorization' => $this->api_key,
 		];
 
-		// Replace "pcode" with "patterncode" in the message
-		$message_content = str_replace( 'pcode', 'patterncode', $message_content );
-
-		// Determine if it's a pattern-based message
-		if ( substr( $message_content, 0, 11 ) === "patterncode" ) {
-			// Handle pattern-based message
-			return $this->send_pattern_sms( $recipients, $message_content );
-		} else {
-			// Handle simple SMS
-			return $this->send_simple_sms( $recipients, $from, $message_content );
+		if ( $this->is_pattern() ) {
+			return $this->send_pattern_sms();
 		}
+
+		return $this->send_normal_sms();
+
 	}
 
-	private function send_pattern_sms( array $recipients, string $message_content ) {
-		$pattern_api_url = $this->api_url . '/pattern';
+	private function send_pattern_sms() {
 
-		// Replace new lines with semicolons and split
-		$message_parts = explode( ';', str_replace( [ "\r\n", "\n" ], ';', $message_content ) );
-		$pattern_code  = explode( ':', $message_parts[0] )[1];
-		unset( $message_parts[0] ); // Remove the first element containing the pattern code
+		$pattern = $this->parse_pattern();
 
-		// Initialize the pattern data array
-		$pattern_data = [];
-		foreach ( $message_parts as $parameter ) {
-			$split_parameter = explode( ':', $parameter, 2 ); // Split only on the first occurrence
-			if ( count( $split_parameter ) === 2 ) { // Ensure both key and value exist
-				$pattern_data[ trim( $split_parameter[0] ) ] = trim( $split_parameter[1] );
-			}
-		}
-
-		// Check for required fields
-		if ( empty( $pattern_code ) || empty( $recipients ) ) {
-			return 'اطلاعات ارسال پیامک به درستی وارد نشده.';
-		}
-
-		$data = [
-			'patternCode' => trim( $pattern_code ),
-			'recipients'  => $recipients,
-			'parameters'  => $pattern_data,
+		$payload = [
+			'patternCode' => $pattern['code'],
+			'recipients'  => $this->mobile,
+			'parameters'  => $pattern['vars'],
 		];
 
-		$remote = wp_remote_post( $pattern_api_url, [
+		$remote = wp_remote_post( $this->api_url . '/pattern', [
 			'headers' => $this->headers,
-			'body'    => wp_json_encode( $data ),
+			'body'    => wp_json_encode( $payload ),
 		] );
 
 		if ( is_wp_error( $remote ) ) {
@@ -93,13 +73,13 @@ class Mediana implements GatewayInterface {
 		$response = wp_remote_retrieve_body( $remote );
 
 		if ( empty( $response ) ) {
-			return 'بدون پاسخ دریافتی از سمت وب سرویس.';
+			return 'پاسخی از وب‌سرویس دریافت نشد.';
 		}
 
 		$response_data = json_decode( $response, true );
 
 		if ( ! empty( json_last_error() ) || ! is_array( $response_data ) ) {
-			return 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
+			return 'قالب پاسخ دریافتی از وب‌سرویس نامعتبر است.';
 		}
 
 		if ( empty( $response_data['data']['succeed'] ) ) {
@@ -109,30 +89,22 @@ class Mediana implements GatewayInterface {
 		return true;
 	}
 
+	private function send_normal_sms( $informational = false ) {
 
-	private function send_simple_sms( array $recipients, string $from, string $message_content ) {
-		$single_api_url = $this->api_url . '/sms';
-
-		// Check for required fields
-		if ( empty( $message_content ) || empty( $recipients ) ) {
-			return 'اطلاعات پنل، یا پیامک به درستی وارد نشده.';
-		}
-
-		$data = [
-			'recipients'  => $recipients,
-			'messageText' => $message_content,
+		$payload = [
+			'recipients'  => $this->mobile,
+			'messageText' => $this->message,
 		];
 
-		if ( empty( $from ) ) {
-			$this->senderNumber = 'Informational'; // Show in SMS archive.
-			$data['type']       = $this->senderNumber;
+		if ( $informational ) {
+			$payload['type'] = 'Informational';
 		} else {
-			$data['sendingNumber'] = $from;
+			$payload['sendingNumber'] = $this->senderNumber;
 		}
 
-		$remote = wp_remote_post( $single_api_url, [
+		$remote = wp_remote_post( $this->api_url . '/sms', [
 			'headers' => $this->headers,
-			'body'    => json_encode( $data ),
+			'body'    => json_encode( $payload ),
 		] );
 
 		if ( is_wp_error( $remote ) ) {
@@ -149,22 +121,21 @@ class Mediana implements GatewayInterface {
 		$response = wp_remote_retrieve_body( $remote );
 
 		if ( empty( $response ) ) {
-			return 'بدون پاسخ دریافتی از سمت وب سرویس.';
+			return 'پاسخی از وب‌سرویس دریافت نشد.';
 		}
 
 		$response_data = json_decode( $response, true );
 
 		if ( ! empty( json_last_error() ) || ! is_array( $response_data ) ) {
-			return 'فرمت نامعتبر پاسخ از سمت وب سرویس.';
+			return 'قالب پاسخ دریافتی از وب‌سرویس نامعتبر است.';
 		}
-		// Resend without from number (informational message) if sender doesn't exists!
 
+		// Resend without from number (informational message) if sender doesn't exists!
 		if ( isset( $response_data['meta']['errors'][0]['errorCode'] ) && $response_data['meta']['errors'][0]['errorCode'] == "1101" ) {
-			return self::send_simple_sms( $recipients, '', $message_content );
+			return self::send_normal_sms( true );
 		}
 
 		if ( isset( $result['data']['succeed'] ) && $result['data']['succeed'] == "1" ) {
-			// Success sending
 			return true;
 		} elseif ( isset( $result['meta']['errorMessage'] ) && ! empty( $result['meta']['errorMessage'] ) ) {
 			return $result['meta']['errorMessage'];
@@ -177,6 +148,5 @@ class Mediana implements GatewayInterface {
 		}
 
 		return true;
-
 	}
 }

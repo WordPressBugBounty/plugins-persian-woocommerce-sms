@@ -4,91 +4,88 @@ namespace PW\PWSMS\Gateways;
 
 
 use nusoap_client;
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
 
-class CandooSMS implements GatewayInterface {
-    use GatewayTrait;
+class CandooSMS extends Gateway {
 
-    public static function id() {
-        return 'candoo';
-    }
-    public static function name() {
-        return 'CandooSMS.com';
-    }
+	public static function id(): string {
+		return 'candoo';
+	}
 
-    public function send() {
+	public static function name(): string {
+		return 'CandooSMS.com - کندو اس ام اس';
+	}
 
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
-        $massage  = $this->message;
-        $to       = $this->mobile;
+	public function send() {
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
+		$massage  = $this->message;
+		$to       = $this->mobile;
 
-        $i = sizeOf( $to );
-        while ( $i -- ) {
-            $uNumber = trim( $to[ $i ] );
-            $ret     = &$uNumber;
-            if ( substr( $uNumber, 0, 3 ) == '%2B' ) {
-                $ret = substr( $uNumber, 3 );
-            }
-            if ( substr( $uNumber, 0, 3 ) == '%2b' ) {
-                $ret = substr( $uNumber, 3 );
-            }
-            if ( substr( $uNumber, 0, 4 ) == '0098' ) {
-                $ret = substr( $uNumber, 4 );
-            }
-            if ( substr( $uNumber, 0, 3 ) == '098' ) {
-                $ret = substr( $uNumber, 3 );
-            }
-            if ( substr( $uNumber, 0, 3 ) == '+98' ) {
-                $ret = substr( $uNumber, 3 );
-            }
-            if ( substr( $uNumber, 0, 2 ) == '98' ) {
-                $ret = substr( $uNumber, 2 );
-            }
-            if ( substr( $uNumber, 0, 1 ) == '0' ) {
-                $ret = substr( $uNumber, 1 );
-            }
-            $to[ $i ] = '98' . $ret;
-        }
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        /*PWSMS()->nusoap();*/
+		$i = sizeOf( $to );
+		while ( $i -- ) {
+			$uNumber = trim( $to[ $i ] );
+			$ret     = &$uNumber;
+			if ( substr( $uNumber, 0, 3 ) == '%2B' ) {
+				$ret = substr( $uNumber, 3 );
+			}
+			if ( substr( $uNumber, 0, 3 ) == '%2b' ) {
+				$ret = substr( $uNumber, 3 );
+			}
+			if ( substr( $uNumber, 0, 4 ) == '0098' ) {
+				$ret = substr( $uNumber, 4 );
+			}
+			if ( substr( $uNumber, 0, 3 ) == '098' ) {
+				$ret = substr( $uNumber, 3 );
+			}
+			if ( substr( $uNumber, 0, 3 ) == '+98' ) {
+				$ret = substr( $uNumber, 3 );
+			}
+			if ( substr( $uNumber, 0, 2 ) == '98' ) {
+				$ret = substr( $uNumber, 2 );
+			}
+			if ( substr( $uNumber, 0, 1 ) == '0' ) {
+				$ret = substr( $uNumber, 1 );
+			}
+			$to[ $i ] = '98' . $ret;
+		}
 
-        try {
-            $client                   = new nusoap_client( 'http://my.candoosms.com/services/?wsdl', true );
-            $client->soap_defencoding = 'UTF-8';
-            $client->decode_utf8      = false;
+		/*PWSMS()->nusoap();*/
 
-            $results = $client->call( 'Send', [
-                'username'  => $username,
-                'password'  => $password,
-                'srcNumber' => $from,
-                'body'      => $massage,
-                'destNo'    => $to,
-                'flash'     => '0',
-            ] );
+		try {
+			$client                   = new nusoap_client( 'http://my.candoosms.com/services/?wsdl', true );
+			$client->soap_defencoding = 'UTF-8';
+			$client->decode_utf8      = false;
 
-            $error = [];
-            foreach ( $results as $result ) {
-                if ( ! isset( $result['Mobile'] ) || stripos( $result['ID'], 'e' ) !== false ) {
-                    $error[] = $result;
-                }
-            }
+			$results = $client->call( 'Send', [
+				'username'  => $username,
+				'password'  => $password,
+				'srcNumber' => $from,
+				'body'      => $massage,
+				'destNo'    => $to,
+				'flash'     => '0',
+			] );
 
-            if ( empty( $error ) ) {
-                return true; // Success
-            }
-        } catch ( Exception $e ) {
-            $response = $e->getMessage();
-        }
+			$error = [];
+			foreach ( $results as $result ) {
+				if ( ! isset( $result['Mobile'] ) || stripos( $result['ID'], 'e' ) !== false ) {
+					$error[] = $result;
+				}
+			}
 
-        return $response;
-    }
+			if ( empty( $error ) ) {
+				return true; // Success
+			}
+		} catch ( Exception $e ) {
+			$response = $e->getMessage();
+		}
+
+		return $response;
+	}
 
 }

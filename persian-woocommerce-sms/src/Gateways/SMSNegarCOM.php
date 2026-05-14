@@ -2,82 +2,79 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
 use SoapClient;
-use SoapFault;
 
-class SMSNegarCOM implements GatewayInterface {
-    use GatewayTrait;
+class SMSNegarCOM extends Gateway {
 
-    public static function id() {
-        return 'smsnegar';
-    }
+	public static function id(): string {
+		return 'smsnegar';
+	}
 
-    public static function name() {
-        return 'sms.smsnegar.com';
-    }
+	public static function name(): string {
+		return 'SMS.SMSNegar.com - اس ام اس نگار';
+	}
 
-    public function send() {
-        $response = false;
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
-        $to       = $this->mobile;
-        $massage  = $this->message;
+	public function send() {
+		$response = false;
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
+		$to       = $this->mobile;
+		$massage  = $this->message;
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        $to = implode( '', $this->mobile );
-        $to = preg_replace( '#^(\+98|0)?#', '', $to );
+		$to = implode( '', $this->mobile );
+		$to = preg_replace( '#^(\+98|0)?#', '', $to );
 
-        try {
+		try {
 
-            $client = new SoapClient( "http://sms.smsnegar.com/webservice/Service.asmx?wsdl" );
+			$client = new SoapClient( "http://sms.smsnegar.com/webservice/Service.asmx?wsdl" );
 
-            $result = $client->SendSms( [
-                "cUserName"     => $username,
-                "cPassword"     => $password,
-                "cBody"         => $massage,
-                "cSmsnumber"    => $to,
-                "cGetid"        => "0",
-                "nCMessage"     => "1",
-                "nTypeSent"     => "1",
-                "m_SchedulDate" => "",
-                "cDomainname"   => "yazd",
-                "nSpeedsms"     => "0",
-                "nPeriodmin"    => "0",
-                "cstarttime"    => "",
-                "cEndTime"      => ""
-            ] );
+			$result = $client->SendSms( [
+				"cUserName"     => $username,
+				"cPassword"     => $password,
+				"cBody"         => $massage,
+				"cSmsnumber"    => $to,
+				"cGetid"        => "0",
+				"nCMessage"     => "1",
+				"nTypeSent"     => "1",
+				"m_SchedulDate" => "",
+				"cDomainname"   => "yazd",
+				"nSpeedsms"     => "0",
+				"nPeriodmin"    => "0",
+				"cstarttime"    => "",
+				"cEndTime"      => "",
+			] );
 
-            if ( ! empty( $result->SendSmsResult ) ) {
+			if ( ! empty( $result->SendSmsResult ) ) {
 
 
-                return true;
+				return true;
 
-                $results = explode( ',', $result );
-                unset( $result );
+				$results = explode( ',', $result );
+				unset( $result );
 
-                foreach ( $results as $result ) {
-                    if ( intval( $result ) > 1000 ) {
-                        $result       = $client->ShowError( [ "cErrorCode" => $result, "cLanShow" => "FA" ] );
-                        $sms_response = ! empty( $result->ShowErrorResult ) ? $result->ShowErrorResult : $results;
-                        break;
-                    }
-                }
-            } else {
-                $sms_response = 'unknown';
-            }
-        } catch ( Exception $ex ) {
-            $sms_response = $ex->getMessage();
-        }
+				foreach ( $results as $result ) {
+					if ( intval( $result ) > 1000 ) {
+						$result       = $client->ShowError( [ "cErrorCode" => $result, "cLanShow" => "FA" ] );
+						$sms_response = ! empty( $result->ShowErrorResult ) ? $result->ShowErrorResult : $results;
+						break;
+					}
+				}
+			} else {
+				$sms_response = 'unknown';
+			}
+		} catch ( Exception $ex ) {
+			$sms_response = $ex->getMessage();
+		}
 
-        if ( empty( $sms_response ) ) {
-            return true; // Success
-        }
+		if ( empty( $sms_response ) ) {
+			return true; // Success
+		}
 
-        return $sms_response;
-    }
+		return $sms_response;
+	}
 }

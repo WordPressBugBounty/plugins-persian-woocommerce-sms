@@ -3,59 +3,57 @@
 namespace PW\PWSMS\Gateways;
 
 
-use PW\PWSMS\PWSMS;
 use SoapClient;
 use SoapFault;
 
-class YektaTech implements GatewayInterface {
-    use GatewayTrait;
+class YektaTech extends Gateway {
 
-    public static function id() {
-        return 'yektasms';
-    }
+	public static function id(): string {
+		return 'yektasms';
+	}
 
-    public static function name() {
-        return 'Yektatech.ir';
-    }
+	public static function name(): string {
+		return 'YektaTech.ir - یکتا تک';
+	}
 
-    public function send() {
+	public function send() {
 
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
-        $to       = $this->mobile;
-        $massage  = $this->message;
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
+		$to       = $this->mobile;
+		$massage  = $this->message;
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        try {
-            $client       = new SoapClient( "http://37.228.138.118/post/send.asmx?wsdl" );
-            $encoding     = "UTF-8";
-            $parameters   = [
-                'username' => $username,
-                'password' => $password,
-                'from'     => $from,
-                'to'       => $to,
-                'text'     => iconv( $encoding, 'UTF-8//TRANSLIT', $massage ),
-                'isflash'  => false,
-                'udh'      => "",
-                'recId'    => [ 0 ],
-                'status'   => 0,
-            ];
-            $sms_response = $client->SendSms( $parameters )->SendSmsResult;
-        } catch ( SoapFault $ex ) {
-            $sms_response = $ex->getMessage();
-        }
+		try {
+			$client       = new SoapClient( "http://37.228.138.118/post/send.asmx?wsdl" );
+			$encoding     = "UTF-8";
+			$parameters   = [
+				'username' => $username,
+				'password' => $password,
+				'from'     => $from,
+				'to'       => $to,
+				'text'     => iconv( $encoding, 'UTF-8//TRANSLIT', $massage ),
+				'isflash'  => false,
+				'udh'      => "",
+				'recId'    => [ 0 ],
+				'status'   => 0,
+			];
+			$sms_response = $client->SendSms( $parameters )->SendSmsResult;
+		} catch ( SoapFault $ex ) {
+			$sms_response = $ex->getMessage();
+		}
 
-        if ( $sms_response == 1 ) {
-            return true; // Success
-        } else {
-            $response = $sms_response;
-        }
+		if ( $sms_response == 1 ) {
+			return true; // Success
+		} else {
+			$response = $sms_response;
+		}
 
-        return $response;
-    }
+		return $response;
+	}
 
 }

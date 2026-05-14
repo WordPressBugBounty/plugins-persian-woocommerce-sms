@@ -1,0 +1,520 @@
+:root {
+    --pwsms-primary: #4f46e5;    
+    --pwsms-primary-hover: #4338ca;
+    --pwsms-surface: #f8fafc;       
+    --pwsms-bg: #ffffff;
+    --pwsms-border: #e2e8f0;
+    --pwsms-text-main: #1e293b;
+    --pwsms-text-muted: #64748b;
+    --pwsms-radius-sm: 8px;
+    --pwsms-radius-md: 12px;
+    --pwsms-radius-lg: 16px;
+    --pwsms-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.persian_woocommerce_sms {
+    background: var(--pwsms-bg);
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    padding: 30px;
+    margin: 20px 20px 20px 0;
+    border-radius: var(--pwsms-radius-lg);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--pwsms-border);
+    color: var(--pwsms-text-main);
+}
+
+.persian-woocommerce-sms h1, 
+.persian-woocommerce-sms h2, 
+.persian-woocommerce-sms h3, 
+.persian-woocommerce-sms h4, 
+.persian-woocommerce-sms h5, 
+.persian-woocommerce-sms h6 {
+    color: var(--pwsms-text-main);
+    font-weight: 700;
+}
+
+.persian-woocommerce-sms img.logo {
+    max-height: 55px;
+    margin: 0 0 20px 0;
+    transition: var(--pwsms-transition);
+}
+
+.persian-woocommerce-sms img.logo:hover {
+    transform: scale(1.02);
+}
+
+.persian-woocommerce-sms .clear { clear: both; }
+
+.persian-woocommerce-sms hr.pwoo_line {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--pwsms-border), transparent);
+    margin: 25px 0;
+}
+
+/* --- 3. Top Buttons --- */
+.persian_woocommerce_sms .float-left-buttons {
+    float: left;
+    border-radius: var(--pwsms-radius-sm);
+    font-weight: 600;
+    padding: 6px 16px;
+    border: none;
+    transition: var(--pwsms-transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.persian_woocommerce_sms .float-left-buttons.button-primary {
+    background: linear-gradient(135deg, var(--pwsms-primary), #6366f1);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+    margin-inline-end: 10px;
+}
+
+.persian_woocommerce_sms .float-left-buttons.button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(79, 70, 229, 0.35);
+}
+
+.persian_woocommerce_sms .float-left-buttons.button-secondary {
+    background: var(--pwsms-surface);
+    border: 1px solid var(--pwsms-border);
+    color: var(--pwsms-text-muted);
+}
+
+.persian_woocommerce_sms .float-left-buttons.button-secondary:hover {
+    background: var(--pwsms-bg);
+    color: var(--pwsms-text-main);
+    border-color: #cbd5e1;
+}
+
+/* --- 4. Navigation Tabs (Modern Pill Style) --- */
+.persian_woocommerce_sms .woo-nav-tab-wrapper {
+    background: var(--pwsms-surface);
+    padding: 6px;
+    border-radius: var(--pwsms-radius-md);
+    border: 1px solid var(--pwsms-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 30px;
+}
+
+.persian_woocommerce_sms .nav-tab {
+    border: none !important;
+    background: transparent !important;
+    color: var(--pwsms-text-muted) !important;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: var(--pwsms-radius-sm);
+    transition: var(--pwsms-transition);
+    margin: 0;
+}
+
+.persian_woocommerce_sms .nav-tab:hover {
+    color: var(--pwsms-primary) !important;
+    background: rgba(79, 70, 229, 0.08) !important;
+}
+
+.persian_woocommerce_sms .nav-tab-active {
+    background: var(--pwsms-primary) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* --- 5. Form & Inputs --- */
+.persian_woocommerce_sms .form-table {
+    margin-top: 10px;
+}
+
+.persian_woocommerce_sms .form-table th {
+    font-weight: 600;
+    color: var(--pwsms-text-main);
+    font-size: 14px;
+    padding: 20px 24px 20px 0 !important;
+}
+
+.persian_woocommerce_sms .form-table td {
+    padding: 15px 10px;
+}
+
+/* Style Inputs and Selects */
+.persian_woocommerce_sms input[type="text"],
+.persian_woocommerce_sms input[type="number"],
+.persian_woocommerce_sms input[type="password"],
+.persian_woocommerce_sms select,
+.persian_woocommerce_sms textarea {
+    border-radius: var(--pwsms-radius-sm) !important;
+    border: 1px solid var(--pwsms-border) !important;
+    padding: 8px 12px !important;
+    background: var(--pwsms-surface) !important;
+    color: var(--pwsms-text-main);
+    transition: var(--pwsms-transition);
+    box-shadow: none !important;
+}
+
+.persian_woocommerce_sms input[type="text"]:focus,
+.persian_woocommerce_sms select:focus,
+.persian_woocommerce_sms textarea:focus {
+    border-color: var(--pwsms-primary) !important;
+    background: var(--pwsms-bg) !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+    outline: none;
+}
+
+/* Select2 Modernization */
+.select2-container--default .select2-selection--single {
+    border-radius: var(--pwsms-radius-sm) !important;
+    border: 1px solid var(--pwsms-border) !important;
+    background: var(--pwsms-surface) !important;
+    display: flex;
+    align-items: center;
+}
+.select2-container--default.select2-container--open .select2-selection--single {
+    border-color: var(--pwsms-primary) !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+    background: var(--pwsms-bg) !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: var(--pwsms-text-main) !important;
+    line-height: normal !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 38px !important;
+}
+
+.persian_woocommerce_sms .description {
+    color: var(--pwsms-text-muted) !important;
+    font-size: 12px !important;
+    font-style: normal !important;
+    margin-top: 8px !important;
+    line-height: 1.8 !important;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.persian_woocommerce_sms .description:empty {
+    display: none !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.persian_woocommerce_sms #submit {
+    background: linear-gradient(135deg, var(--pwsms-primary), #6366f1);
+    border: none;
+    border-radius: var(--pwsms-radius-sm);
+    padding: 10px 30px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    transition: var(--pwsms-transition);
+    cursor: pointer;
+    height: auto;
+}
+
+.persian_woocommerce_sms #submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.persian_woocommerce_sms .notice {
+    border-radius: var(--pwsms-radius-sm);
+    border: none;
+    padding: 15px 20px;
+    margin: 15px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    display: flex;
+    align-items: center;
+}
+
+.persian_woocommerce_sms .notice-error {
+    background: #fef2f2;
+    border-right: 4px solid #ef4444; /* Right border for RTL */
+    color: #991b1b;
+}
+
+.persian_woocommerce_sms .notice-success {
+    background: #f0fdf4;
+    border-right: 4px solid #22c55e;
+    color: #166534;
+}
+
+.persian_woocommerce_sms .notice p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.persian_woocommerce_sms input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px !important;
+    border: 1px solid #cbd5e1 !important;
+    cursor: pointer;
+    transition: var(--pwsms-transition);
+}
+.persian_woocommerce_sms input[type="checkbox"]:checked {
+    background-color: var(--pwsms-primary) !important;
+    border-color: var(--pwsms-primary) !important;
+}
+.persian_woocommerce_sms input[type="checkbox"] + label {
+    vertical-align: middle;
+    margin-right: 8px;
+    cursor: pointer;
+    color: var(--pwsms-text-main);
+}
+
+.pwsms-about {
+    font-family: 'Vazirmatn', sans-serif;
+    padding: 20px 0;
+    max-width: 1200px;
+    margin: auto;
+    direction: rtl;
+}
+
+.pwsms-about .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border-radius: var(--pwsms-radius-lg);
+    padding: 30px;
+    margin-bottom: 30px;
+    transition: var(--pwsms-transition);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.pwsms-about .glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.pwsms-about .section-flex { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.pwsms-about .text-col { flex: 1 1 55%; padding: 15px; }
+.pwsms-about .img-col { flex: 1 1 40%; text-align: center; }
+.pwsms-about .img-col img { max-width: 100%; border-radius: var(--pwsms-radius-md); }
+
+.pwsms-about h1, .pwsms-about h2, .pwsms-about h3 { color: var(--pwsms-text-main); font-weight: 800; }
+.pwsms-about p { color: var(--pwsms-text-muted); line-height: 1.8; font-size: 14px; text-align: justify;}
+
+.pwsms-about ul { padding-right: 18px; margin: 15px 0; }
+.pwsms-about ul li { margin-bottom: 10px; color: var(--pwsms-text-main); font-size: 14px; }
+.pwsms-about ul li::marker { color: var(--pwsms-primary); }
+
+.pwsms-about a { color: var(--pwsms-primary); text-decoration: none; font-weight: 600; }
+.pwsms-about a:hover { color: var(--pwsms-primary-hover); text-decoration: underline; }
+
+/* Highlight Cards */
+.pwsms-about .highlight-card {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    padding: 30px;
+    border-radius: var(--pwsms-radius-md);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1);
+    margin: 0 auto;
+    width: 80%;
+    text-align: center;
+    border: 1px solid #fde68a;
+}
+.pwsms-about .highlight-card h3 { color: #d97706; }
+.pwsms-about .contact-card {
+    background: var(--pwsms-surface);
+    border-right: 4px solid var(--pwsms-primary);
+    padding: 25px;
+    margin-top: 40px;
+    border-radius: var(--pwsms-radius-md);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.pwsms-changelog__container {
+    max-width: 800px;
+    margin: 2rem auto;
+    direction: rtl;
+}
+
+.pwsms-changelog__container .changelog-version {
+    background: var(--pwsms-bg);
+    border-radius: var(--pwsms-radius-md);
+    padding: 25px;
+    margin-bottom: 20px;
+    border: 1px solid var(--pwsms-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: var(--pwsms-transition);
+}
+
+.pwsms-changelog__container .changelog-version:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+}
+
+.pwsms-changelog__container .changelog-title {
+    font-size: 1.2rem;
+    color: var(--pwsms-primary);
+    border-bottom: 1px dashed var(--pwsms-border);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.pwsms-changelog__container .changelog-list { list-style: none; padding: 0; margin: 0; }
+.pwsms-changelog__container .changelog-list li {
+    position: relative;
+    padding-right: 25px;
+    margin-bottom: 10px;
+    color: var(--pwsms-text-muted);
+    font-size: 14px;
+}
+.pwsms-changelog__container .changelog-list li::before {
+    content: '✓';
+    position: absolute;
+    right: 0;
+    color: #10b981; /* Green success */
+    font-weight: bold;
+    background: #d1fae5;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    top: 2px;
+}
+
+@media screen and (max-width: 768px) {
+    .persian_woocommerce_sms { padding: 15px; margin: 10px; }
+    .persian_woocommerce_sms .woo-nav-tab-wrapper { flex-direction: column; }
+    .persian_woocommerce_sms .nav-tab { text-align: center; width: 100%; box-sizing: border-box; }
+    .pwsms-about .section-flex { flex-direction: column; }
+    .pwsms-about .highlight-card { width: 100%; }
+}
+
+.persian_woocommerce_sms table.form-table th {
+    font-weight: 600 !important;
+    color: var(--text-color, #374151) !important;
+    padding: 24px 24px 24px 0 !important; /* راست‌چین شده */
+    vertical-align: top;
+}
+
+.persian_woocommerce_sms table.form-table td {
+    padding: 24px 15px;
+}
+
+.persian_woocommerce_sms table.form-table input[type="text"],
+.persian_woocommerce_sms table.form-table textarea {
+    width: 100%;
+    max-width: 450px;
+    padding: 10px 14px;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #1f2937;
+    font-family: inherit;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.persian_woocommerce_sms table.form-table input[type="text"]:focus,
+.persian_woocommerce_sms table.form-table textarea:focus {
+    background-color: #ffffff;
+    border-color: #3b82f6; /* رنگ آبی مدرن */
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.persian_woocommerce_sms table.form-table textarea {
+    min-height: 100px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.persian_woocommerce_sms table.form-table input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 6px; /* گوشه‌های کمی گرد */
+    background-color: #ffffff;
+    display: inline-block;
+    position: relative;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 10px; /* فاصله از متن */
+}
+
+.persian_woocommerce_sms table.form-table input[type="checkbox"]:hover {
+    border-color: #9ca3af;
+}
+
+.persian_woocommerce_sms table.form-table input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.persian_woocommerce_sms table.form-table input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.persian_woocommerce_sms table.form-table input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.persian_woocommerce_sms table.form-table fieldset label {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 12px;
+    margin-left: 20px;
+    font-size: 14px;
+    color: #4b5563;
+    cursor: pointer;
+}
+
+.shortcode-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px; 
+    margin-bottom: 12px;
+}
+
+.pwsms-shortcode-insert-button {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 3px 8px; 
+    font-size: 11px; 
+    font-family: Tahoma, sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.pwsms-shortcode-insert-button:hover {
+    background-color: #e5e7eb;
+    border-color: #9ca3af;
+    color: #1f2937;
+}
+
+.pwsms-shortcode-insert-button:active,
+.pwsms-shortcode-insert-button:focus {
+    outline: none;
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}

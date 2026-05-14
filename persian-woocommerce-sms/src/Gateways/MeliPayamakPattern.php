@@ -2,12 +2,10 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
 use SoapClient;
 use SoapFault;
 
-class MeliPayamakPattern implements GatewayInterface {
-	use GatewayTrait;
+class MeliPayamakPattern extends Gateway {
 
 	public const ERRORS = [
 		- 7 => 'خطایی در شماره فرستنده پیامک رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
@@ -23,15 +21,15 @@ class MeliPayamakPattern implements GatewayInterface {
 		7   => 'متن پیامک حاوی کلمه یا کلمات فیلتر شده است.',
 		10  => 'پنل اس ام اس کاربر فعال نمی‌باشد و یا پنل پیامک کاربر مسدود شده است.',
 		11  => 'ارسال نشده / شماره موبایل گیرنده در لیست سیاه پنل اس ام اس قرار دارد.',
-		12  => 'مدارک پنل اس ام اس کاربر کامل نمی‌باشد.'
+		12  => 'مدارک پنل اس ام اس کاربر کامل نمی‌باشد.',
 	];
 
-	public static function id() {
+	public static function id(): string {
 		return 'melipayamakpattern';
 	}
 
-	public static function name() {
-		return 'melipayamak.com خدماتی';
+	public static function name(): string {
+		return 'melipayamak.com - ملی پیامک خدماتی';
 	}
 
 	public function send() {
@@ -62,8 +60,8 @@ class MeliPayamakPattern implements GatewayInterface {
 						'username' => $username,
 						'password' => $password,
 						'text'     => reset( $textarray ),
-						'to'       => $to[$i],
-						'bodyId'   => $bodyid
+						'to'       => $to[ $i ],
+						'bodyId'   => $bodyid,
 					];
 					//استفاده از  متد SendByBaseNumber2 جایگزین SendByBaseNumber3
 					$sms_response = $client->SendByBaseNumber2( $parameters )->SendByBaseNumber2Result;

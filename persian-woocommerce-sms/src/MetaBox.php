@@ -2,8 +2,7 @@
 
 namespace PW\PWSMS;
 
-use PW\PWSMS\Subscribe\Contacts;
-use PWS_SMS;
+use PW\PWSMS\Subscription\Contacts;
 use WC_Order;
 
 defined( 'ABSPATH' ) || exit;
@@ -12,7 +11,6 @@ class MetaBox {
 
 	private $enable_metabox = false;
 	private $enable_notification = false;
-	private $enable_product_admin_sms = false;
 
 	public function __construct() {
 
@@ -20,11 +18,10 @@ class MetaBox {
 			return;
 		}
 
-		$this->enable_metabox           = PWSMS()->get_option( 'enable_metabox' );//سفارش - مشتری
-		$this->enable_notification      = PWSMS()->get_option( 'enable_notif_sms_main' );//خبرنامه
-		$this->enable_product_admin_sms = PWSMS()->get_option( 'enable_product_admin_sms' );//مدیر محصول
+		$this->enable_metabox      = PWSMS()->get_option( 'enable_metabox' );//سفارش - مشتری
+		$this->enable_notification = PWSMS()->get_option( 'enable_notif_sms_main' );//خبرنامه
 
-		if ( $this->enable_metabox || $this->enable_notification || $this->enable_product_admin_sms ) {
+		if ( $this->enable_metabox || $this->enable_notification ) {
 			add_action( 'add_meta_boxes', [ $this, 'send_sms_metabox' ] );
 			add_action( 'add_meta_boxes', [ $this, 'send_post_tracking_code_metabox' ] );
 
@@ -78,220 +75,35 @@ class MetaBox {
 
 		</style>
 		<?php
-		ob_start(); ?>
+		$post_tracking_urls = apply_filters( 'pwsms_post_tracking_urls', [
+			'https://tracking.post.ir/'     => 'شرکت ملی پست',
+			'https://tipaxco.com/tracking'  => 'تیپاکس',
+			'https://tracking.dekapost.ir/' => 'دکاپست',
+			'https://mahex.com/tracking'    => 'ماهکس',
+			'https://chaparnet.com/track/'  => 'چاپار',
+		] );
+
+		ob_start();
+
+		?>
+
 		<p>
 			<label for="select_group">ارائه دهنده خدمات پست</label><br>
 			<select name="select_group" class="wc-enhanced-select" id="select_group" style="width: 100%;">
-				<option value="https://tracking.post.ir/">شرکت ملی پست</option>
-				<option value="https://tipaxco.com/tracking">تیپاکس</option>
+				<?php foreach ( $post_tracking_urls as $url => $service_name ) : ?>
+					<option value="<?php echo esc_url( $url ); ?>">
+						<?php echo esc_html( $service_name ); ?>
+					</option>
+				<?php endforeach; ?>
 			</select>
 		</p>
 		<br>
+
 		<?php
 		$html_below = ob_get_clean();
 
 		$this->metabox_html( $order_id, 'shop_order', '<p>کد رهگیری</p>', $html_below );
 	}
-
-
-	public function send_sms_metabox() {
-
-		if ( $this->enable_metabox ) {
-			$screen = PWSMS()->is_wc_order_hpos_enabled() ? wc_get_page_screen_id( 'shop-order' ) : 'shop_order';
-
-
-			add_meta_box( 'send_sms_to_buyer', 'ارسال پیامک به مشتری', [
-				$this,
-				'order_metabox_html',
-			], [
-				'shop_order',
-				$screen,
-			], 'side', 'high' );
-
-		}
-
-		if ( $this->enable_notification || $this->enable_product_admin_sms ) {
-
-			add_meta_box( 'send_sms_to_buyer', 'ارسال پیامک به مشترکین این محصول', [
-				$this,
-				'product_metabox_html',
-			], 'product', 'side', 'high' );
-
-		}
-	}
-
-	public function send_sms_ajax_callback() {
-
-		check_ajax_referer( 'pwoosms_metabox', 'security' );
-
-		if ( empty( $_POST['post_id'] ) || empty( $_POST['post_type'] ) ) {
-			wp_send_json_error( [ 'message' => 'خطای ایجکس رخ داده است.' ] );
-		}
-
-		$message = sanitize_text_field( $_POST['message'] ?? '' );
-
-		switch ( $_POST['post_type'] ) {
-
-			case 'shop_order':
-				if ( isset( $_POST['group'] ) ) { // Tracking post code action
-					$this->order_post_tracking_metabox_result( intval( $_POST['post_id'] ), $message, sanitize_text_field( $_POST['group'] ?? '' ) );
-				} else { // Normal SMS sending
-					$this->order_metabox_result( intval( $_POST['post_id'] ), $message );
-				}
-				break;
-
-			case 'product':
-				$this->product_metabox_result( intval( $_POST['post_id'] ), $message, sanitize_text_field( $_POST['group'] ?? '' ) );
-				break;
-
-			default:
-				wp_send_json_error( [ 'message' => 'خطای ایجکس رخ داده است.' ] );
-		}
-	}
-
-	public function order_post_tracking_metabox_result( $order_id, $tracking_code, $group ) {
-		$order = wc_get_order( $order_id );
-
-		if ( ! PWSMS()->is_wc_order( $order ) ) {
-			return;
-		}
-
-		$mobile  = PWSMS()->buyer_mobile( $order_id );
-		$message = PWSMS()->get_option( 'sms_body_set-post-tracking-code' );
-
-		$data = [
-			'post_id' => $order_id,
-			'type'    => 3,
-			'mobile'  => $mobile,
-			'message' => PWSMS()->replace_short_codes( $message, 'set-post-tracking-code', $order, [ 'post_tracking_code' => $tracking_code, 'post_tracking_url' => $group ] ),
-		];
-
-		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
-
-			$order->add_order_note( sprintf( 'پیامک با موفقیت به مشتری با شماره موبایل %s ارسال شد.<br>متن پیامک: %s', $mobile, $message ) );
-			wp_send_json_success( [
-				'message'    => 'پیامک با موفقیت ارسال شد.',
-				'order_note' => PWSMS()->order_note_metabox( $order ),
-			] );
-
-		} else {
-
-			$order->add_order_note( sprintf( 'پیامک به مشتری با شماره موبایل %s ارسال نشد.<br>متن پیامک: %s<br>پاسخ وبسرویس: %s', $mobile, $message, $result ) );
-			wp_send_json_error( [
-				'message'    => sprintf( 'ارسال پیامک با خطا مواجه شد. %s', $result ),
-				'order_note' => PWSMS()->order_note_metabox( $order ),
-			] );
-
-		}
-	}
-
-	public function order_metabox_result( $order_id, $message ) {
-
-		$order = wc_get_order( $order_id );
-
-		if ( ! PWSMS()->is_wc_order( $order ) ) {
-			return;
-		}
-
-		$mobile = PWSMS()->buyer_mobile( $order_id );
-
-		$data = [
-			'post_id' => $order_id,
-			'type'    => 3,
-			'mobile'  => $mobile,
-			'message' => $message,
-		];
-
-		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
-
-			$order->add_order_note( sprintf( 'پیامک با موفقیت به مشتری با شماره موبایل %s ارسال شد.<br>متن پیامک: %s', $mobile, $message ) );
-			wp_send_json_success( [
-				'message'    => 'پیامک با موفقیت ارسال شد.',
-				'order_note' => PWSMS()->order_note_metabox( $order ),
-			] );
-
-		} else {
-
-			$order->add_order_note( sprintf( 'پیامک به مشتری با شماره موبایل %s ارسال نشد.<br>متن پیامک: %s<br>پاسخ وبسرویس: %s', $mobile, $message, $result ) );
-			wp_send_json_error( [
-				'message'    => sprintf( 'ارسال پیامک با خطا مواجه شد. %s', $result ),
-				'order_note' => PWSMS()->order_note_metabox( $order ),
-			] );
-
-		}
-	}
-
-	/*سفارش*/
-
-	public function product_metabox_result( int $product_id, string $message, string $group ) {
-
-		if ( empty( $group ) ) {
-			wp_send_json_error( [ 'message' => 'یک گروه برای دریافت پیامک انتخاب کنید.' ] );
-		}
-
-		if ( $group == '_product_admins' ) {
-			$type    = 6;
-			$mobiles = array_keys( PWSMS()->product_admin_mobiles( $product_id ) );
-		} else {
-
-			switch ( $group ) {
-
-				case '_onsale'://حراج
-					$type = 10;
-					break;
-
-				case '_in'://موجود شدن
-					$type = 12;
-					break;
-
-				case '_low'://کم بودن موجودی
-					$type = 14;
-					break;
-
-				default:
-					$type = 15;
-			}
-
-			$mobiles = Contacts::get_contacts_mobile( $product_id, $group );
-		}
-
-		$data = [
-			'post_id' => $product_id,
-			'type'    => $type,
-			'mobile'  => $mobiles,
-			'message' => $message,
-		];
-
-		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
-			wp_send_json_success( [
-				'message' => sprintf( 'پیامک با موفقیت به %s شماره موبایل ارسال شد.', count( $mobiles ) )
-			] );
-		} else {
-			wp_send_json_error( [ 'message' => sprintf( 'ارسال پیامک با خطا مواجه شد. %s', $result ) ] );
-		}
-	}
-
-	public function order_metabox_html( $post_or_order_object ) {
-		$order_id = $post_or_order_object instanceof WC_Order ? $post_or_order_object->get_id() : $post_or_order_object->ID;
-
-		$mobile = PWSMS()->buyer_mobile( $order_id );
-
-		if ( empty( $mobile ) ) {
-			echo '<p>شماره ای برای ارسال پیامک وجود ندارد.</p>';
-
-			return;
-		}
-
-		if ( ! PWSMS()->validate_mobile( $mobile ) ) {
-			echo '<p>شماره موبایل مشتری معتبر نیست.</p>';
-
-			return;
-		}
-
-		$this->metabox_html( $order_id, 'shop_order', sprintf( '<p>ارسال پیامک به شماره %s</p>', $mobile ) );
-	}
-
-	/*محصول*/
 
 	private function metabox_html( int $post_id, $post_type, $html_above = '', $html_below = '' ) { ?>
 
@@ -329,7 +141,7 @@ class MetaBox {
 		</div>
 
 		<div class="pwoosms_loading">
-			<img src="<?php echo PWSMS_URL . '/assets/images/ajax-loader.gif'; ?>">
+			<img src="<?php echo esc_url( PWSMS_URL . '/assets/images/ajax-loader.gif' ); ?>">
 		</div>
 
 		<style type="text/css">
@@ -378,7 +190,7 @@ class MetaBox {
 		</style>
 
 		<script type="text/javascript">
-
+            // TODO : Convert to rest
             jQuery(document).ready(function ($) {
                 $('.pwoosms_submit').unbind().click(function (e) {
                     e.preventDefault();
@@ -418,31 +230,238 @@ class MetaBox {
 		<?php
 	}
 
+	public function send_sms_metabox() {
+
+		if ( $this->enable_metabox ) {
+			$screen = PWSMS()->is_wc_order_hpos_enabled() ? wc_get_page_screen_id( 'shop-order' ) : 'shop_order';
+
+
+			add_meta_box( 'send_sms_to_buyer', 'ارسال پیامک به مشتری', [
+				$this,
+				'order_metabox_html',
+			], [
+				'shop_order',
+				$screen,
+			], 'side', 'high' );
+
+		}
+
+		if ( $this->enable_notification ) {
+
+			add_meta_box( 'send_sms_to_buyer', 'ارسال پیامک به مشترکین این محصول', [
+				$this,
+				'product_metabox_html',
+			], 'product', 'side', 'high' );
+
+		}
+	}
+
+	public function send_sms_ajax_callback() {
+
+		check_ajax_referer( 'pwoosms_metabox', 'security' );
+
+		if ( empty( $_POST['post_id'] ) || empty( $_POST['post_type'] ) ) {
+			wp_send_json_error( [ 'message' => 'خطای ایجکس رخ داده است.' ] );
+		}
+		// sanitizing message in here would remove special unicode chars in a hypothetical URL
+		$message = trim( wp_strip_all_tags( $_POST['message'] ?? '' ) );
+
+		switch ( $_POST['post_type'] ) {
+
+			case 'shop_order':
+				if ( isset( $_POST['group'] ) ) { // Tracking post code action
+					$this->order_post_tracking_metabox_result( intval( $_POST['post_id'] ), $message, sanitize_text_field( $_POST['group'] ?? '' ) );
+				} else { // Normal SMS sending
+					$this->order_metabox_result( intval( $_POST['post_id'] ), $message );
+				}
+				break;
+
+			case 'product':
+				$this->product_metabox_result( intval( $_POST['post_id'] ), $message, sanitize_text_field( $_POST['group'] ?? '' ) );
+				break;
+
+			default:
+				wp_send_json_error( [ 'message' => 'خطای ایجکس رخ داده است.' ] );
+		}
+	}
+
+	public function order_post_tracking_metabox_result( $order_id, $tracking_code, $group ) {
+		$order = wc_get_order( $order_id );
+
+		if ( ! PWSMS()->is_wc_order( $order ) ) {
+			return;
+		}
+
+		$mobile  = PWSMS()->buyer_mobile( $order_id );
+		$message = PWSMS()->get_option( 'sms_body_set-post-tracking-code' );
+		$message = PWSMS()->replace_short_codes( $message, 'set-post-tracking-code', $order, [
+			'post_tracking_code' => $tracking_code,
+			'post_tracking_url'  => $group,
+		] );
+
+		$data = [
+			'post_id' => $order_id,
+			'type'    => 3,
+			'mobile'  => $mobile,
+			'message' => $message,
+		];
+
+		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+
+			$order->add_order_note( sprintf( 'پیامک با موفقیت به مشتری با شماره موبایل %s ارسال شد.<br>متن پیامک: %s', $mobile, $message ) );
+			wp_send_json_success( [
+				'message'    => 'پیامک با موفقیت ارسال شد.',
+				'order_note' => PWSMS()->order_note_metabox( $order ),
+			] );
+
+		} else {
+
+			$order->add_order_note( sprintf( 'ارسال پیامک به مشتری با شماره %s با خطا مواجه شد.<br>متن پیامک: %s<br>پاسخ وبسرویس: %s', $mobile, $message, $result ) );
+			wp_send_json_error( [
+				'message'    => sprintf( 'ارسال پیامک با خطا مواجه شد. %s', $result ),
+				'order_note' => PWSMS()->order_note_metabox( $order ),
+			] );
+
+		}
+	}
+
+	/*سفارش*/
+
+	public function order_metabox_result( $order_id, $message ) {
+
+		$order = wc_get_order( $order_id );
+
+		if ( ! PWSMS()->is_wc_order( $order ) ) {
+			return;
+		}
+
+		$mobile = PWSMS()->buyer_mobile( $order_id );
+
+		$data = [
+			'post_id' => $order_id,
+			'type'    => 3,
+			'mobile'  => $mobile,
+			'message' => $message,
+		];
+
+		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+
+			$order->add_order_note( sprintf( 'پیامک با موفقیت به مشتری با شماره موبایل %s ارسال شد.<br>متن پیامک: %s', $mobile, $message ) );
+			wp_send_json_success( [
+				'message'    => 'پیامک با موفقیت ارسال شد.',
+				'order_note' => PWSMS()->order_note_metabox( $order ),
+			] );
+
+		} else {
+
+			$order->add_order_note( sprintf( 'ارسال پیامک به مشتری با شماره %s با خطا مواجه شد.<br>متن پیامک: %s<br>پاسخ وبسرویس: %s', $mobile, $message, $result ) );
+			wp_send_json_error( [
+				'message'    => sprintf( 'ارسال پیامک با خطا مواجه شد. %s', $result ),
+				'order_note' => PWSMS()->order_note_metabox( $order ),
+			] );
+
+		}
+	}
+
+	public function product_metabox_result( int $product_id, string $message, string $group ) {
+
+		if ( empty( $group ) ) {
+			wp_send_json_error( [ 'message' => 'یک گروه برای دریافت پیامک انتخاب کنید.' ] );
+		}
+
+		if ( $group == '_product_admins' ) {
+			$type    = 6;
+			$mobiles = array_keys( PWSMS()->product_admin_mobiles( $product_id ) );
+		} else {
+
+			switch ( $group ) {
+
+				case '_onsale'://حراج
+					$type = 10;
+					break;
+
+				case '_in'://موجود شدن
+					$type = 12;
+					break;
+
+				case '_low'://کم بودن موجودی
+					$type = 14;
+					break;
+
+				default:
+					$type = 15;
+			}
+
+			$mobiles = Contacts::get_contacts_mobile( $product_id, $group );
+		}
+
+		$data = [
+			'post_id' => $product_id,
+			'type'    => $type,
+			'mobile'  => $mobiles,
+			'message' => $message,
+		];
+
+		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+			wp_send_json_success( [
+				'message' => sprintf( 'پیامک با موفقیت به %s شماره موبایل ارسال شد.', count( $mobiles ) ),
+			] );
+		} else {
+			wp_send_json_error( [ 'message' => sprintf( 'ارسال پیامک با خطا مواجه شد. %s', $result ) ] );
+		}
+	}
+
+	/*محصول*/
+
+	public function order_metabox_html( $post_or_order_object ) {
+		$order_id = $post_or_order_object instanceof WC_Order ? $post_or_order_object->get_id() : $post_or_order_object->ID;
+
+		$mobile = PWSMS()->buyer_mobile( $order_id );
+
+		if ( empty( $mobile ) ) {
+			echo '<p>شماره ای برای ارسال پیامک وجود ندارد.</p>';
+
+			return;
+		}
+
+		if ( ! PWSMS()->validate_mobile( $mobile ) ) {
+			echo '<p>شماره موبایل مشتری معتبر نیست.</p>';
+
+			return;
+		}
+
+		$this->metabox_html( $order_id, 'shop_order', sprintf( '<p>ارسال پیامک به شماره %s</p>', $mobile ) );
+	}
+
 	public function product_metabox_html( $post ) {
 
 		$product_id = $post->ID;
 
-		ob_start(); ?>
+		ob_start();
+		?>
+
 		<p>
 			<label for="select_group">ارسال پیامک به:</label><br>
-			<select name="select_group" class="wc-enhanced-select regular-input" id="select_group" style="width: 100% !important;">
+			<select name="select_group" class="wc-enhanced-select regular-input" id="select_group"
+			        style="width: 100% !important;">
 
-				<?php if ( $this->enable_product_admin_sms ) { ?>
-					<option value="_product_admins">به مدیران این محصول</option>
-				<?php }
+
+				<option value="_product_admins">به مدیران این محصول</option>
+				<?php
 
 				if ( $this->enable_notification ) {
-
 					$groups = Contacts::get_groups( $product_id, false, true );
-
-					if ( ! empty( $groups ) ) { ?>
+					if ( ! empty( $groups ) ) : ?>
 						<optgroup label="به مشترکین گروه های زیر:">
-							<?php foreach ( $groups as $code => $text ) { ?>
-								<option
-									value="<?php echo esc_attr( $code ); ?>"><?php echo esc_attr( $text ); ?></option>
-							<?php } ?>
+							<?php
+							foreach ( $groups as $code => $text ) :
+								?>
+								<option value="<?php echo esc_attr( $code ); ?>">
+									<?php echo esc_attr( $text ); ?>
+								</option>
+							<?php endforeach; ?>
 						</optgroup>
-					<?php }
+					<?php endif;
 				}
 				?>
 

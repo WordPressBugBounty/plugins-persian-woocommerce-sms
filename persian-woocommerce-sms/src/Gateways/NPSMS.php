@@ -2,19 +2,14 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
+class NPSMS extends Gateway {
 
-class NPSMS implements GatewayInterface {
-	use GatewayTrait;
-
-	public static function id() {
+	public static function id(): string {
 		return 'npsms';
 	}
 
-	public static function name() {
-		return 'npsms.com';
+	public static function name(): string {
+		return 'NPSMS.com - نوین پرداز';
 	}
 
 	public function send() {

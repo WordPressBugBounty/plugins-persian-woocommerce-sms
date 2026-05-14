@@ -3,54 +3,52 @@
 namespace PW\PWSMS\Gateways;
 
 
-use PW\PWSMS\PWSMS;
 use SoapClient;
 use SoapFault;
 
-class TJPIR implements GatewayInterface {
-    use GatewayTrait;
+class TJPIR extends Gateway {
 
-    public static function id() {
-        return 'tjp';
-    }
+	public static function id(): string {
+		return 'tjp';
+	}
 
-    public static function name() {
-        return 'TJP.ir';
-    }
+	public static function name(): string {
+		return 'TJP.ir';
+	}
 
-    public function send() {
+	public function send() {
 
-        $username = $this->username;
-        $password = $this->password;
+		$username = $this->username;
+		$password = $this->password;
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        //$from     = $this->senderNumber;
-        $to      = $this->mobile;
-        $massage = $this->message;
+		//$from     = $this->senderNumber;
+		$to      = $this->mobile;
+		$massage = $this->message;
 
-        try {
+		try {
 
-            $client = new SoapClient( 'http://sms-login.tjp.ir/webservice/?WSDL', [
-                'login'    => $username,
-                'password' => $password,
-            ] );
+			$client = new SoapClient( 'http://sms-login.tjp.ir/webservice/?WSDL', [
+				'login'    => $username,
+				'password' => $password,
+			] );
 
-            $client->sendToMany( $to, $massage );
+			$client->sendToMany( $to, $massage );
 
-        } catch ( SoapFault $sf ) {
-            $sms_response = $sf->getMessage();
-        }
+		} catch ( SoapFault $sf ) {
+			$sms_response = $sf->getMessage();
+		}
 
-        if ( empty( $sms_response ) ) {
-            return true; // Success
-        } else {
-            $response = $sms_response;
-        }
+		if ( empty( $sms_response ) ) {
+			return true; // Success
+		} else {
+			$response = $sms_response;
+		}
 
-        return $response;
-    }
+		return $response;
+	}
 
 }

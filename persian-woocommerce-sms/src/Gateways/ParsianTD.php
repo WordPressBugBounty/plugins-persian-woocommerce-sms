@@ -2,57 +2,52 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
+class ParsianTD extends Gateway {
 
-class ParsianTD implements GatewayInterface {
-    use GatewayTrait;
+	public static function id(): string {
+		return 'parsiantd';
+	}
 
-    public static function id() {
-        return 'parsiantd';
-    }
+	public static function name(): string {
+		return 'sms.parsiantd.com';
+	}
 
-    public static function name() {
-        return 'sms.parsiantd.com';
-    }
+	public function send() {
+		$username  = $this->username;
+		$password  = $this->password;
+		$from      = $this->senderNumber;
+		$recievers = $this->mobile;
+		$massage   = $this->message;
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-    public function send() {
-        $username  = $this->username;
-        $password  = $this->password;
-        $from      = $this->senderNumber;
-        $recievers = $this->mobile;
-        $massage   = $this->message;
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		$errors = [];
 
-        $errors = [];
+		foreach ( (array) $recievers as $to ) {
 
-        foreach ( (array) $recievers as $to ) {
+			$content = 'http://sms.parsiantd.com/Api-Services/sms_sender_url.php?' .
+			           '&username=' . rawurlencode( $username ) .
+			           '&password=' . rawurlencode( $password ) .
+			           '&from=' . rawurlencode( $from ) .
+			           '&to=' . rawurlencode( $to ) .
+			           '&text=' . $massage;
 
-            $content = 'http://sms.parsiantd.com/Api-Services/sms_sender_url.php?' .
-                       '&username=' . rawurlencode( $username ) .
-                       '&password=' . rawurlencode( $password ) .
-                       '&from=' . rawurlencode( $from ) .
-                       '&to=' . rawurlencode( $to ) .
-                       '&text=' . $massage;
+			$remote = wp_remote_get( $content );
 
-            $remote = wp_remote_get( $content );
+			$sms_response = intval( wp_remote_retrieve_body( $remote ) );
 
-            $sms_response = intval( wp_remote_retrieve_body( $remote ) );
+			if ( $sms_response < 12 ) {
+				$errors[ $to ] = $sms_response;
+			}
+		}
 
-            if ( $sms_response < 12 ) {
-                $errors[ $to ] = $sms_response;
-            }
-        }
+		if ( empty( $errors ) ) {
+			return true; // Success
+		} else {
+			$response = $errors;
+		}
 
-        if ( empty( $errors ) ) {
-            return true; // Success
-        } else {
-            $response = $errors;
-        }
-
-        return $response;
-    }
+		return $response;
+	}
 }

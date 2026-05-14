@@ -2,19 +2,14 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
+class NHOne extends Gateway {
 
-class NHOne implements GatewayInterface {
-	use GatewayTrait;
-
-	public static function id() {
+	public static function id(): string {
 		return 'nh1ir';
 	}
 
-	public static function name() {
-		return 'nh1.ir';
+	public static function name(): string {
+		return 'NH1.ir - نوین همراه';
 	}
 
 	public function send() {
@@ -36,7 +31,7 @@ class NHOne implements GatewayInterface {
 			'Text'     => $massage,
 			'From'     => $from,
 		];
-		
+
 		$remote = wp_remote_get( 'http://ws.nh1.ir/Api/SMS/Send?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );

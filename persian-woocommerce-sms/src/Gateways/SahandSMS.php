@@ -2,39 +2,34 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
+class SahandSMS extends Gateway {
 
-class SahandSMS implements GatewayInterface {
-    use GatewayTrait;
+	public static function id(): string {
+		return 'sahandsms';
+	}
 
-    public static function id() {
-        return 'sahandsms';
-    }
+	public static function name(): string {
+		return 'SahandSMS.com - سهند اس ام اس';
+	}
 
-    public static function name() {
-        return 'sahandsms.com';
-    }
+	public function send() {
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
+		$to       = $this->mobile;
+		$massage  = $this->message;
 
-    public function send() {
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
-        $to       = $this->mobile;
-        $massage  = $this->message;
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		$to = implode( '-', $to );
+		$to = str_ireplace( '+98', '0', $to );
 
-        $to = implode( '-', $to );
-        $to = str_ireplace( '+98', '0', $to );
+		$url = 'http://webservice.sahandsms.com/NewSMSWebService.asmx/SendFromUrl?username=' . $username . '&password=' . $password . '&fromNumber=' . $from . '&toNumber=' . $to . '&message=' . urlencode( trim( $massage ) );
 
-        $url = 'http://webservice.sahandsms.com/NewSMSWebService.asmx/SendFromUrl?username=' . $username . '&password=' . $password . '&fromNumber=' . $from . '&toNumber=' . $to . '&message=' . urlencode( trim( $massage ) );
+		wp_remote_get( $url );
 
-        wp_remote_get( $url );
-
-        return true;
-    }
+		return true;
+	}
 }

@@ -2,50 +2,45 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
+class TSMS extends Gateway {
 
-class TSMS implements GatewayInterface {
-    use GatewayTrait;
+	public static function id(): string {
+		return 'TSMS';
+	}
 
-    public static function id() {
-        return 'TSMS';
-    }
+	public static function name(): string {
+		return 'TSMS.ir - طوبی اس ام اس';
+	}
 
-    public static function name() {
-        return 'tsms.ir';
-    }
+	public function send() {
 
-    public function send() {
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
+		$massage  = $this->message;
 
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
-        $massage  = $this->message;
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		$to = implode( ',', $this->mobile );
 
-        $to = implode( ',', $this->mobile );
+		$data = [
+			'from'     => rawurlencode( $from ),
+			'to'       => rawurlencode( $to ),
+			'username' => rawurlencode( $username ),
+			'password' => rawurlencode( $password ),
+			'message'  => $massage,
+		];
 
-        $data = [
-            'from'     => rawurlencode( $from ),
-            'to'       => rawurlencode( $to ),
-            'username' => rawurlencode( $username ),
-            'password' => rawurlencode( $password ),
-            'message'  => $massage,
-        ];
+		$remote = wp_remote_get( 'http://tsms.ir/url/tsmshttp.php?' . http_build_query( $data ) );
 
-        $remote = wp_remote_get( 'http://tsms.ir/url/tsmshttp.php?' . http_build_query( $data ) );
+		$response = wp_remote_retrieve_body( $remote );
 
-        $response = wp_remote_retrieve_body( $remote );
+		if ( strtolower( $response ) > '20' ) {
+			return true; // Success
+		}
 
-        if ( strtolower( $response ) > '20' ) {
-            return true; // Success
-        }
-
-        return $response;
-    }
+		return $response;
+	}
 }

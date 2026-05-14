@@ -4,6 +4,9 @@ namespace PW\PWSMS\SMS;
 
 
 use Automattic\WooCommerce\Utilities\OrderUtil;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
 use WP_List_Table;
 
 class ListTable extends WP_List_Table {
@@ -25,6 +28,7 @@ class ListTable extends WP_List_Table {
 	public function column_default( $item, $column_name ): string {
 
 		$align = is_rtl() ? 'right' : 'left';
+
 		switch ( $column_name ) {
 
 			case 'sender':
@@ -36,7 +40,7 @@ class ListTable extends WP_List_Table {
 					return nl2br( $item[ $column_name ] );
 				}
 
-				return print_r( $item[ $column_name ], true );
+				return print_r( $item[ $column_name ], true ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		}
 	}
 
@@ -97,7 +101,7 @@ class ListTable extends WP_List_Table {
 	}
 
 	public function column_type( $item ) {
-
+		// TODO: Maybe types should be unique for each sending situation. like RSS can start with 10 : 101, 102,...
 		if ( empty( $item['type'] ) ) {
 			return '-';
 		}
@@ -160,6 +164,11 @@ class ListTable extends WP_List_Table {
 			/*--*/ case '15':
 			$value = 'خبرنامه - گزینه های دلخواه - دستی';
 			break;
+
+			/*Delayed product sms*/
+			/*case '16' :
+				$value = 'خبرنامه - پیامک زمان‌دار محصول - اتوماتیک';
+				break;*/
 
 			default:
 				$value = '';
@@ -246,9 +255,7 @@ class ListTable extends WP_List_Table {
 
 		if ( 'delete' === $action ) {
 
-			if ( ! wp_verify_nonce( $_REQUEST['_wpnonce'] ?? null, 'pwoosms_delete_archive' ) ) {
-				wp_die( 'خطایی رخ داده است. بعدا تلاش کنید.' );
-			}
+			check_admin_referer( 'pwoosms_delete_archive' );
 
 			$this->delete_item( intval( $_REQUEST['item'] ?? 0 ) );
 
@@ -271,73 +278,84 @@ class ListTable extends WP_List_Table {
 	}
 
 	public function delete_item( int $id ) {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
 		$wpdb->delete( self::table(), [ 'id' => $id ] );
 	}
 
 	public static function table(): string {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
 		return $wpdb->prefix . self::$table;
 	}
 
 	protected function fetch_data( $per_page = 20, $offset = 0 ) {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
 		$orderby = ! empty( $_GET['orderby'] ) ? sanitize_key( $_GET['orderby'] ) : 'date';
 		$order   = ! empty( $_GET['order'] ) ? sanitize_key( $_GET['order'] ) : 'desc';
 
 		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}woocommerce_ir_sms_archive ORDER BY $orderby $order LIMIT %d OFFSET %d", $per_page, $offset );
 
-		$data = $wpdb->get_results( $query, ARRAY_A );
-
-		return $data;
+		return $wpdb->get_results( $query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/*--------------------------------------------*/
 
 	public function record_count(): int {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
 		if ( ! $this->table_exists() ) {
 			return 0;
 		}
 
-		return $wpdb->get_var( $this->get_query( true ) );
+		return $wpdb->get_var( $this->get_query( true ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	private function table_exists() {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
-		$wild   = '%';
-		$like   = $wild . $wpdb->esc_like( self::table() ) . $wild;
+		$like   = '%' . $wpdb->esc_like( self::table() ) . '%';
 		$result = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES  LIKE %s", $like ) );
 
 		return ! is_null( $result ) ? 1 : 0;
 	}
 
 	private function get_query( $count = false ) {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
 		$select = $count ? 'count(*)' : '*';
 
 		$sql = sprintf( "SELECT %s FROM %s", $select, self::table() );
 
 		if ( isset( $_POST['s'] ) ) {
-			$s   = ltrim( sanitize_text_field( $_REQUEST['s'] ), '0' );
+			$s   = ltrim( sanitize_text_field( $_POST['s'] ), '0' );
 			$sql .= $wpdb->prepare( " WHERE (`message` LIKE %s OR `reciever` LIKE %s  OR `sender` LIKE %s)", '%' . $wpdb->esc_like( $s ) . '%', '%' . $wpdb->esc_like( $s ) . '%', '%' . $wpdb->esc_like( $s ) . '%' );
 
 		}
 
-		if ( ! empty( $_REQUEST['id'] ) ) {
-			$post_id = array_map( 'intval', is_array( $_REQUEST['id'] ) ? $_REQUEST['id'] : explode( ',', (string) $_REQUEST['id'] ) );
+		if ( ! empty( $_GET['id'] ) ) {
+			$post_id = array_map( 'intval', is_array( $_GET['id'] ) ? $_GET['id'] : explode( ',', (string) $_GET['id'] ) );
 			$sql     .= ( isset( $s ) ? ' AND' : ' WHERE' ) . ' (`post_id` IN (' . implode( ',', is_array( $post_id ) ? $post_id : [ $post_id ] ) . '))';
+		}
+
+		// Filter by phone or phones to show specific user archive
+		if ( ! empty( $_GET['phone'] ) ) {
+			$phone = sanitize_text_field( $_GET['phone'] );
+			$like  = '%' . $wpdb->esc_like( $phone ) . '%';
+			$sql   .= ( isset( $s ) || ! empty( $_GET['id'] ) ? ' AND' : ' WHERE' ) . $wpdb->prepare( ' `reciever` LIKE %s', $like );
+		} elseif ( ! empty( $_GET['phones'] ) ) {
+			$phones = explode( ',', sanitize_text_field( $_GET['phones'] ) );
+			$likes  = array_map( function ( $phone ) use ( $wpdb ) {
+				return $wpdb->prepare( '`reciever` LIKE %s', '%' . $wpdb->esc_like( sanitize_text_field( $phone ) ) . '%' );
+			}, $phones );
+
+			$sql .= ( isset( $s ) || ! empty( $_GET['id'] ) ? ' AND' : ' WHERE' ) . ' (' . implode( ' OR ', $likes ) . ')';
 		}
 
 		if ( ! empty( $_GET['orderby'] ) ) {
 			$sql .= $wpdb->prepare( ' ORDER BY %s', sanitize_key( $_GET['orderby'] ) );
-			$sql .= $_REQUEST['order'] == 'DESC' ? ' DESC' : ' ASC';
+			$sql .= $_GET['order'] == 'DESC' ? ' DESC' : ' ASC';
 		} else {
 			$sql .= ' ORDER BY id DESC';
 		}
@@ -346,7 +364,7 @@ class ListTable extends WP_List_Table {
 	}
 
 	public function get_items( int $per_page = 20, int $page_number = 1 ) {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
 		if ( ! $this->table_exists() ) {
 			return [];
@@ -355,7 +373,7 @@ class ListTable extends WP_List_Table {
 		$query = $this->get_query();
 		$query .= $wpdb->prepare( " LIMIT %d, %d ", ( $page_number - 1 ) * $per_page, $per_page );
 
-		return $wpdb->get_results( $query, 'ARRAY_A' );
+		return $wpdb->get_results( $query, 'ARRAY_A' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	public function get_bulk_actions(): array {
@@ -368,26 +386,23 @@ class ListTable extends WP_List_Table {
 	public function render_export_csv(): void {
 
 		?>
-        <div style="margin-block-end: 10px;">
-            <input type="submit" name="export_csv" class="button button-primary" value="<?php esc_attr_e( 'برون بری همه' ); ?>"/>
-        </div>
+		<div style="margin-block-end: 10px;">
+			<input type="submit" name="export_csv" class="button button-primary" value="<?php echo esc_attr( 'برون بری همه' ); ?>"/>
+		</div>
 		<?php
 	}
 
 	public function render_period_delete(): void {
 		?>
-        <div>
-            <select name="delete_period">
-                <option value="">انتخاب بازه زمانی</option>
-                <option value="last_week">هفته گذشته</option>
-                <option value="last_month">ماه گذشته</option>
-                <option value="last_three_months">سه ماه گذشته</option>
-                <option value="last_six_months">شش ماه گذشته</option>
-                <option value="last_year">سال گذشته</option>
-                <option value="everything_before_today">همه به جز امروز</option>
-            </select>
-            <input type="submit" name="delete_records" class="button action" value="حذف">
-        </div>
+		<div>
+			<select name="delete_period">
+				<option value="">انتخاب بازه زمانی</option>
+				<option value="last_month">قبل از ماه اخیر</option>
+				<option value="last_three_months">قبل از سه ماه اخیر</option>
+				<option value="last_year">قبل از سال اخیر</option>
+			</select>
+			<input type="submit" name="delete_records" class="button action" value="حذف">
+		</div>
 		<?php
 	}
 
@@ -396,9 +411,6 @@ class ListTable extends WP_List_Table {
 		if ( ! isset( $_POST['export_csv'] ) || ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-
-		// Prepare CSV file
-		ob_clean(); // Clean the output buffer
 
 		// Fetch only the items for the current page
 		$current_page = $this->get_pagenum();
@@ -417,42 +429,77 @@ class ListTable extends WP_List_Table {
 			return;
 		}
 
-		$file_name = 'PWSMS-sms-archive-export-' . date( 'Y-m-d' ) . '.csv';
-		header( 'Content-Type: text/csv; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename=' . $file_name );
+		$file_name = 'PWSMS-sms-archive-export-' . gmdate( 'Y-m-d' ) . '.csv';
 
-		$output = fopen( 'php://output', 'w' );
+		$spreadsheet = new Spreadsheet();
+		$spreadsheet->getProperties()->setCreator( get_current_user() )
+		            ->setTitle( $file_name );
 
-		// Output the column headings
-		fputcsv( $output, [ 'Product', 'Receiver', 'Message', 'Type', 'Sender', 'Result', 'Date' ] );
+		try {
+			$spreadsheet->setActiveSheetIndex( 0 )
+			            ->setCellValue( 'A1', 'Order ID' )
+			            ->setCellValue( 'B1', 'Receiver' )
+			            ->setCellValue( 'C1', 'Message' )
+			            ->setCellValue( 'D1', 'Type' )
+			            ->setCellValue( 'E1', 'Sender' )
+			            ->setCellValue( 'F1', 'Result' )
+			            ->setCellValue( 'G1', 'Date' );
+		} catch ( \Exception $e ) {
+			return $e->getMessage();
+		}
 
-		// Output the grouped data
+		$export_data = [];
+
 		foreach ( $data as $row ) {
-			fputcsv( $output, [
+
+			$date          = date_i18n( 'Y/m/d-H:i', strtotime( $row['date'] ) );
+			$type          = $this->column_type( $row );
+			$export_data[] = [
 				$row['post_id'],
 				$row['reciever'],
 				$row['message'],
-				$row['type'],
+				$type,
 				$row['sender'],
 				$row['result'],
-				$row['date']
-			] );
+				$date
+			];
+
+			$spreadsheet->getActiveSheet()->fromArray( $export_data, null, 'A2' );
+
 		}
 
-		fclose( $output );
+		ob_clean();
+
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=' . $file_name );
+		header( 'Cache-Control: max-age=0' );
+		header( 'Cache-Control: max-age=1' );
+		header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s' ) . ' GMT' );
+		header( 'Cache-Control: cache, must-revalidate' );
+		header( 'Pragma: public' );
+
+		try {
+			$writer = IOFactory::createWriter( $spreadsheet, 'Csv' );
+			$writer->save( 'php://output' );
+		} catch ( Exception $e ) {
+			return $e->getMessage();
+		}
+
 		exit;
 	}
 
 	protected function get_total_items() {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
-		$query = "SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_ir_sms_archive";
+		$sql   = "SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_ir_sms_archive";
+		$query = $wpdb->prepare( $sql );
 
 		return $wpdb->get_var( $query );
 	}
 
 	public function delete_records_by_period( $period ) {
-		$wpdb         = $GLOBALS['wpdb'];
+		global $wpdb;
+
 		$table_name   = $wpdb->prefix . 'woocommerce_ir_sms_archive';
 		$date_column  = 'date';
 		$current_date = current_time( 'mysql' );
@@ -460,25 +507,26 @@ class ListTable extends WP_List_Table {
 		$date_threshold = $this->get_date_threshold( $period, $current_date );
 
 		if ( $date_threshold ) {
-			$wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE $date_column <= %s", $date_threshold ) );
+			$table_name  = esc_sql( $table_name );
+			$date_column = esc_sql( $date_column );
+
+			$sql = $wpdb->prepare(
+				"DELETE FROM $table_name WHERE $date_column <= %s",
+				$date_threshold
+			);
+			$wpdb->query( $sql );
 		}
 
 	}
 
 	private function get_date_threshold( $period, $current_date ) {
 		switch ( $period ) {
-			case 'last_week':
-				return date( 'Y-m-d H:i:s', strtotime( '-1 week', strtotime( $current_date ) ) );
 			case 'last_month':
 				return date( 'Y-m-d H:i:s', strtotime( '-1 month', strtotime( $current_date ) ) );
 			case 'last_three_months':
 				return date( 'Y-m-d H:i:s', strtotime( '-3 months', strtotime( $current_date ) ) );
-			case 'last_six_months':
-				return date( 'Y-m-d H:i:s', strtotime( '-6 months', strtotime( $current_date ) ) );
 			case 'last_year':
 				return date( 'Y-m-d H:i:s', strtotime( '-1 year', strtotime( $current_date ) ) );
-			case 'everything_before_today':
-				return date( 'Y-m-d H:i:s', strtotime( '-1 day', strtotime( $current_date ) ) );
 			default:
 				return false;
 		}

@@ -7,24 +7,23 @@ namespace PW\PWSMS\Gateways;
  * The api key will set in username field like :
  * username;apikey
  */
-class Sipka implements GatewayInterface {
-	use GatewayTrait;
+class Sipka extends Gateway {
 
 	public string $token;
 
-	public static function id() {
+	public static function id(): string {
 		return 'sipka';
 	}
 
-	public static function name() {
-		return 'sipka.co';
+	public static function name(): string {
+		return 'Sipka.co - سیپکا';
 	}
 
 	public function send() {
 		$this->senderNumber = trim( $this->senderNumber ) ?: '';
 
-		if ( empty( $this->mobile ) || empty( $this->message ) || empty( $this->senderNumber ) ) {
-			return 'شماره گیرنده/ متن پیام یا شماره ارسال کننده، تعریف نشده است.';
+		if ( empty( $this->senderNumber ) ) {
+			return 'شماره ارسال کننده تعریف نشده است.';
 		}
 
 		$credentials = explode( ';', $this->username );
@@ -71,7 +70,7 @@ class Sipka implements GatewayInterface {
 		}
 
 		if ( ! isset( $body['success'] ) || ! $body['success'] ) {
-			return $body['response'] ?? 'خطای نامشخص در ارسال پیامک';
+			return $body['response'] ?? 'خطایی ناشناخته رخ داده است.';
 		}
 
 		return true;

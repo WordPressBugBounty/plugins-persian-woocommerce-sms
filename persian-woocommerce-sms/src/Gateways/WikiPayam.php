@@ -2,21 +2,16 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
-
-class WikiPayam implements GatewayInterface {
-	use GatewayTrait;
+class WikiPayam extends Gateway {
 
 	public string $api_url = 'https://sms.asanak.ir/webservice/v2rest';
 
-	public static function id() {
+	public static function id(): string {
 		return 'wikipayam';
 	}
 
-	public static function name() {
-		return 'wikipayam.ir';
+	public static function name(): string {
+		return 'WikiPayam.ir - ویکی پیام';
 	}
 
 	public function send() {
@@ -38,7 +33,7 @@ class WikiPayam implements GatewayInterface {
 				'sender'   => $from,
 				'receiver' => $to,
 				'message'  => $message,
-			]
+			],
 		] );
 
 		$args = [

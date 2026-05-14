@@ -8,7 +8,7 @@ Tags: sms,ووکامرس فارسی,woocommerce,persian woocommerce,پیامک
 Requires at least: 5.8
 Tested up to: 6.8.1
 Requires PHP: 7.4
-Stable tag: 7.1.1
+Stable tag: 7.2.1
 
 افزونه کامل و حرفه ای برای اطلاع رسانی پیامکی سفارشات و رویداد های محصولات ووکامرس
 
@@ -26,111 +26,124 @@ Stable tag: 7.1.1
 * شما برای شروع کار با پلاگین نیاز به یک پنل اس ام اس دارید. پیشنهاد ما استفاده از پنل اس ام اس ملی پیامک است. این سامانه 20% تخفیف با کد wcsms20 به مدیران سایت های وردپرس ارائه می‌دهد.[خرید پنل پیامک](http://www.melipayamak.com/)
 
 
-
-
 = درگاه های پیامک =
- *  MeliPayamak.com
- * ParsGreen.com
- * ParandSMS.com
- * GAMAPayamak.com
- * LimooSMS.com
- * SMSFa.net
- * Arad-SMS.ir
- * FaraPayamak.ir
- * TJP.ir
- * SMS.Niazpardaz.com
- * PayamAfraz.ir
- * YektaSMS.com
- * Relax.ir
- * SMS.Paaz.ir
- * SmsBefrest.ir
- * Yektatech.ir
- * Postgah.info
- * IdehPayam.com
- * Azaranpayamak.ir
- * SMS.IR
- * S1.Websms.ir
- * Manirani.ir
- * Payam-Resan.com
- * BakhtarPanel.com
- * Avalpayam.com
- * IranSmsServer.com
- * LoginPanel.IR
- * SmsHooshmand.com
- * SmsFor.ir
- * ChaparPanel.ir
- * FirstPayamak.ir
- * SMS.Netpaydar.com
- * Panel.SmsPishgaman.com
- * ParsianPayam.ir
- * Hostiran.com
- * IranSMS.co
- * Negins.com
- * Afe.ir
- * Aradpayamak.net
- * iSMS.ir
- * RazPayamak.com
- * MihanSMSCenter.ir
- * 0098SMS.com
- * SefidSMS.ir
- * Chapargah.ir
- * Hafezpayam.com
- * MehrPanel.ir
- * KianArtPanel.ir
- * Sms.FarsTech.ir
- * Berandet.ir
- * NicSMS.com
- * Asanak.ir
- * Ssmss.ir
- * Hiro-Sms.com
- * RayganSms.com
- * SmsPanel.Trez.ir
- * SepahanSms.com(SepahanGostar.com)
- * Sms.3300.ir
- * Sms.SmsNegar.com
- * Sms.BehsaDade.com
- * FlashSms.ir(AdminPayamak.ir)
- * PayamSms.com
- * SMS.HadafWP.COM
- * SunwaySMS.com
- * mehrafraz.com
- * PSMS.Ir
- * IRPayamak.Com
- * Gama.systems
- * AtlasPayamak.ir
- * SMS-Melli.com
- * sms-meli.com
- * Parsian-SMS.ir
- * panelsms20.ir
- * sahandsms.com
- * newsms.ir
- * sms.parsiantd.com
- * payamkotah.com
- * npsms.com
- * karenkart.com
- * jarin.ir
- * samait.ir
- * 1b1.ir
- * pardis.ssmss.ir
- * candoosms.com
- * Kavenegar.com (بجای نام کاربری ApiKey را وارد کرده و کلمه عبور را خالی قرار دهید)
- * SabaNovin.com (بجای نام کاربری ApiKey را وارد کرده و کلمه عبور را خالی قرار دهید)
- * webone-sms.com
- * satsms.ir
- * asiasms.ir
- * payamakyab.com
- * Arad ITC
- * SMSNegar.ir
- * MAX-SMS.co
- * IPPANEL.com 
- * ModirPayamak.com 
- * FarazSMS.com
- * GhasedakSMS.com 
- * Mediana.ir
- * PanelChi
- * Asanak
- * NMTSMS
- * PersianSMS
+ * MeliPayamak.com - ملی پیامک
+* 0098SMS.com - ۰۰۹۸ اس ام اس
+* 1b1.ir - یک به یک
+* Afe.ir - واید
+* Afe.ir - واید
+* Arad-SMS.ir - آراد اس ام اس
+* AradPayamak.net - آراد پیامک
+* Asanak.ir - آسانک
+* AsiaSMS.ir - آسیا اس ام اس
+* AtlasPayamak.ir - اطلس پیامک
+* AvalPayam.com - اول پیام
+* AzaranPayamak.ir - آذران پیامک
+* Bakhtar.xyz - باختر پنل
+* Berandet.ir - برندت
+* CandooSMS.com - کندو اس ام اس
+* ChaparPanel.ir - چاپار
+* Chapargah.com - چاپارگاه
+* FaraPayamak.ir - فراپیامک
+* FarazSMS.com - فراز اس ام اس
+* FirstPayamak.ir - اولین پیامک
+* GAMAPayamak.com - گاما پیامک
+* Ghasedak.me - قاصدک
+* HafezPayam.com - حافظ پیام
+* Hiro-SMS.com - هیرو اس ام اس
+* HostIran.com - هاست ایران
+* ISMS.ir - آی اس ام اس
+* IdehPayam.com - ایده پیام
+* IrPayamak.com - آی آر پیامک
+* IranSMS.co - ایران اس ام اس
+* IranSMS.com - ایران اس ام اس
+* KaveNegar.com - کاوه نگار
+* Login.NiazPardaz.ir - نیاز پرداز
+* LoginPanel.ir - ایلام اس ام اس
+* LogisticSMS.ir - لجستیک پیامک
+* MSGWay.com - راه پیام
+* ManIrani.ir - من ایرانی
+* MaxSMS.co - مکس اس ام اس
+* Mediana.ir - مدیانا
+* MehrAfraz.com - مهر افراز آسیا
+* ModirPayamak.com - مدیر پیامک
+* NH1.ir - نوین همراه
+* NMTSMS.ir - نگین مرمر تجارت
+* NPSMS.com - نوین پرداز
+* Negins.com - نگین
+* NewSMS.ir - نیو اس ام اس
+* NikSMS.com - نیک اس ام اس
+* Paaz.ir - پاز
+* Panel.SignalAds.com - سیگنال ادز
+* PanelChi.com - پنل چی
+* PanelSMSPayam.ir - اس ام اس پیام
+* ParandSMS.ir - پرند اس ام اس
+* Pardis.sSMSs.ir - پردیس اس ام اس
+* ParsGreen.com - پارس گرین
+* Parsian-SMS.ir - پارسیان اس ام اس
+* PayamKotah.com - پیام کوتاه
+* PayamSMS.com - پیام اس ام اس
+* PayamakYab.com - پیامک یاب
+* Persian-SMS.com - پرشین اس ام اس
+* RayganSMS.com - رایگان اس ام اس
+* RazPayamak.com - راز پیامک
+* Relax.ir - ریلکس
+* SMS-Meli.com - سامانه پیامک ملی
+* SMS.3300.ir - ۳۳۰۰
+* SMS.BehsaDade.com - بهسا داده
+* SMS.FarsTech.ir - فارس تک
+* SMS.HadafWP.com - هدف وردپرس
+* SMS.NetPaydar.com - شبکه پایدار
+* SMS.NiazPardaz.com - نیاز پرداز
+* SMS.SMSNegar.com - اس ام اس نگار
+* SMSFor.ir - ارتباط آفرینان تات
+* SMSHooshmand.com - اس ام اس هوشمند
+* SMSMelli.com - اس ام اس ملی
+* SMSNegar.ir - اس ام اس نگار
+* SMSPanel.Trez.ir - ترز
+* SabaNovin.com - صبا نوین
+* SahandSMS.com - سهند اس ام اس
+* SamaIT.ir - سما ارتباط اسپادانا
+* SatSMS.ir - سات اس ام اس
+* SepahanSMS.com - سپاهان گستر
+* Sipka.co - سیپکا
+* SornaSMS.net - سورنا اس ام اس
+* SunWaySMS.com - راه آفتاب
+* TSMS.ir - طوبی اس ام اس
+* WebOne-SMS.com - وب وان
+* WebSMS.ir - وب اس ام اس
+* WikiPayam.ir - ویکی پیام
+* YektaTech.ir - یکتا تک
+* arad itc - آراد آی تی سی
+* bale.ai - پیامرسان بله
+* payam-resan.com
+* payam-resan.com (پترن)
+* sSMSs.ir - صلابت
+* Panel.SmsPishgaman.com
+* SMS.ir (نام کاربری و کلمه عبور)
+* SMS.ir (کلید دسترسی)
+* SMSFa.ir
+* SmsBefrest.ir
+* TJP.ir
+* farazsms.com (نام کاربری و کلمه عبور)
+* flashsms.ir (adminpayamak.ir)
+* gama.systems
+* ippanel.com (نام کاربری و کلمه عبور)
+* ippanel.com (کلید دسترسی)
+* iransmsserver.com
+* karenkart.com
+* kavenegar.com(lookup)
+* kianartpanel.ir
+* mehrpanel.ir
+* melipayamak.com (ترکیبی)
+* melipayamak.com خدماتی
+* parsianpayam.ir
+* payamafraz.com
+* postgah.info
+* pwsms.log
+* sefidsms.ir
+* sms.parsiantd.com
+* w.jarin.ir
 
 == Installation ==
 1. Upload `persian-woocommerce-sms` folder to the `/wp-content/plugins/` directory
@@ -154,6 +167,13 @@ Stable tag: 7.1.1
 14. Screen shot 14
 
 == Changelog ==
+= 7.2.0 =
+* افزودن ربات اطلاع رسانی رایگان بله https://ble.ir/PersianWoocommerceBot
+* افزودن ربات اطلاع رسانی رایگان تلگرام https://t.me/PersianWoocommerceBot
+* افزودن درگاه پیامرسان بله
+* سازگاری با ساختار استاندارد تعریف پیامک
+* بروزرسانی درگاه پیامکی پنل‌چی
+* افزودن پیامک فروشندگان دکان
 = 7.1.1 =
 * رفع خطای چند وبسرویس پیامکی
 = 7.1.0 =

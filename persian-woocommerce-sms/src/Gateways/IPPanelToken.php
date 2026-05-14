@@ -5,14 +5,8 @@ namespace PW\PWSMS\Gateways;
 /**
  * The new IPPanel service based on https://ippanelcom.github.io
  * Can send Pattern and Simple SMS at same time (based on message)
- *
- * Example pattern message, you can use pcode instead of patterncode too.
- * patterncode:confirmedpatterncode
- * param1:value
- * param2:value
  */
-class IPPanelToken implements GatewayInterface {
-	use GatewayTrait;
+class IPPanelToken extends Gateway {
 
 	/**
 	 * @var string
@@ -27,92 +21,57 @@ class IPPanelToken implements GatewayInterface {
 	/**
 	 * @var string
 	 */
-	private string $token = '';
+	private string $api_key = '';
 
-	public static function id() {
+	public static function id(): string {
 		return 'ippanel-token';
 	}
 
-	public static function name() {
+	public static function name(): string {
 		return 'ippanel.com (کلید دسترسی)';
 	}
 
-	/**
-	 * Creates the complete request url based on api_url
-	 *
-	 * @param string $endpoint
-	 *
-	 * @return string the full request url
-	 */
-	public function endpoint( string $endpoint ): string {
-		return $this->api_url . $endpoint;
-	}
-
-	/**
-	 * Handle sending SMS based on its content (pattern, simple)
-	 *
-	 * @return bool|string (only true if send process was successful)
-	 */
 	public function send() {
-		$this->token        = $this->get_token();
-		$this->senderNumber = trim( $this->senderNumber ) ?: '+983000505';
+		$this->api_key = $this->get_token();
 
-		if ( empty( $this->message ) ) {
-			return 'متن پیام برای ارسال تعریف نشده.';
-		}
-
-		if ( empty( $this->token ) ) {
+		if ( empty( $this->api_key ) ) {
 			return 'کلید وبسرویس را در بخش تنظیمات وبسرویس تعریف کنید.';
 		}
 
-		// Change pcode to patterncode before anything (ensure message content is valid)
-		$this->message = str_replace( 'pcode', 'patterncode', $this->message );
+		if ( empty( $this->senderNumber ) ) {
+			return 'شماره فرستنده پیامک تعیین نشده است.';
+		}
 
-		// Check for pattern message
-		if ( substr( $this->message, 0, 11 ) === "patterncode" ) {
+		if ( $this->is_pattern() ) {
 			$this->send_pattern_sms();
 		} else {
-			$this->send_simple_sms();
+			$this->send_normal_sms();
 		}
 
-		return empty( $this->failed_numbers ) ? true : $this->format_failed_numbers();
+		return $this->format_failed_numbers();
 	}
 
-	/**
-	 * Send the pattern SMS
-	 *
-	 * @return void
-	 */
 	private function send_pattern_sms() {
-		$this->message = str_replace( [ "\r\n", "\n" ], ';', $this->message );
-		$message_parts = explode( ';', $this->message );
-		$pattern_code  = explode( ':', $message_parts[0] )[1];
-		unset( $message_parts[0] );
+		$pattern = $this->parse_pattern();
 
-		$pattern_data = [];
-
-		foreach ( $message_parts as $parameter ) {
-			$split_parameter                     = explode( ':', $parameter, 2 );
-			$pattern_data[ $split_parameter[0] ] = $split_parameter[1];
-		}
+		$payload = [
+			'sending_type' => 'pattern',
+			'from_number'  => $this->senderNumber,
+			'code'         => $pattern['code'],
+			'params'       => $pattern['vars'],
+		];
 
 		foreach ( $this->mobile as $recipient ) {
 
-			$payload = [
-				'sending_type' => 'pattern',
-				'from_number'  => $this->senderNumber,
-				'code'         => $pattern_code,
-				'recipients'   => [ $recipient ],
-				'params'       => $pattern_data,
-			];
+			$payload['recipients'] = [ $recipient ];
 
-			$response = wp_remote_post( $this->endpoint( 'api/send' ), [
+			$response = wp_remote_post( $this->api_url . 'api/send', [
 				'method'  => 'POST',
 				'body'    => json_encode( $payload ),
 				'timeout' => 10,
 				'headers' => [
 					'Content-Type'  => 'application/json',
-					'Authorization' => $this->token,
+					'Authorization' => $this->api_key,
 				],
 			] );
 
@@ -120,12 +79,7 @@ class IPPanelToken implements GatewayInterface {
 		}
 	}
 
-	/**
-	 * Send the simple SMS
-	 *
-	 * @return void
-	 */
-	private function send_simple_sms() {
+	private function send_normal_sms() {
 
 		$payload = [
 			'sending_type' => 'webservice',
@@ -136,28 +90,19 @@ class IPPanelToken implements GatewayInterface {
 			],
 		];
 
-		$response = wp_remote_post( $this->endpoint( 'api/send' ), [
+		$response = wp_remote_post( $this->api_url . 'api/send', [
 			'method'  => 'POST',
 			'body'    => json_encode( $payload ),
 			'timeout' => 10,
 			'headers' => [
 				'Content-Type'  => 'application/json',
-				'Authorization' => $this->token,
+				'Authorization' => $this->api_key,
 			],
 		] );
 
-		// Handle single response for all recipients
 		$this->handle_response( $response );
 	}
 
-	/**
-	 * Handle the response for each recipient.
-	 *
-	 * @param mixed $response
-	 * @param string $recipient
-	 *
-	 * @return void
-	 */
 	private function handle_response( $response, string $recipient = '' ): void {
 
 		if ( is_wp_error( $response ) ) {
@@ -179,7 +124,6 @@ class IPPanelToken implements GatewayInterface {
 			return;
 		}
 
-		// Determine error message
 		if ( isset( $body['meta']['message'] ) ) {
 
 			$message = $body['meta']['message'];
@@ -202,7 +146,7 @@ class IPPanelToken implements GatewayInterface {
 
 		} else {
 
-			$message = 'خطای نامشخص';
+			$message = 'خطایی ناشناخته رخ داده است.';
 
 		}
 
@@ -213,12 +157,8 @@ class IPPanelToken implements GatewayInterface {
 		}
 	}
 
-	/**
-	 * Create proper output message to show if message is failed
-	 *
-	 * @return bool|string (only true if there's no failed sms)
-	 */
-	private function format_failed_numbers() {
+
+	private function format_failed_numbers(): bool {
 
 		if ( empty( $this->failed_numbers ) ) {
 			return true;

@@ -1,0 +1,165 @@
+(function ($) {
+    $(document).ready(function () {
+        // Initialize select2 if available
+        if ($.fn.select2) {
+            $('.pwoosms_tab_status').select2();
+        }
+
+        /**
+         * Insert text at the cursor position of a textarea
+         */
+        function pwsms_insert_at_cursor(textarea, text) {
+            if (!textarea) return;
+
+            const scroll_pos = textarea.scrollTop;
+            const caret_pos = textarea.selectionStart;
+
+            const front = textarea.value.substring(0, caret_pos);
+            const back = textarea.value.substring(textarea.selectionEnd, textarea.value.length);
+
+            textarea.value = front + text + back;
+            textarea.selectionStart = textarea.selectionEnd = caret_pos + text.length;
+            textarea.focus();
+            textarea.scrollTop = scroll_pos;
+        }
+
+        $('#add_another_sms_tab').on('click', function (e) {
+            e.preventDefault();
+
+            if ($.fn.select2) {
+                $('.pwoosms_tab_status').select2("destroy");
+            }
+
+            const clone_container = $('#duplicate_this_row_sms');
+            const new_count = parseInt($('#sms_tab_counter').val(), 10) + 1;
+            const remove_tab_button = $('#duplicate_this_row_sms .sms_tab_counter');
+            const move_tab_content_buttons = $('#duplicate_this_row_sms .button-holder-sms');
+
+            clone_container.children('p').each(function () {
+                $(this)
+                    .clone()
+                    .insertBefore('#duplicate_this_row_sms')
+                    .removeClass('hidden_duplicator_row_title_field_sms hidden_duplicator_row_content_field_sms')
+                    .addClass('new_duplicate_row_sms');
+            }).promise().done(function () {
+                const duplicate_rows = $('.new_duplicate_row_sms');
+
+                duplicate_rows.find('input').each(function () {
+                    const input_element = $(this);
+                    if (input_element.is('input[name="hidden_duplicator_row_mobile"]')) {
+                        const new_name = `pwoosms_tab_mobile_${new_count}`;
+                        input_element
+                            .attr('name', new_name)
+                            .attr('id', new_name)
+                            .parents('p')
+                            .addClass(`${new_name}_field`)
+                            .removeClass('hidden_duplicator_row_title_field_sms')
+                            .find('label')
+                            .attr('for', `${new_name}_field`);
+                    }
+                });
+
+                duplicate_rows.find('select').each(function () {
+                    const select_element = $(this);
+                    if (select_element.is('select[name="hidden_duplicator_row_statuses[]"]')) {
+                        const new_name = `pwoosms_tab_status_${new_count}`;
+                        select_element
+                            .attr('name', `${new_name}[]`)
+                            .attr('id', new_name)
+                            .parents('p')
+                            .addClass(`${new_name}_field`)
+                            .removeClass('hidden_duplicator_row_content_field_sms')
+                            .find('label')
+                            .attr('for', `${new_name}_field`);
+                    }
+                });
+
+                $('#sms_tab_counter').val(new_count);
+                duplicate_rows.first().before('<div class="pwoosms-tab-divider"></div>');
+            });
+
+            move_tab_content_buttons
+                .clone()
+                .insertAfter($('.pwoosms-tab-divider').last())
+                .addClass('last-button-holder-sms');
+
+            remove_tab_button
+                .clone()
+                .prependTo('.last-button-holder-sms')
+                .removeAttr('style');
+
+            $('.button-holder-sms').first().prev('.pwoosms-tab-divider').hide();
+
+            $('.last-button-holder-sms').attr('alt', new_count).removeClass('last-button-holder-sms');
+
+            setTimeout(() => {
+                $('.new_duplicate_row_sms').removeClass('new_duplicate_row_sms');
+            }, 100);
+
+            if ($.fn.select2) {
+                $('.pwoosms_tab_status').select2();
+            }
+        });
+
+        // Remove tab event delegation
+        $('body').on('click', '.sms_tab_counter', function (e) {
+            e.preventDefault();
+
+            const clicked_parent = $(this).parents('.button-holder-sms');
+            const tab_title_to_remove = clicked_parent.next();
+            const tab_content_to_remove = tab_title_to_remove.next();
+            const divider_to_remove_next = tab_content_to_remove.next('.pwoosms-tab-divider');
+            const divider_to_remove_prev = clicked_parent.prev('.pwoosms-tab-divider');
+
+            tab_title_to_remove.remove();
+            tab_content_to_remove.remove();
+            divider_to_remove_prev.remove();
+            divider_to_remove_next.remove();
+            clicked_parent.remove();
+        });
+
+        // Toggle help section visibility
+        $('.pwoosms-tab-help-toggle').on('click', function () {
+            $('.pwoosms-tab-help').fadeToggle();
+        }).show();
+
+
+        /*############## REST REQUESTS ###############*/
+
+        /**
+         * Rest Request to use selected group template message content api
+         * Sets the formatted related group message in send box of product meta box
+         * */
+        $('#select_group').on('change', function (e) {
+            let selected_group = $(this).find(':selected').val();
+            let product_id = $("#post_ID").val();
+            let current_element = $(this);
+
+            fetch(pwsms_product.rest_url + `pwsms/content/group-message/${product_id}/${selected_group}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': pwsms_product.nonce
+                },
+            }).then(function (response) {
+                if (!response.ok) {
+                    throw new Error("وضعیت HTTP " + response.status);
+                }
+                return response.json();
+            }).then(data => {
+                if (data.hasOwnProperty('message')) {
+                    current_element.parents().find('#pwoosms_message').val(data.message);
+                }
+            }).catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: 'دریافت متن پیام با خطا مواجه شد: ' + error.message
+                });
+            });
+        });
+
+    });
+
+})(jQuery);
+

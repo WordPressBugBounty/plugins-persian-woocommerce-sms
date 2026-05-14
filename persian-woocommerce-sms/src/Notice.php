@@ -30,13 +30,11 @@ class Notice {
 				continue;
 			}
 
-			$dismissible = $notice['dismiss'] ? 'is-dismissible' : '';
-
-			$notice_id      = esc_attr( $notice['id'] );
+			$dismissible    = $notice['dismiss'] ? 'is-dismissible' : '';
 			$notice_content = strip_tags( $notice['content'], '<p><a><input><b><img><ul><ol><li>' );
 
-			printf( '<div class="notice pwsms_notice notice-success %s" id="pwsms_%s"><p>%s</p></div>', $dismissible,
-				$notice_id, $notice_content );
+			printf( '<div class="notice pwsms_notice notice-success %s" id="pwsms_%s"><p>%s</p></div>', esc_attr( $dismissible ), esc_attr( $notice['id'] ),
+				$notice_content ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 			break;
 		}
@@ -55,12 +53,12 @@ class Notice {
                         notice = notice.replace('pwsms_', '');
 
                         $.ajax({
-                            url: "<?php echo admin_url( 'admin-ajax.php' ) ?>",
+                            url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ) ?>",
                             type: 'post',
                             data: {
                                 notice: notice,
                                 action: 'pwsms_dismiss_notice',
-                                nonce: "<?php echo wp_create_nonce( 'pwsms_dismiss_notice' ); ?>"
+                                nonce: "<?php echo esc_js( wp_create_nonce( 'pwsms_dismiss_notice' ) ); ?>"
                             }
                         });
                     }
@@ -68,11 +66,11 @@ class Notice {
                 });
 
                 $.ajax({
-                    url: "<?php echo admin_url( 'admin-ajax.php' ) ?>",
+                    url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>",
                     type: 'post',
                     data: {
                         action: 'pwsms_update_notice',
-                        nonce: '<?php echo wp_create_nonce( 'pwsms_update_notice' ); ?>'
+                        nonce: '<?php echo esc_js( wp_create_nonce( 'pwsms_update_notice' ) ); ?>'
                     }
                 });
             });
@@ -85,7 +83,6 @@ class Notice {
 	}
 
 	public function notices(): array {
-
 		global $pagenow;
 
 		$post_type    = sanitize_text_field( $_GET['post_type'] ?? null );
@@ -97,7 +94,7 @@ class Notice {
 			[
 				'id'        => 'nrr_product_reviews',
 				'content'   => sprintf( '<b>نظرسنجی خودکار ووکامرس:</b> جهت افزایش تعداد نظرات فروشگاه‌تان، می‌توانید با استفاده از <a href="%s" target="_blank">افزونه نظرسنجی خودکار ندا</a> با ارسال خودکار پیامک، برای هر سفارش از مشتریان خود درخواست ثبت نظر کنید. | کدتخفیف: pwsms20',
-					'https://yun.ir/pwsmsneda' ),
+					'https://l.nabik.net/neda?utm_source=pwsms' ),
 				'condition' => $page == 'product-reviews' && is_plugin_inactive( 'nabik-review-reminder/nabik-review-reminder.php' ) && is_plugin_inactive( 'persian-woocommerce-shipping/woocommerce-shipping.php' ),
 				'dismiss'   => 6 * MONTH_IN_SECONDS,
 			],
@@ -167,6 +164,7 @@ class Notice {
 			set_transient( 'pwsms_notice_' . $notice_id, 'DISMISS', intval( $notices[ $notice_id ] ) );
 			set_transient( 'pwsms_notice_all', 'DISMISS', HOUR_IN_SECONDS );
 		}
+
 	}
 
 	public function update_notice() {
@@ -241,6 +239,7 @@ class Notice {
 				if ( $style ) {
 					$element->setAttribute( 'style', $style );
 				}
+
 			}
 
 			$_notice['content'] = $doc->saveHTML();

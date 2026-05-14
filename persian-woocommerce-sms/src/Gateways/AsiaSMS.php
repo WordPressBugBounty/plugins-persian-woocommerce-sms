@@ -2,53 +2,48 @@
 
 namespace PW\PWSMS\Gateways;
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
+class AsiaSMS extends Gateway {
 
-class AsiaSMS implements GatewayInterface {
-    use GatewayTrait;
+	public static function id(): string {
+		return 'asiasms';
+	}
 
-    public static function id() {
-        return 'asiasms';
-    }
+	public static function name(): string {
+		return 'AsiaSMS.ir - آسیا اس ام اس';
+	}
 
-    public static function name() {
-        return 'asiasms.ir';
-    }
+	public function send() {
+		$response = false;
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
 
-    public function send() {
-        $response = false;
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
+		$massage = $this->message;
 
-        $massage = $this->message;
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		$data = [
+			'Username'  => $username,
+			'password'  => $password,
+			'Receivers' => implode( ',', $this->mobile ),
+			'SmsText'   => $massage,
+			'SenderId'  => $from,
+		];
 
-        $data = [
-            'Username'  => $username,
-            'password'  => $password,
-            'Receivers' => implode( ',', $this->mobile ),
-            'SmsText'   => $massage,
-            'SenderId'  => $from,
-        ];
+		$remote = wp_remote_get( 'http://api.asiasms.ir:8080/Messages/SendViaURL?' . http_build_query( $data ) );
 
-        $remote = wp_remote_get( 'http://api.asiasms.ir:8080/Messages/SendViaURL?' . http_build_query( $data ) );
+		$response = wp_remote_retrieve_body( $remote );
 
-        $response = wp_remote_retrieve_body( $remote );
+		$result = json_decode( $response, true );
 
-        $result = json_decode( $response, true );
+		if ( $result["IsSuccessful"] == true ) {
+			$response = true;
+		} else {
+			return $response; // Success
+		}
 
-        if ( $result["IsSuccessful"] == true ) {
-            $response = true;
-        } else {
-            return $response; // Success
-        }
-
-        return $response;
-    }
+		return $response;
+	}
 }

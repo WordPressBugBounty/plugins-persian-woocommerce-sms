@@ -3,49 +3,44 @@
 namespace PW\PWSMS\Gateways;
 
 
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
+class SMSIR extends Gateway {
 
-class SMSIR implements GatewayInterface {
-    use GatewayTrait;
+	public static function id(): string {
+		return 'smsir';
+	}
 
-    public static function id() {
-        return 'smsir';
-    }
+	public static function name(): string {
+		return 'SMS.ir (نام کاربری و کلمه عبور)';
+	}
 
-    public static function name() {
-        return 'SMS.ir (نام کاربری و کلمه عبور)';
-    }
+	public function send() {
 
-    public function send() {
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
+		$massage  = $this->message;
 
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
-        $massage  = $this->message;
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		$to = implode( ',', $this->mobile );
 
-        $to = implode( ',', $this->mobile );
+		$content = 'user=' . rawurlencode( $username ) .
+		           '&pass=' . rawurlencode( $password ) .
+		           '&to=' . rawurlencode( $to ) .
+		           '&lineNo=' . rawurlencode( $from ) .
+		           '&text=' . $massage;
 
-        $content = 'user=' . rawurlencode( $username ) .
-                   '&pass=' . rawurlencode( $password ) .
-                   '&to=' . rawurlencode( $to ) .
-                   '&lineNo=' . rawurlencode( $from ) .
-                   '&text=' . $massage;
+		$remote = wp_remote_get( 'https://ip.sms.ir/SendMessage.ashx?' . $content );
 
-        $remote = wp_remote_get( 'https://ip.sms.ir/SendMessage.ashx?' . $content );
+		$response = wp_remote_retrieve_body( $remote );
 
-        $response = wp_remote_retrieve_body( $remote );
+		if ( strtolower( $response ) == 'ok' || stripos( $response, 'ارسال با موفقیت انجام شد' ) !== false ) {
+			return true; // Success
+		}
 
-        if ( strtolower( $response ) == 'ok' || stripos( $response, 'ارسال با موفقیت انجام شد' ) !== false ) {
-            return true; // Success
-        }
-
-        return $response;
-    }
+		return $response;
+	}
 
 }

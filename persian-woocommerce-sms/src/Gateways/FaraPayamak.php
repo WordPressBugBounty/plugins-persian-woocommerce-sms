@@ -3,60 +3,58 @@
 namespace PW\PWSMS\Gateways;
 
 
-use PW\PWSMS\PWSMS;
 use SoapClient;
 use SoapFault;
 
-class FaraPayamak implements GatewayInterface {
-    use GatewayTrait;
+class FaraPayamak extends Gateway {
 
-    public static function id() {
-        return 'farapayamak';
-    }
+	public static function id(): string {
+		return 'farapayamak';
+	}
 
-    public static function name() {
-        return 'FaraPayamak.ir';
-    }
+	public static function name(): string {
+		return 'FaraPayamak.ir - فراپیامک';
+	}
 
-    public function send() {
+	public function send() {
 
-        $username = $this->username;
-        $password = $this->password;
-        $from     = $this->senderNumber;
-        $to       = $this->mobile;
-        $massage  = $this->message;
+		$username = $this->username;
+		$password = $this->password;
+		$from     = $this->senderNumber;
+		$to       = $this->mobile;
+		$massage  = $this->message;
 
-        if ( empty( $username ) || empty( $password ) ) {
-            return false;
-        }
+		if ( empty( $username ) || empty( $password ) ) {
+			return false;
+		}
 
-        try {
+		try {
 
-            $client       = new SoapClient( "https://api.payamak-panel.com/post/send.asmx?wsdl" );
-            $encoding     = "UTF-8";
-            $parameters   = [
-                'username' => $username,
-                'password' => $password,
-                'from'     => $from,
-                'to'       => $to,
-                'text'     => iconv( $encoding, 'UTF-8//TRANSLIT', $massage ),
-                'isflash'  => false,
-                'udh'      => "",
-                'recId'    => [ 0 ],
-                'status'   => 0,
-            ];
-            $sms_response = $client->SendSms( $parameters )->SendSmsResult;
-        } catch ( SoapFault $ex ) {
-            $sms_response = $ex->getMessage();
-        }
+			$client       = new SoapClient( "https://api.payamak-panel.com/post/send.asmx?wsdl" );
+			$encoding     = "UTF-8";
+			$parameters   = [
+				'username' => $username,
+				'password' => $password,
+				'from'     => $from,
+				'to'       => $to,
+				'text'     => iconv( $encoding, 'UTF-8//TRANSLIT', $massage ),
+				'isflash'  => false,
+				'udh'      => "",
+				'recId'    => [ 0 ],
+				'status'   => 0,
+			];
+			$sms_response = $client->SendSms( $parameters )->SendSmsResult;
+		} catch ( SoapFault $ex ) {
+			$sms_response = $ex->getMessage();
+		}
 
-        if ( $sms_response == 1 ) {
-            return true; // Success
-        } else {
-            $response = $sms_response;
-        }
+		if ( $sms_response == 1 ) {
+			return true; // Success
+		} else {
+			$response = $sms_response;
+		}
 
-        return $response;
-    }
+		return $response;
+	}
 
 }

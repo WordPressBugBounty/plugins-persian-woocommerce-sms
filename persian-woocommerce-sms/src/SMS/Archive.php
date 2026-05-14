@@ -10,7 +10,7 @@ class Archive {
 	}
 
 	public static function insert_record( $data ) {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
 		$time = time();
 
@@ -18,7 +18,7 @@ class Archive {
 			$time += wc_timezone_offset();
 		}
 
-		$wpdb->insert( ListTable::table(), [
+		$wpdb->insert( $wpdb->prefix . 'woocommerce_ir_sms_archive', [
 			'post_id'  => ! empty( $data['post_id'] ) ? $data['post_id'] : 0,
 			'type'     => ! empty( $data['type'] ) ? $data['type'] : 0,
 			'reciever' => ! empty( $data['reciever'] ) ? $data['reciever'] : '',
@@ -30,7 +30,7 @@ class Archive {
 	}
 
 	public function create_table() {
-		$wpdb = $GLOBALS['wpdb'];
+		global $wpdb;
 
 		if ( get_option( 'pwoosms_table_archive' ) ) {
 			return;
@@ -50,6 +50,10 @@ class Archive {
 			$charset_collate .= " COLLATE $wpdb->collate";
 		}
 
+		if ( ! class_exists( 'WP_List_Table' ) ) {
+			require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+		}
+		
 		$table = ListTable::table();
 
 		dbDelta( "CREATE TABLE IF NOT EXISTS $table (
@@ -82,29 +86,29 @@ class Archive {
 		$list->prepare_items();
 		?>
 
-        <style type="text/css">
+		<style type="text/css">
             .wp-list-table .column-id {
                 max-width: 5%;
             }
-        </style>
+		</style>
 
 		<?php if ( ! empty( $_GET['id'] ) ) : ?>
-            <a class="page-title-action" href="<?php echo esc_url( remove_query_arg( [ 'id' ] ) ); ?>">
-                بازگشت به لیست آرشیو همه پیامک‌ها
-            </a>
+			<a class="page-title-action" href="<?php echo esc_url( remove_query_arg( [ 'id' ] ) ); ?>">
+				بازگشت به لیست آرشیو همه پیامک‌ها
+			</a>
 		<?php endif; ?>
 
-        <form method="post">
-            <input type="hidden" name="page" value="WoocommerceIR_SMS_Archive_list_table">
+		<form method="post">
+			<input type="hidden" name="page" value="WoocommerceIR_SMS_Archive_list_table">
 			<?php
 			$list->search_box( 'جستجوی گیرنده', 'search_id' );
 			$list->render_export_csv();
 			$list->render_period_delete();
 			$list->display();
 			?>
-        </form>
+		</form>
 
-        <script type="text/javascript">
+		<script type="text/javascript">
             jQuery(document).ready(function ($) {
                 $('.delete a, a.delete, .button.action').on('click', function (e) {
                     var action1 = $('select[name="action"]').val();
@@ -117,7 +121,7 @@ class Archive {
                     }
                 });
             });
-        </script>
+		</script>
 		<?php
 	}
 

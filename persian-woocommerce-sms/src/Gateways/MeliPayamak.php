@@ -4,19 +4,17 @@ namespace PW\PWSMS\Gateways;
 
 use SoapClient;
 use SoapFault;
-use PW\PWSMS\PWSMS;
 
-class MeliPayamak implements GatewayInterface {
-	use GatewayTrait;
+class MeliPayamak extends Gateway {
 
 	public const ERRORS = [
-		-7  => 'خطایی در شماره فرستنده پیامک رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
-		-6  => 'خطای داخلی رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
-		-5  => 'تعداد متغیرهای پترن با متن ارسالی مطابقت ندارد.',
-		-4  => 'کد پترن صحیح نیست یا تایید نشده است.',
-		-3  => 'سرشماره تعریف نشده یا تعداد گیرندگان مجاز نیست.',
-		-2  => 'در هر بار ارسال، تنها یک گیرنده مجاز است.',
-		-1  => 'دسترسی به وب‌سرویس غیرفعال است.',
+		- 7 => 'خطایی در شماره فرستنده پیامک رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
+		- 6 => 'خطای داخلی رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
+		- 5 => 'تعداد متغیرهای پترن با متن ارسالی مطابقت ندارد.',
+		- 4 => 'کد پترن صحیح نیست یا تایید نشده است.',
+		- 3 => 'سرشماره تعریف نشده یا تعداد گیرندگان مجاز نیست.',
+		- 2 => 'در هر بار ارسال، تنها یک گیرنده مجاز است.',
+		- 1 => 'دسترسی به وب‌سرویس غیرفعال است.',
 		0   => 'نام کاربری یا رمز عبور اشتباه است.',
 		2   => 'اعتبار کافی نیست.',
 		3   => 'محدودیت در ارسال روزانه.',
@@ -31,15 +29,15 @@ class MeliPayamak implements GatewayInterface {
 		12  => 'مدارک پنل ناقص است.',
 		14  => 'ارسال لینک از این سرشماره مجاز نیست.',
 		15  => 'ارسال به چند شماره بدون لغو11 مجاز نیست.',
-		35  => 'شماره در لیست سیاه مخابرات است.'
+		35  => 'شماره در لیست سیاه مخابرات است.',
 	];
 
-	public static function id() {
+	public static function id(): string {
 		return 'melipayamak_unified';
 	}
 
-	public static function name() {
-		return 'melipayamak.com (ترکیبی)';
+	public static function name(): string {
+		return 'melipayamak.com - ملی پیامک ترکیبی';
 	}
 
 	public function get_credit( string $username, string $password ) {
@@ -47,6 +45,7 @@ class MeliPayamak implements GatewayInterface {
 			$client  = new SoapClient( "http://api.payamak-panel.com/post/Users.asmx?wsdl", [ 'encoding' => 'UTF-8' ] );
 			$request = [ 'username' => $username, 'password' => $password ];
 			$result  = $client->GetUserCredit2( $request )->GetUserCredit2Result;
+
 			return is_numeric( $result ) ? (int) $result : 0;
 		} catch ( SoapFault $e ) {
 			return 'خطا در دریافت موجودی: ' . $e->getMessage();
@@ -61,7 +60,7 @@ class MeliPayamak implements GatewayInterface {
 		$to       = (array) $this->mobile;
 		$message  = trim( $this->message );
 
-		if ( empty( $username ) || empty( $password ) || empty( $message ) ) {
+		if ( empty( $username ) || empty( $password ) ) {
 			return false;
 		}
 
@@ -83,7 +82,7 @@ class MeliPayamak implements GatewayInterface {
 
 	private function send_simple( $username, $password, $from, $to, $message ) {
 		try {
-			$client     = new SoapClient( "https://api.payamak-panel.com/post/Send.asmx?wsdl", [
+			$client = new SoapClient( "https://api.payamak-panel.com/post/Send.asmx?wsdl", [
 				'encoding'     => 'UTF-8',
 				'cache_wsdl'   => WSDL_CACHE_MEMORY,
 				'compression'  => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP,
@@ -91,7 +90,7 @@ class MeliPayamak implements GatewayInterface {
 				'keep_alive'   => true,
 				'exceptions'   => true,
 				'features'     => SOAP_WAIT_ONE_WAY_CALLS,
-				'trace'        => true
+				'trace'        => true,
 			] );
 
 			$params = [
@@ -139,6 +138,7 @@ class MeliPayamak implements GatewayInterface {
 						return self::ERRORS[ $response ] ?? $response;
 					}
 				}
+
 				return true;
 
 			} catch ( SoapFault $ex ) {

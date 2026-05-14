@@ -2,13 +2,7 @@
 
 namespace PW\PWSMS\Gateways;
 
-use Exception;
-use PW\PWSMS\PWSMS;
-use SoapClient;
-use SoapFault;
-
-class LogisticSMS implements GatewayInterface {
-	use GatewayTrait;
+class LogisticSMS extends Gateway {
 
 	private $token;
 
@@ -16,19 +10,19 @@ class LogisticSMS implements GatewayInterface {
 
 	private $transient = 'pwsms_logistic_sms_token';
 
-	public static function id() {
+	public static function id(): string {
 		return 'logistic-sms';
 	}
 
-	public static function name() {
-		return 'logisticsms.ir';
+	public static function name(): string {
+		return 'LogisticSMS.ir - لجستیک پیامک';
 	}
 
 	public function get_account_balance() {
 		$url    = $this->url . '/api/v1/account/info';
 		$header = [ 'X-API-TOKEN' => $this->token ];
 		$remote = wp_remote_get( $url, [
-			'headers' => $header
+			'headers' => $header,
 		] );
 
 		if ( is_wp_error( $remote ) ) {
@@ -79,7 +73,7 @@ class LogisticSMS implements GatewayInterface {
 			$payload = [
 				'receptor' => $mobile,
 				'message'  => $this->message,
-				'sender'   => $this->senderNumber
+				'sender'   => $this->senderNumber,
 			];
 
 			$headers = [
@@ -89,10 +83,10 @@ class LogisticSMS implements GatewayInterface {
 			// Make the POST request using wp_remote_post
 			$remote = wp_remote_post( $url, [
 				'method'    => 'POST',
-				'body'      => $payload ,
+				'body'      => $payload,
 				'timeout'   => 5,
 				'headers'   => $headers,
-				'sslverify' => false
+				'sslverify' => false,
 			] );
 
 			// Check if the response is a WP_Error
@@ -149,7 +143,7 @@ class LogisticSMS implements GatewayInterface {
 	 * Retrieve stored transient token stored in WordPress
 	 * @return string
 	 */
-	private function get_token() {
+	public function get_token(): string {
 		return get_transient( $this->transient );
 	}
 

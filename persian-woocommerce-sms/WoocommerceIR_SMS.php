@@ -3,11 +3,11 @@
  * Plugin Name: پیامک حرفه ای ووکامرس
  * Plugin URI: https://woosupport.ir
  * Description: افزونه کامل و حرفه ای برای اطلاع رسانی پیامکی سفارشات و رویداد های محصولات ووکامرس. تمامی حقوق این افزونه متعلق به <a href="http://woosupport.ir" target="_blank">تیم ووکامرس پارسی</a> می باشد و هر گونه کپی برداری، فروش آن غیر مجاز می باشد.
- * Version: 7.1.1
+ * Version: 7.2.0
  * Author: ووکامرس فارسی
  * Author URI: https://woosupport.ir
  * WC requires at least: 6.0.0
- * WC tested up to: 9.8.5
+ * WC tested up to: 10.7.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,10 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once 'vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 
 if ( ! defined( 'PWSMS_VERSION' ) ) {
-	define( 'PWSMS_VERSION', '7.1.1' );
+	define( 'PWSMS_VERSION', '7.2.0' );
 }
 
 if ( ! defined( 'PWSMS_URL' ) ) {
@@ -26,11 +26,7 @@ if ( ! defined( 'PWSMS_URL' ) ) {
 }
 
 if ( ! defined( 'PWSMS_DIR' ) ) {
-	define( 'PWSMS_DIR', dirname( __FILE__ ) );
-}
-
-if ( ! defined( 'PWSMS_LOG_FILE' ) ) {
-	define( 'PWSMS_LOG_FILE', wp_upload_dir()['basedir'] . '/wc-logs/pwsms.log' );
+	define( 'PWSMS_DIR', __DIR__ );
 }
 
 register_activation_hook( __FILE__, 'PWSMS_REGISTER' );
@@ -42,31 +38,6 @@ function PWSMS_REGISTER() {
 	delete_option( 'pwoosms_hide_about_page' );
 	delete_option( 'pwoosms_redirect_about_page' );
 }
-
-/*
- * Rewrite SoapClient as a null class
- * This plugin depends on the SOAP php module
- * If the soap is not enabled, There will be an empty SoapClient class
-*/
-if ( ! class_exists( 'SoapClient' ) ) {
-	class SoapClient {
-		public function __construct( $wsdl, $options = [] ) {
-		}
-
-		public function __call( $name, $arguments ) {
-			throw new Exception( "عملکرد با اشکال مواجه شد، لطفا اکستنشن SOAP را در PHP فعال کنید." );
-		}
-	}
-
-	add_action( 'admin_notices', function () {
-		?>
-		<div class="notice notice-error is-dismissible">
-			<p><?php _e( ' برای عملکرد صحیح افزونه <b>پیامک حرفه ای ووکامرس</b>، اکستنشن <b>SOAP</b> را در PHP فعال کنید.' ); ?></p>
-		</div>
-		<?php
-	} );
-}
-
 
 add_action( 'before_woocommerce_init', function () {
 	if ( class_exists( Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
