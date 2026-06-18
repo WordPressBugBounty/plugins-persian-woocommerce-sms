@@ -6,8 +6,8 @@ defined( 'ABSPATH' ) || exit;
 
 class Tab {
 
-	private $product_metas = [];
-	private $enable_notification = false;
+	private array $product_metas = [];
+	private bool $enable_notification = false;
 
 	public function __construct() {
 
@@ -17,15 +17,17 @@ class Tab {
 			return;
 		}
 
-		$this->enable_notification      = PWSMS()->get_option( 'enable_notif_sms_main' );
+		$this->enable_notification = PWSMS()->get_option( 'enable_notif_sms_main' );
 
-		if ( $this->enable_notification ) {
-			add_action( 'admin_enqueue_scripts', [ $this, 'script' ] );
-			add_action( 'woocommerce_product_write_panel_tabs', [ $this, 'tab_nav' ] );
-			add_action( 'woocommerce_product_data_panels', [ $this, 'tab_content' ] );
-			add_action( 'woocommerce_product_write_panels', [ $this, 'tab_content' ] );
-			add_action( 'woocommerce_process_product_meta', [ $this, 'update_tab_data' ], 10, 1 );
+		if ( ! $this->enable_notification ) {
+			return;
 		}
+
+		add_action( 'admin_enqueue_scripts', [ $this, 'script' ] );
+		add_action( 'woocommerce_product_write_panel_tabs', [ $this, 'tab_nav' ] );
+		add_action( 'woocommerce_product_data_panels', [ $this, 'tab_content' ] );
+		add_action( 'woocommerce_product_write_panels', [ $this, 'tab_content' ] );
+		add_action( 'woocommerce_update_product', [ $this, 'update_tab_data' ], 10, 1 );
 	}
 
 	public function update_meta_38() {
@@ -52,6 +54,8 @@ class Tab {
 			return false;
 		}
 
+		$min = wp_scripts_get_suffix();
+
 		wp_register_script( 'pwoosms-frontend-js', PWSMS_URL . '/assets/js/multi-select.js', [ 'jquery' ], PWSMS_VERSION, true );
 
 		wp_localize_script( 'pwoosms-frontend-js', 'pwoosms', [
@@ -66,14 +70,14 @@ class Tab {
 		wp_enqueue_style( 'pwsms-sweetalert2' );
 		wp_enqueue_script( 'pwsms-sweetalert2' );
 
-		wp_register_script( 'pwsms-product', PWSMS_URL . '/assets/js/product.js', [ 'pwsms-sweetalert2', 'pwoosms-frontend-js' ], PWSMS_VERSION );
+		wp_register_script( 'pwsms-product', PWSMS_URL . '/assets/js/product' . $min . '.js', [ 'pwsms-sweetalert2', 'pwoosms-frontend-js' ], PWSMS_VERSION );
 		wp_enqueue_script( 'pwsms-product' );
 		wp_localize_script( 'pwsms-product', 'pwsms_product', [
 			'rest_url' => esc_url_raw( rest_url() ),
 			'nonce'    => wp_create_nonce( 'wp_rest' )
 		] );
 
-		wp_register_style( 'pwsms-product', PWSMS_URL . '/assets/css/product.css', '', PWSMS_VERSION );
+		wp_register_style( 'pwsms-product', PWSMS_URL . '/assets/css/product' . $min . '.css', '', PWSMS_VERSION );
 		wp_enqueue_style( 'pwsms-product' );
 
 	}
@@ -115,171 +119,172 @@ class Tab {
 
 	private function notification_settings( $product_id ) {
 
-		if ( $this->enable_notification ) { ?>
+		if ( ! $this->enable_notification ) {
+			return;
+		}
 
-			<div class="pwoosms-tab-product-admin">
-				<p><strong>تنظیمات خبرنامه محصول: </strong></p>
-			</div>
+		?>
 
-			<?php
-			$this->product_metas[] = 'enable_notif_sms';
-			woocommerce_wp_radio( [
-				'label'         => 'فرم عضویت در خبرنامه',
-				'wrapper_class' => 'pswoosms_tab_radio',
-				'id'            => end( $this->product_metas ),
-				'value'         => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-				'options'       => [
-					'on'        => 'نمایش خودکار در بدنه محصول',
-					'thumbnail' => 'نمایش خودکار زیر تصویر شاخص',
-					'no'        => sprintf( 'نمایش دستی (راهنمای این گزینه در "تنظیمات افزونه >> خبرنامه محصول >> فرم عضویت در خبرنامه" آمده است.)' ),
-				],
-			] );
+		<div class="pwoosms-tab-product-admin">
+			<p><strong>تنظیمات خبرنامه محصول: </strong></p>
+		</div>
 
-			$this->product_metas[] = 'notif_title';
-			woocommerce_wp_text_input( [
-				'desc_tip'    => true,
-				'label'       => 'متن عضویت در خبرنامه',
-				'description' => 'این متن در صفحه محصول به صورت چک باکس ظاهر خواهد شد و کاربر با انتخاب آن میتواند شماره موبایل و گروه های مورد نظر خود را برای عضویت در خبرنامه محصول وارد نماید.',
-				'id'          => end( $this->product_metas ),
-				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		<?php
 
+		$this->product_metas[] = 'enable_notif_sms';
+		woocommerce_wp_radio( [
+			'label'         => 'فرم عضویت در خبرنامه',
+			'wrapper_class' => 'pswoosms_tab_radio',
+			'id'            => end( $this->product_metas ),
+			'value'         => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+			'options'       => [
+				'on'        => 'نمایش خودکار در بدنه محصول',
+				'thumbnail' => 'نمایش خودکار زیر تصویر شاخص',
+				'no'        => sprintf( 'نمایش دستی (راهنمای این گزینه در "تنظیمات افزونه >> خبرنامه محصول >> فرم عضویت در خبرنامه" آمده است.)' ),
+			],
+		] );
 
-			$this->product_metas[] = 'notif_only_loggedin';
-			woocommerce_wp_checkbox( [
-				'cbvalue'     => 'on',
-				'desc_tip'    => true,
-				'label'       => 'عضویت فقط برای اعضای سایت',
-				'description' => 'با فعالسازی این گزینه، فقط کاربران وارد شده قادر به عضویت در خبرنامه محصول خواهند بود.',
-				'id'          => end( $this->product_metas ),
-				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'notif_title';
+		woocommerce_wp_text_input( [
+			'desc_tip'    => true,
+			'label'       => 'متن عضویت در خبرنامه',
+			'description' => 'این متن در صفحه محصول به صورت چک باکس ظاهر خواهد شد و کاربر با انتخاب آن میتواند شماره موبایل و گروه های مورد نظر خود را برای عضویت در خبرنامه محصول وارد نماید.',
+			'id'          => end( $this->product_metas ),
+			'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			$this->product_metas[] = 'notif_only_loggedin_text';
-			woocommerce_wp_text_input( [
-				'desc_tip'    => true,
-				'label'       => 'متن جلوگیری از عضویت مهمانان',
-				'description' => 'در صورتی که گزینه "عضویت فقط برای اعضای سایت" را فعال کرده باشید، هنگامیکه کاربران مهمان قصد عضویت در خبرنامه محصول را داشته باشند، با این متن وارد شده مواجه خواهند شد.',
-				'id'          => end( $this->product_metas ),
-				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'notif_only_loggedin';
+		woocommerce_wp_checkbox( [
+			'cbvalue'     => 'on',
+			'desc_tip'    => true,
+			'label'       => 'عضویت فقط برای اعضای سایت',
+			'description' => 'با فعالسازی این گزینه، فقط کاربران وارد شده قادر به عضویت در خبرنامه محصول خواهند بود.',
+			'id'          => end( $this->product_metas ),
+			'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			echo '<p class="pwoosms-tab-help-toggle" style="cursor: pointer"></span>شورت کد های مورد استفاده در متن پیامک ها<span class="dashicons dashicons-editor-help"></p>';
+		$this->product_metas[] = 'notif_only_loggedin_text';
+		woocommerce_wp_text_input( [
+			'desc_tip'    => true,
+			'label'       => 'متن جلوگیری از عضویت مهمانان',
+			'description' => 'در صورتی که گزینه "عضویت فقط برای اعضای سایت" را فعال کرده باشید، هنگامیکه کاربران مهمان قصد عضویت در خبرنامه محصول را داشته باشند، با این متن وارد شده مواجه خواهند شد.',
+			'id'          => end( $this->product_metas ),
+			'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			echo '<div class="pwoosms-tab-help" style="display: none;">
+		echo '<p class="pwoosms-tab-help-toggle" style="cursor: pointer"></span>شورت کد های مورد استفاده در متن پیامک ها<span class="dashicons dashicons-editor-help"></p>';
+
+		echo '<div class="pwoosms-tab-help" style="display: none;">
 				<p><code>{product_id}</code> : آیدی محصول ، <code>{sku}</code> : شناسه محصول ، <code>{product_title}</code> : عنوان محصول ، <code>{product_title_full}</code> : عنوان محصول همراه متغیر ، <code>{regular_price}</code> قیمت اصلی ، <code>{onsale_price}</code> : قیمت فروش فوق العاده<br><code>{onsale_from}</code> : تاریخ شروع فروش فوق العاده ، <code>{onsale_to}</code> : تاریخ اتمام فروش فوق العاده ، <code>{stock}</code> : موجودی انبار</p>
 			</div>';
 
-			echo '<div class="setting-div"></div>';
+		echo '<div class="setting-div"></div>';
 
-			$this->product_metas[] = 'enable_onsale';
-			woocommerce_wp_checkbox( [
-				'cbvalue'     => 'on',
-				'desc_tip'    => true,
-				'label'       => 'زمانیکه محصول حراج شد',
-				'description' => 'با فعالسازی این گزینه، در صورت حراج نبودن محصول، گزینه "زمانیکه محصول حراج شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
-				'id'          => end( $this->product_metas ),
-				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'enable_onsale';
+		woocommerce_wp_checkbox( [
+			'cbvalue'     => 'on',
+			'desc_tip'    => true,
+			'label'       => 'زمانیکه محصول حراج شد',
+			'description' => 'با فعالسازی این گزینه، در صورت حراج نبودن محصول، گزینه "زمانیکه محصول حراج شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+			'id'          => end( $this->product_metas ),
+			'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			$this->product_metas[] = 'notif_onsale_text';
-			woocommerce_wp_text_input( [
-				'desc_tip' => true,
-				'label'    => 'متن گزینه "زمانیکه محصول حراج شد"',
-				'id'       => end( $this->product_metas ),
-				'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'notif_onsale_text';
+		woocommerce_wp_text_input( [
+			'desc_tip' => true,
+			'label'    => 'متن گزینه "زمانیکه محصول حراج شد"',
+			'id'       => end( $this->product_metas ),
+			'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			$this->product_metas[] = 'notif_onsale_sms';
-			woocommerce_wp_textarea_input( [
-				'class'    => 'short',
-				'desc_tip' => true,
-				'label'    => 'متن پیامک "زمانیکه محصول حراج شد"',
-				'id'       => end( $this->product_metas ),
-				'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'notif_onsale_sms';
+		woocommerce_wp_textarea_input( [
+			'class'    => 'short',
+			'desc_tip' => true,
+			'label'    => 'متن پیامک "زمانیکه محصول حراج شد"',
+			'id'       => end( $this->product_metas ),
+			'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			echo '<div class="setting-div"></div>';
+		echo '<div class="setting-div"></div>';
 
-			$this->product_metas[] = 'enable_notif_no_stock';
-			woocommerce_wp_checkbox( [
-				'cbvalue'     => 'on',
-				'desc_tip'    => true,
-				'label'       => 'زمانیکه محصول موجود شد',
-				'description' => 'با فعالسازی این گزینه، در صورت ناموجود بودن محصول، گزینه "زمانیکه محصول موجود شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
-				'id'          => end( $this->product_metas ),
-				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'enable_notif_no_stock';
+		woocommerce_wp_checkbox( [
+			'cbvalue'     => 'on',
+			'desc_tip'    => true,
+			'label'       => 'زمانیکه محصول موجود شد',
+			'description' => 'با فعالسازی این گزینه، در صورت ناموجود بودن محصول، گزینه "زمانیکه محصول موجود شد" در فرم عضویت خبرنامه نمایش داده خواهد شد.',
+			'id'          => end( $this->product_metas ),
+			'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			$this->product_metas[] = 'notif_no_stock_text';
-			woocommerce_wp_text_input( [
-				'desc_tip' => true,
-				'label'    => 'متن گزینه "زمانیکه محصول موجود شد"',
-				'id'       => end( $this->product_metas ),
-				'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'notif_no_stock_text';
+		woocommerce_wp_text_input( [
+			'desc_tip' => true,
+			'label'    => 'متن گزینه "زمانیکه محصول موجود شد"',
+			'id'       => end( $this->product_metas ),
+			'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			$this->product_metas[] = 'notif_no_stock_sms';
-			woocommerce_wp_textarea_input( [
-				'desc_tip' => true,
-				'label'    => 'متن پیامک "زمانیکه محصول موجود شد"',
-				'id'       => end( $this->product_metas ),
-				'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'notif_no_stock_sms';
+		woocommerce_wp_textarea_input( [
+			'desc_tip' => true,
+			'label'    => 'متن پیامک "زمانیکه محصول موجود شد"',
+			'id'       => end( $this->product_metas ),
+			'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			echo '<div class="setting-div"></div>';
+		echo '<div class="setting-div"></div>';
 
-			$this->product_metas[] = 'enable_notif_low_stock';
-			woocommerce_wp_checkbox( [
-				'cbvalue'     => 'on',
-				'desc_tip'    => true,
-				'label'       => 'زمانیکه محصول رو به اتمام است',
-				'description' => 'با فعال سازی این گزینه، اگر موجودی محصول کم باشد، گزینه‌ی "زمانی که موجودی رو به اتمام است" در فرم عضویت خبرنامه نمایش داده می شود.',
-				'id'          => end( $this->product_metas ),
-				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
-
-
-			$this->product_metas[] = 'notif_low_stock_text';
-			woocommerce_wp_text_input( [
-				'desc_tip' => true,
-				'label'    => 'متن گزینه "زمانیکه محصول رو به اتمام است"',
-				'id'       => end( $this->product_metas ),
-				'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'enable_notif_low_stock';
+		woocommerce_wp_checkbox( [
+			'cbvalue'     => 'on',
+			'desc_tip'    => true,
+			'label'       => 'زمانیکه محصول رو به اتمام است',
+			'description' => 'با فعال سازی این گزینه، اگر موجودی محصول کم باشد، گزینه‌ی "زمانی که موجودی رو به اتمام است" در فرم عضویت خبرنامه نمایش داده می شود.',
+			'id'          => end( $this->product_metas ),
+			'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
 
-			$this->product_metas[] = 'notif_low_stock_sms';
-			woocommerce_wp_textarea_input( [
-				'desc_tip' => true,
-				'label'    => 'متن پیامک "زمانیکه محصول رو به اتمام است"',
-				'id'       => end( $this->product_metas ),
-				'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+		$this->product_metas[] = 'notif_low_stock_text';
+		woocommerce_wp_text_input( [
+			'desc_tip' => true,
+			'label'    => 'متن گزینه "زمانیکه محصول رو به اتمام است"',
+			'id'       => end( $this->product_metas ),
+			'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			echo '<div class="setting-div"></div>';
+		$this->product_metas[] = 'notif_low_stock_sms';
+		woocommerce_wp_textarea_input( [
+			'desc_tip' => true,
+			'label'    => 'متن پیامک "زمانیکه محصول رو به اتمام است"',
+			'id'       => end( $this->product_metas ),
+			'value'    => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
+		echo '<div class="setting-div"></div>';
 
-			$this->product_metas[] = 'notif_options';
-			woocommerce_wp_textarea_input( [
-				'desc_tip'    => true,
-				'style'       => 'height:100px;',
-				'label'       => 'گزینه های دلخواه',
-				'description' => 'شما میتوانید گزینه های دلخواه خود را برای نمایش در صفحه محصولات ایجاد نمایید و به صورت دستی به مشتریانی که در گزینه های بالا عضو شده اند پیامک ارسال کنید.<br>
+		$this->product_metas[] = 'notif_options';
+		woocommerce_wp_textarea_input( [
+			'desc_tip'    => true,
+			'style'       => 'height:100px;',
+			'label'       => 'گزینه های دلخواه',
+			'description' => 'شما میتوانید گزینه های دلخواه خود را برای نمایش در صفحه محصولات ایجاد نمایید و به صورت دستی به مشتریانی که در گزینه های بالا عضو شده اند پیامک ارسال کنید.<br>
 		برای اضافه کردن گزینه ها، همانند نمونه بالا ابتدا یک کد عددی دلخواه تعریف کنید سپس بعد از قرار دادن عبارت ":" متن مورد نظر را بنویسید.<br>
 		دقت کنید که کد عددی هر گزینه بسیار مهم بوده و از تغییر کد مربوط به هر گزینه بعد از ذخیره تنظیمات خود داری نمایید.',
-				'id'          => end( $this->product_metas ),
-				'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
-			] );
+			'id'          => end( $this->product_metas ),
+			'value'       => PWSMS()->get_product_meta_value( end( $this->product_metas ), $product_id ),
+		] );
 
-			echo '<input type="hidden" name="sms_notification_metas" value="' . esc_attr( implode( ',', $this->product_metas ) ) . '">';
+		echo '<input type="hidden" name="sms_notification_metas" value="' . esc_attr( implode( ',', $this->product_metas ) ) . '">';
 
-			echo '<hr>';
-		}
+		echo '<hr>';
+
 	}
 
 	private function product_admin_settings( $product_id ) {
-
 		?>
 
 		<div class="pwoosms-tab-product-admin">
@@ -296,15 +301,17 @@ class Tab {
 			return '';
 		}
 
-		/*فروشندگان ست شده با متا*/
+		// Product Admin extracted from metas: product_admin_user_meta, product_admin_post_meta
 		$meta_tab_data = [];
 
 		$meta_mobile = PWSMS()->get_user_mobile_meta( $product_id );
+
 		if ( ! empty( $meta_mobile['meta'] ) ) {
 			$meta_tab_data[] = $meta_mobile;
 		}
 
 		$meta_mobile = PWSMS()->get_post_mobile_meta( $product_id );
+
 		if ( ! empty( $meta_mobile['meta'] ) ) {
 			$meta_tab_data[] = $meta_mobile;
 		}
@@ -339,14 +346,17 @@ class Tab {
 				'options' => $all_statuses,
 				'style'   => 'width:70%;height:10.5em;',
 			] );
+
 		}
+
 		if ( ! empty( $meta_tab_data ) ) {
 			echo '<div class="setting-div"></div>';
 		}
 
-		/*فروشندگان وارد شده دستی*/
+		// Manual configured Product Admins
 		$i        = 1;
 		$tab_data = array_filter( (array) $product->get_meta( '_pwoosms_product_admin_data', true ) );
+
 		foreach ( $tab_data as $tab ) {
 			?>
 
@@ -378,9 +388,9 @@ class Tab {
 			}
 
 			$i ++;
+
 		}
 		?>
-
 
 		<div id="duplicate_this_row_sms">
 
@@ -427,95 +437,119 @@ class Tab {
 			return;
 		}
 
+		// Update product sms notification settings
 		if ( $this->enable_notification && ! empty( $_POST['sms_notification_metas'] ) ) {
-			$updated = [];
 
-			foreach ( explode( ',', $_POST['sms_notification_metas'] ) as $product_meta ) {
+			$updated = $product->get_meta( '_is_sms_set', true ) ?: [];
 
-				$product_meta = ltrim( $product_meta, '_' );
-				$this_meta    = sanitize_text_field( $_POST[ $product_meta ] ?? '' );
+			$metas = explode( ',', $_POST['sms_notification_metas'] );
 
-				if ( wp_unslash( PWSMS()->maybe_bool( $this_meta ) ) != wp_unslash( PWSMS()->get_option( $product_meta ) ) ) {
-					$updated[] = $product_meta;
-					$product->update_meta_data( '_' . $product_meta, esc_textarea( $this_meta ) );
-				} else {
+			foreach ( $metas as $product_meta ) {
+
+				$product_meta   = ltrim( $product_meta, '_' );
+				$new_meta_value = sanitize_textarea_field( $_POST[ $product_meta ] ?? '' );
+				$old_meta_value = PWSMS()->get_product_meta_value( $product_meta, $product_id );
+
+				if ( $new_meta_value === '' ) {
+
+					$updated = array_diff( $updated, [ $product_meta ] );
 					$product->delete_meta_data( '_' . $product_meta );
+					continue;
+
 				}
-				$product->save_meta_data();
+
+				if ( PWSMS()->maybe_bool( $new_meta_value ) == PWSMS()->maybe_bool( $old_meta_value ) ) {
+					continue;
+				}
+
+				$product->update_meta_data( '_' . $product_meta, $new_meta_value );
+
+				if ( ! in_array( $product_meta, $updated ) ) {
+					$updated[] = $product_meta;
+				}
+
 			}
+
+			$updated = array_unique( $updated );
 
 			if ( ! empty( $updated ) ) {
 				$product->update_meta_data( '_is_sms_set', $updated );
 			} else {
 				$product->delete_meta_data( '_is_sms_set' );
 			}
+
 			$product->save_meta_data();
+
 		}
 
+		// List Admin and Product Admin extracted from custom meta and set by user
 		if ( isset( $_POST['sms_tab_counter'] ) ) {
-				$tab_data = [];
-				$count    = intval( $_POST['sms_tab_counter'] );
-				for ( $i = 1; $i <= $count; $i ++ ) {
 
-					if ( empty( $_POST[ 'pwoosms_tab_mobile_' . $i ] ) ) {
-						continue;
-					}
+			$tab_data = [];
+			$count    = intval( $_POST['sms_tab_counter'] );
 
-					$mobile   = stripslashes( PWSMS()->sanitize_text_field( $_POST[ 'pwoosms_tab_mobile_' . $i ] ) );
-					$statuses = ! empty( $_POST[ 'pwoosms_tab_status_' . $i ] ) ? PWSMS()->sanitize_text_field( $_POST[ 'pwoosms_tab_status_' . $i ] ) : '';
+			for ( $i = 1; $i <= $count; $i ++ ) {
 
-					$tab_data[ $i ] = [
-						'mobile'   => $mobile,
-						'statuses' => PWSMS()->prepare_admin_product_status( $statuses, false ),
-					];
-
+				if ( empty( $_POST[ 'pwoosms_tab_mobile_' . $i ] ) ) {
+					continue;
 				}
 
-				if ( ! empty( $tab_data ) ) {
-					$product->update_meta_data( '_pwoosms_product_admin_data', array_values( $tab_data ) );
-				} else {
-					$product->delete_meta_data( '_pwoosms_product_admin_data' );
-				}
-				$product->save_meta_data();
+				$mobile   = stripslashes( PWSMS()->sanitize_text_field( $_POST[ 'pwoosms_tab_mobile_' . $i ] ) );
+				$statuses = ! empty( $_POST[ 'pwoosms_tab_status_' . $i ] ) ? PWSMS()->sanitize_text_field( $_POST[ 'pwoosms_tab_status_' . $i ] ) : '';
+
+				$tab_data[ $i ] = [
+					'mobile'   => $mobile,
+					'statuses' => PWSMS()->prepare_admin_product_status( $statuses, false ),
+				];
+
 			}
 
-		/*ذخیره شماره های مربوط به متا*/
+			if ( ! empty( $tab_data ) ) {
+				$product->update_meta_data( '_pwoosms_product_admin_data', array_values( $tab_data ) );
+			} else {
+				$product->delete_meta_data( '_pwoosms_product_admin_data' );
+			}
+
+			$product->save_meta_data();
+
+		}
+
+		// Save meta related numbers : product_admin_user_meta, product_admin_post_meta
 		foreach ( [ 'user', 'post' ] as $meta ) {
 
-				if ( ! isset( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) ) {
-					continue;
-				}
-
-				$mobile = ! empty( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) ? sanitize_text_field( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) : '';
-
-				$statuses = '';
-
-				if ( isset( $_POST[ 'pwoosms_tab_status_meta_' . $meta ] ) && is_array( $_POST[ 'pwoosms_tab_status_meta_' . $meta ] ) ) {
-					$statuses = array_map( 'sanitize_text_field', $_POST[ 'pwoosms_tab_status_meta_' . $meta ] );
-				}
-
-				$statuses = PWSMS()->prepare_admin_product_status( $statuses, false );
-
-				$old_value    = $meta == 'post' ? PWSMS()->get_post_mobile_meta( $product_id ) : PWSMS()->get_user_mobile_meta( $product_id );
-				$old_mobile   = ! empty( $old_value['mobile'] ) ? $old_value['mobile'] : '';
-				$old_statuses = ! empty( $old_value['statuses'] ) ? $old_value['statuses'] : '';
-				$old_statuses = PWSMS()->prepare_admin_product_status( $old_statuses, false );
-
-				if ( $mobile == $old_mobile && $statuses == $old_statuses ) {
-					continue;
-				}
-
-				$product->update_meta_data( '_pwoosms_product_admin_meta_' . $meta, [
-					'meta'     => $meta,
-					'mobile'   => PWSMS()->sanitize_text_field( $mobile ),
-					'statuses' => $statuses,
-				] );
-
-				$product->save_meta_data();
-
+			if ( ! isset( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) ) {
+				continue;
 			}
 
-	}
+			$mobile = ! empty( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) ? sanitize_text_field( $_POST[ 'pwoosms_tab_mobile_meta_' . $meta ] ) : '';
 
+			$statuses = '';
+
+			if ( isset( $_POST[ 'pwoosms_tab_status_meta_' . $meta ] ) && is_array( $_POST[ 'pwoosms_tab_status_meta_' . $meta ] ) ) {
+				$statuses = array_map( 'sanitize_text_field', $_POST[ 'pwoosms_tab_status_meta_' . $meta ] );
+			}
+
+			$statuses = PWSMS()->prepare_admin_product_status( $statuses, false );
+
+			$old_meta_value = $meta == 'post' ? PWSMS()->get_post_mobile_meta( $product_id ) : PWSMS()->get_user_mobile_meta( $product_id );
+			$old_mobile     = ! empty( $old_meta_value['mobile'] ) ? $old_meta_value['mobile'] : '';
+			$old_statuses   = ! empty( $old_meta_value['statuses'] ) ? $old_meta_value['statuses'] : '';
+			$old_statuses   = PWSMS()->prepare_admin_product_status( $old_statuses, false );
+
+			if ( $mobile == $old_mobile && $statuses == $old_statuses ) {
+				continue;
+			}
+
+			$product->update_meta_data( '_pwoosms_product_admin_meta_' . $meta, [
+				'meta'     => $meta,
+				'mobile'   => PWSMS()->sanitize_text_field( $mobile ),
+				'statuses' => $statuses,
+			] );
+
+			$product->save_meta_data();
+
+		}
+
+	}
 }
 

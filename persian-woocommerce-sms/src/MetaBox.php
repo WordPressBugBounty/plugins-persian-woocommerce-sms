@@ -2,6 +2,7 @@
 
 namespace PW\PWSMS;
 
+use PW\PWSMS\Enums\EventsEnum;
 use PW\PWSMS\Subscription\Contacts;
 use WC_Order;
 
@@ -301,7 +302,7 @@ class MetaBox {
 
 		$data = [
 			'post_id' => $order_id,
-			'type'    => 3,
+			'type'    => EventsEnum::CUSTOMER_MANUAL_ORDER_METABOX,
 			'mobile'  => $mobile,
 			'message' => $message,
 		];
@@ -339,7 +340,7 @@ class MetaBox {
 
 		$data = [
 			'post_id' => $order_id,
-			'type'    => 3,
+			'type'    => EventsEnum::CUSTOMER_MANUAL_ORDER_METABOX,
 			'mobile'  => $mobile,
 			'message' => $message,
 		];
@@ -370,26 +371,26 @@ class MetaBox {
 		}
 
 		if ( $group == '_product_admins' ) {
-			$type    = 6;
+			$type    = EventsEnum::PRODUCT_MANAGER_MANUAL_PRODUCT_METABOX;
 			$mobiles = array_keys( PWSMS()->product_admin_mobiles( $product_id ) );
 		} else {
 
 			switch ( $group ) {
 
-				case '_onsale'://حراج
-					$type = 10;
+				case '_onsale':
+					$type = EventsEnum::NEWSLETTER_SALE_MANUAL;
 					break;
 
-				case '_in'://موجود شدن
-					$type = 12;
+				case '_in':
+					$type = EventsEnum::NEWSLETTER_IN_STOCK_MANUAL;
 					break;
 
-				case '_low'://کم بودن موجودی
-					$type = 14;
+				case '_low':
+					$type = EventsEnum::NEWSLETTER_LOW_STOCK_MANUAL;
 					break;
 
 				default:
-					$type = 15;
+					$type = EventsEnum::NEWSLETTER_CUSTOM_OPTIONS_MANUAL;
 			}
 
 			$mobiles = Contacts::get_contacts_mobile( $product_id, $group );

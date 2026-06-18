@@ -2,6 +2,7 @@
 
 namespace PW\PWSMS;
 
+use PW\PWSMS\Enums\EventsEnum;
 use PWS_Tapin;
 use WC_Order;
 
@@ -121,7 +122,7 @@ class Orders {
 		$data         = [
 			'post_id' => $order_id,
 			'mobile'  => $mobile,
-			'type'    => 4,
+			'type'    => EventsEnum::SUPER_ADMIN_AUTOMATIC_ORDER,
 			'message' => PWSMS()->replace_short_codes( $message, $order_status, $order, [ 'post_tracking_code' => $tracking_code, 'post_tracking_url' => 'https://radgir.net' ] ),
 		];
 
@@ -150,7 +151,6 @@ class Orders {
 
 		$order = new WC_Order( $order_id );
 
-		// send sms to Customer
 		$order_page = ( $_POST['is_shop_order'] ?? null ) == 'true';
 
 		if ( ( $order_page && ! empty( $_POST['sms_order_send'] ) ) || ( ! $order_page && $this->buyer_can_get_sms( $order_id, $new_status ) ) ) {
@@ -160,7 +160,7 @@ class Orders {
 
 			$data = [
 				'post_id' => $order_id,
-				'type'    => 2,
+				'type'    => EventsEnum::CUSTOMER_AUTOMATIC_ORDER,
 				'mobile'  => $mobile,
 				'message' => PWSMS()->replace_short_codes( $message, $new_status, $order ),
 			];
@@ -172,50 +172,70 @@ class Orders {
 			}
 		}
 
-
-		// send sms to Super Admin
-		if ( in_array( $new_status, (array) PWSMS()->get_option( 'super_admin_order_status' ) ) ) {
+		// send sms to Super Admin, Excluded sub orders
+		if (
+			in_array( $new_status, (array) PWSMS()->get_option( 'super_admin_order_status' ) ) &&
+			! $order->get_parent_id()
+		) {
 
 			$mobile  = PWSMS()->get_option( 'super_admin_phone' );
 			$message = PWSMS()->get_option( 'super_admin_sms_body_' . $new_status );
 
 			$data = [
 				'post_id' => $order_id,
-				'type'    => 4,
+				'type'    => EventsEnum::SUPER_ADMIN_AUTOMATIC_ORDER,
 				'mobile'  => $mobile,
 				'message' => PWSMS()->replace_short_codes( $message, $new_status, $order ),
 			];
 
-			Bot::send_async($data);
+			Bot::send_async( $data );
 
 			if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
 				$order->add_order_note( sprintf( 'پیامک با موفقیت به مدیر کل با شماره %s ارسال گردید.', $mobile ) );
 			} else {
 				$order->add_order_note( sprintf( 'پیامک بخاطر خطا به مدیر کل با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
 			}
+
 		}
 
 		$order_products = PWSMS()->get_product_lists( $order, 'product_id' );
-		$mobiles        = PWSMS()->product_admin_mobiles( $order_products['product_id'], $new_status );
+
+		if ( $order->get_parent_id() ) {
+
+			$sources = [
+				'dokan_vendor',
+				'user_meta',
+				'post_meta',
+			];
+
+		} else {
+
+			$sources = [
+				'product_meta',
+			];
+
+		}
+
+		$mobiles = PWSMS()->product_admin_mobiles( $order_products['product_id'], $new_status, $sources );
 
 		foreach ( (array) $mobiles as $mobile => $product_ids ) {
 
-				$vendor_items = PWSMS()->product_admin_items( $order_products, $product_ids );
-				$message      = PWSMS()->get_option( 'product_admin_sms_body_' . $new_status );
+			$vendor_items = PWSMS()->product_admin_items( $order_products, $product_ids );
+			$message      = PWSMS()->get_option( 'product_admin_sms_body_' . $new_status );
 
-				$data = [
-					'post_id' => $order_id,
-					'type'    => 5,
-					'mobile'  => $mobile,
-					'message' => PWSMS()->replace_short_codes( $message, $new_status, $order, $vendor_items ),
-				];
+			$data = [
+				'post_id' => $order_id,
+				'type'    => EventsEnum::PRODUCT_MANAGER_AUTOMATIC_ORDER,
+				'mobile'  => $mobile,
+				'message' => PWSMS()->replace_short_codes( $message, $new_status, $order, $vendor_items ),
+			];
 
-				if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
-					$order->add_order_note( sprintf( 'پیامک با موفقیت به مدیر محصول با شماره %s ارسال گردید.', $mobile ) );
-				} else {
-					$order->add_order_note( sprintf( 'پیامک بخاطر خطا به مدیر محصول با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
-				}
+			if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+				$order->add_order_note( sprintf( 'پیامک با موفقیت به مدیر محصول با شماره %s ارسال گردید.', $mobile ) );
+			} else {
+				$order->add_order_note( sprintf( 'پیامک بخاطر خطا به مدیر محصول با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
 			}
+		}
 
 	}
 
@@ -232,6 +252,16 @@ class Orders {
 		}
 
 		if ( ! PWSMS()->validate_mobile( PWSMS()->buyer_mobile( $order_id ) ) ) {
+			return false;
+		}
+
+		$sub_orders = wc_get_orders( [
+			'parent' => $order_id,
+			'limit'  => 1,
+			'return' => 'ids',
+		] );
+
+		if ( ! $order->get_parent_id() && ! empty( $sub_orders ) ) {
 			return false;
 		}
 

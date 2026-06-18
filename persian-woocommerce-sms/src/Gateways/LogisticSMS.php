@@ -30,7 +30,7 @@ class LogisticSMS extends Gateway {
 		}
 
 		$response      = wp_remote_retrieve_body( $remote );
-		$response_code = wp_remote_retrieve_response_code( $response );
+		$response_code = wp_remote_retrieve_response_code( $remote );
 
 		if ( empty( $response_code ) || 200 != $response_code ) {
 			return 0;
@@ -65,7 +65,7 @@ class LogisticSMS extends Gateway {
 
 		$url = $this->url . '/api/v1/sms/send';
 
-		$failed_numbers = [];
+		$this->failed_numbers = [];
 
 		foreach ( $this->mobile as $mobile ) {
 
@@ -91,14 +91,14 @@ class LogisticSMS extends Gateway {
 
 			// Check if the response is a WP_Error
 			if ( is_wp_error( $remote ) ) {
-				$failed_numbers[ $mobile ] = $remote->get_error_message();
+				$this->failed_numbers[ $mobile ] = $remote->get_error_message();
 			}
 
 			$response_message = wp_remote_retrieve_response_message( $remote );
 			$response_code    = wp_remote_retrieve_response_code( $remote );
 
 			if ( empty( $response_code ) || 200 != $response_code ) {
-				$failed_numbers[ $mobile ] = $response_code . ' -> ' . $response_message;
+				$this->failed_numbers[ $mobile ] = $response_code . ' -> ' . $response_message;
 				continue;
 			}
 
@@ -109,34 +109,13 @@ class LogisticSMS extends Gateway {
 
 			// Check if 'msg' is 'success'
 			if ( ! isset( $response['msg'] ) || $response['msg'] !== 'success' ) {
-				$failed_numbers[ $mobile ] = 'خطا: ' . $response['msg'];
+				$this->failed_numbers[ $mobile ] = 'خطا: ' . $response['msg'];
 				continue;
 			}
 
 		}
 
-		return $this->format_failed_numbers( $failed_numbers );
-	}
-
-	private function format_failed_numbers( array $failed_numbers ) {
-		// Handle failed numbers and format response
-		if ( ! empty( $failed_numbers ) ) {
-			$grouped = [];
-			foreach ( $failed_numbers as $number => $message ) {
-				if ( ! isset( $grouped[ $message ] ) ) {
-					$grouped[ $message ] = [];
-				}
-				$grouped[ $message ][] = $number;
-			}
-
-			$result = implode( ', ', array_map( function ( string $message, array $numbers ) {
-				return implode( ',', $numbers ) . ': ' . $message;
-			}, array_keys( $grouped ), $grouped ) );
-
-			return $result;
-		}
-
-		return true;
+		return $this->format_failed_numbers();
 	}
 
 	/**
@@ -152,7 +131,7 @@ class LogisticSMS extends Gateway {
 	 * returns string if failed, true if success
 	 * @return string | bool
 	 */
-	private function fetch_token() {
+	public function fetch_token() {
 		$url      = "{$this->url}/api/v1/login";
 		$username = $this->username;
 		$password = $this->password;

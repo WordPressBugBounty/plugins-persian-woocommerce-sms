@@ -3,11 +3,15 @@
 namespace PW\PWSMS\Gateways;
 
 
-class SMSIRToken extends Gateway {
+use Exception;
+use PW\PWSMS\Gateways\Features\SendPatternFeature;
+use PW\PWSMS\Helpers\Curl;
+
+class SMSIRToken extends Gateway implements SendPatternFeature {
 
 	public string $api_url = 'https://api.sms.ir/v1/';
+
 	public string $api_key;
-	public array $failed_numbers;
 
 	public static function id(): string {
 		return 'smsir-new';
@@ -17,11 +21,11 @@ class SMSIRToken extends Gateway {
 		return 'SMS.ir (کلید دسترسی)';
 	}
 
-	public function send() {
+	public function send(): bool {
 		$this->api_key = $this->get_token();
 
 		if ( empty( $this->api_key ) ) {
-			return 'کلید وبسرویس را در بخش تنظیمات وبسرویس تعریف کنید.';
+			throw new Exception( 'کلید وبسرویس را در بخش تنظیمات وبسرویس تعریف کنید.' );
 		}
 
 		if ( $this->is_pattern() ) {
@@ -31,7 +35,10 @@ class SMSIRToken extends Gateway {
 		return $this->send_normal_sms();
 	}
 
-	private function send_pattern_sms() {
+	/**
+	 * @throws Exception
+	 */
+	public function send_pattern_sms(): bool {
 
 		$pattern = $this->parse_pattern();
 
@@ -45,70 +52,52 @@ class SMSIRToken extends Gateway {
 		}
 
 		$headers = [
-			'Content-Type' => 'application/json',
-			'x-api-key'    => $this->api_key,
+			'Content-Type: application/json',
+			'x-api-key: ' . $this->api_key,
 		];
 
-		$payload = [
-			"templateId" => $pattern['code'],
-			"parameters" => $parameters,
+		$data = [
+			'templateId' => $pattern['code'],
+			'parameters' => $parameters,
 		];
 
 		foreach ( $this->mobile as $recipient ) {
 
-			$payload["mobile"] = $recipient;
+			$data['mobile'] = $recipient;
 
-			$remote = wp_remote_post( $this->api_url . "send/verify", [
-				'method'      => 'POST',
-				'body'        => json_encode( $payload ),
-				'headers'     => $headers,
-				'timeout'     => 5,
-				'data_format' => 'body',
-			] );
-
-			if ( is_wp_error( $remote ) ) {
-				$this->failed_numbers[ $recipient ] = $remote->get_error_message();
-			}
-
-			$response_message = wp_remote_retrieve_response_message( $remote );
-			$response_code    = wp_remote_retrieve_response_code( $remote );
-
-			if ( empty( $response_code ) || 200 != $response_code ) {
-				$this->failed_numbers[ $recipient ] = $response_code . ' -> ' . $response_message;
+			try {
+				$response = Curl::post( $this->api_url . 'send/verify', wp_json_encode( $data ), $headers );
+			} catch ( Exception $e ) {
+				$this->failed_numbers[ $recipient ] = $e->getMessage();
 				continue;
 			}
 
-			$response_body = wp_remote_retrieve_body( $remote );
-
-			if ( empty( $response_body ) ) {
-				$this->failed_numbers[ $recipient ] = 'پاسخی از وب‌سرویس دریافت نشد.';
+			if ( isset( $response['messageId'] ) ) {
 				continue;
 			}
 
-			$response_data = json_decode( $response_body, true );
-
-			if ( ! empty( json_last_error() ) ) {
-				$this->failed_numbers[ $recipient ] = 'قالب پاسخ دریافتی از وب‌سرویس نامعتبر است.';
+			if ( isset( $response['message'] ) ) {
+				$this->failed_numbers[ $recipient ] = $response['message'];
 				continue;
 			}
 
-			if ( ! isset( $response_data['status'] ) && $response_data['status'] = ! '1' ) {
-				$error_message                      = $response_data['message'] ?? 'خطایی ناشناخته رخ داده است.';
-				$this->failed_numbers[ $recipient ] = $error_message;
+			if ( isset( $response['title'] ) ) {
+				$this->failed_numbers[ $recipient ] = $response['title'];
 				continue;
 			}
 
-			if ( isset( $response_data['status'] ) && $response_data['status'] == '1' ) {
-				continue;
-			}
-
+			$this->failed_numbers[ $recipient ] = 'خطای ناشناخته در ارسال به sms.ir رخ داده است.';
 		}
 
 		return $this->format_failed_numbers();
 	}
 
-	private function send_normal_sms() {
-		$params = [
+	/**
+	 * @throws Exception
+	 */
+	public function send_normal_sms(): bool {
+
+		$data = [
 			'lineNumber'   => $this->senderNumber,
 			'messageText'  => $this->message,
 			'mobiles'      => $this->mobile,
@@ -116,69 +105,25 @@ class SMSIRToken extends Gateway {
 		];
 
 		$headers = [
-			'Content-Type' => 'application/json',
-			'X-API-KEY'    => $this->api_key,
+			'Content-Type: application/json',
+			'X-API-KEY: ' . $this->api_key,
 		];
 
-		$remote = wp_remote_post( $this->api_url . 'send/bulk', [
-			'method'      => 'POST',
-			'body'        => json_encode( $params ),
-			'headers'     => $headers,
-			'timeout'     => 5,
-			'data_format' => 'body',
-		] );
+		$response = Curl::post( $this->api_url . 'send/bulk', wp_json_encode( $data ), $headers );
 
-		if ( is_wp_error( $remote ) ) {
-			return 'خطا: ' . $remote->get_error_message();
-		}
-
-		$response_message = wp_remote_retrieve_response_message( $remote );
-		$response_code    = wp_remote_retrieve_response_code( $remote );
-
-		if ( empty( $response_code ) || 200 != $response_code ) {
-			return $response_code . ' -> ' . $response_message;
-		}
-
-		$response_body = wp_remote_retrieve_body( $remote );
-
-		if ( empty( $response_body ) ) {
-			return 'پاسخی از وب‌سرویس دریافت نشد.';
-		}
-
-		$response_data = json_decode( $response_body, true );
-
-		if ( ! empty( json_last_error() ) ) {
-			return 'قالب پاسخ دریافتی از وب‌سرویس نامعتبر است.';
-		}
-
-		if ( isset( $response_data['status'] ) && $response_data['status'] == '1' ) {
+		if ( isset( $response['data']['packId'] ) ) {
 			return true;
 		}
 
-		return isset( $response_data['status'] ) ? $response_data['status'] . ' : ' . $response_data['message'] : 'خطایی ناشناخته رخ داده است.';
-	}
-
-
-	private function format_failed_numbers() {
-
-		if ( empty( $this->failed_numbers ) ) {
-			return true;
+		if ( isset( $response['message'] ) ) {
+			throw new Exception( $response['message'], $response['status'] ?? 0 );
 		}
 
-		$grouped = [];
-
-		foreach ( $this->failed_numbers as $number => $message ) {
-
-			if ( ! isset( $grouped[ $message ] ) ) {
-				$grouped[ $message ] = [];
-			}
-
-			$grouped[ $message ][] = $number;
-
+		if ( isset( $response['title'] ) ) {
+			throw new Exception( $response['title'], $response['status'] ?? 0 );
 		}
 
-		return implode( ', ', array_map( function ( string $message, array $numbers ) {
-			return implode( ',', $numbers ) . ': ' . $message;
-		}, array_keys( $grouped ), $grouped ) );
+		throw new Exception( 'خطای ناشناخته در ارسال به sms.ir رخ داده است.' );
 	}
+
 }

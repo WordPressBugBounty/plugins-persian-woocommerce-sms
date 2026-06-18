@@ -12,7 +12,6 @@ use ReflectionClass;
 use WC_Meta_Box_Order_Notes;
 use WC_Order;
 use WC_Product;
-use WeDevs\Dokan\Utilities\OrderUtil;
 use WeDevs\Dokan\Vendor\Vendor;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -115,7 +114,11 @@ class Helper {
 
 		// TODO : Migrate from reciever to receiver
 		// Prepare the SQL query to get receivers with the given type and post_id
-		$select_sql   = "SELECT reciever FROM {$table} WHERE type = %d AND post_id = %d";
+		$select_sql   = "SELECT reciever 
+                 FROM {$table} 
+                 WHERE type = %d 
+                 AND post_id = %d
+                 AND date >= (NOW() - INTERVAL 24 HOUR)";
 		$select_query = $wpdb->prepare( $select_sql, $type, $post_id );
 
 		// Get the results from the database
@@ -423,6 +426,10 @@ class Helper {
 			$product_id = get_the_ID();
 		} elseif ( is_numeric( $product ) ) {
 			$product_id = $product;
+		} elseif ( is_object( $product ) && method_exists( $product, 'get_id' ) ) {
+			$product_id = $product->get_id();
+		} elseif ( is_object( $product ) && isset( $product->ID ) ) {
+			$product_id = $product->ID;
 		} elseif ( is_object( $product ) ) {
 			$product_id = $this->product_prop( $product, 'id' );
 		} else {
@@ -716,14 +723,6 @@ class Helper {
 
 	}
 
-	/**
-	 * This method will return product title only
-	 * The variable product is without variations in title
-	 *
-	 * @param WC_Product|int $product
-	 *
-	 * @return string
-	 */
 	public function product_title( $product ): string {
 		$product_id = $this->product_ID( $product );
 
@@ -754,29 +753,25 @@ class Helper {
 		return html_entity_decode( urldecode( $product_title ) );
 	}
 
-
-	/**
-	 * This method will return the full product title (variable products with variations in title)
-	 * As it returns the variables in product title
-	 *
-	 * @param WC_Product|int $product
-	 *
-	 * @return string
-	 */
-	public function product_title_full( $product ) {
+	public function product_title_full( $product ): string {
 		$product_id = $this->product_ID( $product );
 
 		if ( ! is_object( $product ) ) {
-			$product = wc_get_product( $product );
+			$product = wc_get_product( $product_id );
 		}
 
 		if ( ! PWSMS()->is_wc_product( $product ) ) {
 			return '-';
 		}
 
-		$product_title = get_the_title( $product_id );
+		$title      = $product->get_title();
+		$attributes = wc_get_formatted_variation( $product, true, false );
 
-		return html_entity_decode( urldecode( $product_title ) );
+		if ( ! empty( $attributes ) ) {
+			$title .= ' - ' . $attributes;
+		}
+
+		return html_entity_decode( rawurldecode( $title ), ENT_QUOTES, 'UTF-8' );
 	}
 
 	public function maybe_variable_product_title( $product ) {
@@ -1013,7 +1008,7 @@ class Helper {
 	}
 
 	public function has_notif_condition( $key, $product_id ) {
-		return $this->get_option( 'enable_notif_sms_main' ) && $this->maybe_bool( $this->get_product_meta_value( $key, $product_id ) );
+		return $this->get_option( 'enable_notif_sms_main' ) && $this->maybe_bool( $this->get_sms_setting( $key, $product_id ) );
 	}
 
 	public function get_product_meta_value( $key, $product_id ) {
@@ -1028,11 +1023,21 @@ class Helper {
 
 		$sms_set = $product->get_meta( '_is_sms_set', true );
 
-		if ( ( is_string( $sms_set ) && $this->maybe_bool( $sms_set ) ) || ( is_array( $sms_set ) && in_array( $key, $sms_set ) ) ) {
-			return $product->get_meta( '_' . $key, true );
+		if ( ! is_array( $sms_set ) || ! in_array( $key, $sms_set, true ) ) {
+			return '';
 		}
 
-		return $this->get_option( $key, '__' );
+		return $product->get_meta( '_' . $key, true );
+	}
+
+	public function get_sms_setting( $key, $product_id ) {
+		$value = $this->get_product_meta_value( $key, $product_id );
+
+		if ( $value === '' ) {
+			return $this->get_option( $key, '__' );
+		}
+
+		return $value;
 	}
 
 	public function replace_tags( $key, $product_id, $parent_product_id ) {
@@ -1047,34 +1052,33 @@ class Helper {
 			return '';
 		}
 
-		$sku = $this->product_prop( $product, 'sku' );
+		$sku = $product->get_sku();
 
 		if ( empty( $sku ) ) {
-			$sku = $this->product_prop( $parent_product, 'sku' );
+			$sku = $parent_product->get_sku();
 		}
 
 		$tags = [
 			'{product_id}'         => $parent_product_id,
-			'{product_url}'        => $product->get_permalink(),
+			'{product_url}'        => rawurldecode( rawurldecode( $product->get_permalink() ) ),
 			'{sku}'                => $sku,
 			'{product_title}'      => $this->product_title( $product ),
 			'{product_title_full}' => $this->product_title_full( $product ),
-			'{regular_price}'      => wp_strip_all_tags( wc_price( $this->product_prop( $product, 'regular_price' ) ) ),
-			'{onsale_price}'       => wp_strip_all_tags( wc_price( $this->product_prop( $product, 'sale_price' ) ) ),
+			'{regular_price}'      => wp_strip_all_tags( wc_price( $product->get_regular_price() ) ),
+			'{onsale_price}'       => wp_strip_all_tags( wc_price( $product->get_sale_price() ) ),
 			'{onsale_from}'        => $this->maybe_jalali_date( $sale_price_dates_from ),
 			'{onsale_to}'          => $this->maybe_jalali_date( $sale_price_dates_to ),
 			'{stock}'              => $this->product_stock_qty( $product ),
 
 		];
 
-		$content = $this->get_product_meta_value( $key, $parent_product_id );
+		$content = $this->get_sms_setting( $key, $parent_product_id );
 
-		return str_replace( [ '<br>', '<br>', '<br />', '&nbsp;' ], [
-			'',
-			'',
-			'',
-			' ',
-		], str_replace( array_keys( $tags ), array_values( $tags ), $content ) );
+		return str_replace(
+			[ '<br>', '<br />', '&nbsp;' ],
+			[ '\n', '\n', ' ' ],
+			str_replace( array_keys( $tags ), array_values( $tags ), $content )
+		);
 	}
 
 	public function product_sale_price_time( $product, $type = '' ) {
@@ -1111,10 +1115,19 @@ class Helper {
 		return $timestamp;
 	}
 
-	public function product_admin_mobiles( $product_ids, $status = '' ) {
+	public function product_admin_mobiles( $product_ids, string $status = '', array $sources = [] ) {
 
 		$product_ids = array_unique( (array) $product_ids );
 		$mobiles     = [];
+
+		if ( [] === $sources ) {
+			$sources = [
+				'product_meta',
+				'user_meta',
+				'post_meta',
+				'dokan_vendor',
+			];
+		}
 
 		foreach ( $product_ids as $product_id ) {
 
@@ -1124,10 +1137,23 @@ class Helper {
 				return '';
 			}
 
-			$product_admin   = (array) $product->get_meta( '_pwoosms_product_admin_data', true );
-			$product_admin[] = $this->get_user_mobile_meta( $product_id );
-			$product_admin[] = $this->get_post_mobile_meta( $product_id );
-			$product_admin[] = $this->get_dokan_vendor_mobile( $product_id );
+			$product_admin = [];
+
+			if ( in_array( 'product_meta', $sources ) ) {
+				$product_admin = (array) $product->get_meta( '_pwoosms_product_admin_data', true );
+			}
+
+			if ( in_array( 'user_meta', $sources ) ) {
+				$product_admin[] = $this->get_user_mobile_meta( $product_id );
+			}
+
+			if ( in_array( 'post_meta', $sources ) ) {
+				$product_admin[] = $this->get_post_mobile_meta( $product_id );
+			}
+
+			if ( in_array( 'dokan_vendor', $sources ) ) {
+				$product_admin[] = $this->get_dokan_vendor_mobile( $product_id );
+			}
 
 			$product_admin = array_filter( $product_admin );
 
@@ -1409,10 +1435,18 @@ class Helper {
 	}
 
 	public function product_admin_items( $order_products, $product_ids ) {
-
-		$product_ids = array_unique( $product_ids );
-
 		$items = [];
+
+		if ( empty( $product_ids ) ) {
+			return $items;
+		}
+
+		if ( is_array( $product_ids ) ) {
+			$product_ids = array_unique( $product_ids );
+		} else {
+			$product_ids = [ $product_ids ];
+		}
+
 
 		foreach ( $product_ids as $product_id ) {
 
@@ -1471,7 +1505,6 @@ class Helper {
 		$mobile = array_unique( array_filter( $mobile ) );
 
 		$gateway_obj = $this->get_sms_gateway();
-		$gateway_class = get_class( $gateway_obj );
 
 		if ( empty( $mobile ) ) {
 			return 'شماره موبایل خالی/نامعتبر است.';
@@ -1479,14 +1512,6 @@ class Helper {
 
 		if ( empty( $message ) ) {
 			return 'متن پیامک خالی است.';
-		}
-
-		if ( empty( $gateway_class ) ) {
-			return 'تنظیمات درگاه پیامک انجام نشده است.';
-		}
-
-		if ( ! class_exists( $gateway_class ) ) {
-			return 'درگاه پیامکی شما وجود ندارد.';
 		}
 
 		try {
@@ -1499,25 +1524,18 @@ class Helper {
 			$result = $e->getMessage();
 		}
 
-		if ( $result !== true && ! is_string( $result ) ) {
-			ob_start();
-			var_dump( $result );
-			$result = ob_get_clean();
+		if ( ! is_bool( $result ) && ! is_string( $result ) ) {
+			$result = var_export( $result, true );
 		}
 
-		if ( ! empty( $mobile ) && ! empty( $message ) ) {
-
-			$sender = '( ' . $gateway_obj->senderNumber . ' ) ' . $gateway_obj->name();
-
-			Archive::insert_record( [
-				'post_id'  => ! empty( $data['post_id'] ) ? $data['post_id'] : '',
-				'type'     => ! empty( $data['type'] ) ? $data['type'] : 0,
-				'reciever' => implode( ',', (array) $mobile ),
-				'message'  => $message,
-				'sender'   => $sender,
-				'result'   => $result === true ? '_ok_' : $result,
-			] );
-		}
+		Archive::insert_record( [
+			'post_id'  => ! empty( $data['post_id'] ) ? $data['post_id'] : '',
+			'type'     => ! empty( $data['type'] ) ? $data['type'] : 0,
+			'reciever' => implode( ',', (array) $mobile ),
+			'message'  => $message,
+			'sender'   => '( ' . $gateway_obj->senderNumber . ' ) ' . $gateway_obj->name(),
+			'result'   => $result === true ? '_ok_' : $result,
+		] );
 
 		return $result;
 	}

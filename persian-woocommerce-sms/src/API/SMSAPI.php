@@ -3,6 +3,7 @@
 namespace PW\PWSMS\API;
 
 use PW\PWSMS\API\RestAPI;
+use PW\PWSMS\Enums\EventsEnum;
 use PW\PWSMS\Helper;
 use PW\PWSMS\PWSMS;
 use WP_Error;
@@ -31,7 +32,7 @@ class SMSAPI extends RestAPI {
 		return current_user_can( 'manage_options' );
 	}
 
-	public function send( $request ) {
+	public function send( $request ): WP_REST_Response {
 		$message = $request->get_param( 'message' );
 		$mobile  = $request->get_param( 'mobile' );
 
@@ -41,7 +42,7 @@ class SMSAPI extends RestAPI {
 		$mobile_array      = array_filter( $mobile_array, [ PWSMS(), 'validate_mobile' ] );
 
 		$data              = [
-			'type'    => 1,
+			'type'    => EventsEnum::BULK_SEND,
 			'mobile'  => $mobile_array,
 			'message' => ! empty( $message ) ? sanitize_textarea_field( $message ) : '',
 		];

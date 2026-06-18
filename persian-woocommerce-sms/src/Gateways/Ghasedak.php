@@ -31,7 +31,7 @@ class Ghasedak extends Gateway {
 		return $this->send_normal_sms();
 	}
 
-	private function send_pattern_sms() {
+	public function send_pattern_sms() {
 		$pattern = $this->parse_pattern();
 
 		$headers = [
@@ -96,7 +96,7 @@ class Ghasedak extends Gateway {
 		return 'خطای وبسرویس: ' . $response_data['message'] ?? 'خطایی ناشناخته رخ داده است.';
 	}
 
-	private function send_normal_sms() {
+	public function send_normal_sms() {
 		$date_time           = new DateTime();
 		$date_string         = $date_time->format( 'c' );
 		$client_reference_id = wp_rand( 1, 1000000 );

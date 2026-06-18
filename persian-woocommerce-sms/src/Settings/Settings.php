@@ -145,29 +145,28 @@ class Settings {
 			$filtered_shortcodes['{vendor_price}']       = 'مجموع قیمت محصولات سفارش هر فروشنده';
 		}
 
-
 		$final_shortcodes['core'] = array_merge( $core_shortcodes, $filtered_shortcodes );
 
-
 		$final_shortcodes['notification'] = [
-			"{product_id}"    => "آیدی محصول",
-			"{product_url}"   => "لینک محصول",
-			"{sku}"           => "شناسه محصول",
-			"{product_title}" => "عنوان محصول",
-			"{regular_price}" => "قیمت اصلی",
-			"{onsale_price}"  => "قیمت فروش فوق العاده",
-			"{onsale_from}"   => "تاریخ شروع فروش فوق العاده",
-			"{onsale_to}"     => "تاریخ اتمام فروش فوق العاده",
-			"{stock}"         => "موجودی انبار",
+			"{product_id}"         => "آیدی محصول",
+			"{product_url}"        => "لینک محصول",
+			"{sku}"                => "شناسه محصول",
+			"{product_title}"      => "عنوان محصول",
+			"{product_title_full}" => "عنوان محصول‌ با متغیر",
+			"{regular_price}"      => "قیمت اصلی",
+			"{onsale_price}"       => "قیمت فروش فوق العاده",
+			"{onsale_from}"        => "تاریخ شروع فروش فوق العاده",
+			"{onsale_to}"          => "تاریخ اتمام فروش فوق العاده",
+			"{stock}"              => "موجودی انبار",
 		];
 
-
 		$final_shortcodes['stock'] = [
-			"{product_id}"    => "آیدی محصول",
-			"{product_url}"   => "لینک محصول",
-			"{sku}"           => "شناسه محصول",
-			"{product_title}" => "عنوان محصول",
-			"{stock}"         => "موجودی انبار",
+			"{product_id}"         => "آیدی محصول",
+			"{product_url}"        => "لینک محصول",
+			"{sku}"                => "شناسه محصول",
+			"{product_title}"      => "عنوان محصول",
+			"{product_title_full}" => "عنوان محصول با متغیر",
+			"{stock}"              => "موجودی انبار",
 		];
 
 		$final_shortcodes['post_tracking'] = [
@@ -324,7 +323,7 @@ class Settings {
 				],
 				[
 					'name'  => 'super_admin_bots',
-					'label' => 'شناسه یکتا ربات',
+					'label' => 'شناسه یکتا ربات (آزمایشی)',
 					'desc'  => 'برای استفاده از ربات‌های ووکامرس فارسی، کافیست به ربات‌های زیر پیام بدهید و شناسه یکتا خود را دریافت کنید:<br>
 ربات ووکامرس فارسی در تلگرام: <a href="https://t.me/PersianWoocommerceBot" target="_blank">https://t.me/PersianWoocommerceBot</a><br>
 ربات ووکامرس فارسی در بله: <a href="https://ble.ir/PersianWoocommerceBot" target="_blank">https://ble.ir/PersianWoocommerceBot</a><br>
@@ -530,6 +529,13 @@ class Settings {
 					'row'     => 2,
 				],
 				[
+					'name'    => 'notif_onsale_remove_contacts',
+					'label'   => 'حذف کاربر از این گروه پس از ارسال',
+					'desc'    => 'با فعالسازی این گزینه، پس از ارسال پیامک، گروه "زمانیکه محصول حراج شد" از لیست گروه های اطلاع رسانی به کاربر حذف خواهد شد.',
+					'type'    => 'checkbox',
+					'default' => "yes",
+				],
+				[
 					'name'  => 'header_null_2',
 					'label' => '',
 					'type'  => 'html',
@@ -588,6 +594,13 @@ class Settings {
 					'type'    => 'textarea',
 					'default' => "سلام\nموجودی محصول {product_title} کم می‌باشد. لطفا در صورت تمایل به خرید سریعتر اقدام نمایید.",
 					'row'     => 2,
+				],
+				[
+					'name'    => 'notif_low_stock_remove_contacts',
+					'label'   => 'حذف کاربر از این گروه پس از ارسال',
+					'desc'    => 'با فعالسازی این گزینه، پس از ارسال پیامک، گروه "زمانیکه محصول رو به اتمام است" از لیست گروه های اطلاع رسانی به کاربر حذف خواهد شد.',
+					'type'    => 'checkbox',
+					'default' => "yes",
 				],
 				[
 					'name'  => 'header_null_4',
@@ -669,15 +682,12 @@ class Settings {
 
 		foreach ( ( array ) $statuses as $status_val => $status_name ) {
 
-			$_status_name = preg_replace( '/\(.*\)/is', '', $status_name );
-			$_status_name = trim( $_status_name );
-
 			$text = [
 				[
 					'name'    => 'sms_body_' . $status_val,
 					'label'   => 'وضعیت ' . $status_name,
 					'type'    => 'textarea',
-					'default' => "سلام {b_first_name} {b_last_name}\nسفارش {order_id} دریافت شد و هم اکنون در وضعیت " . $_status_name . " می‌باشد.\nآیتم های سفارش : {all_items}\nمبلغ سفارش : {price}\nشماره تراکنش : {transaction_id}",
+					'default' => "سلام {b_first_name} {b_last_name}\nسفارش {order_id} دریافت شد و هم اکنون در وضعیت {status} می‌باشد.\nآیتم های سفارش : {all_items}\nمبلغ سفارش : {price}\nشماره تراکنش : {transaction_id}",
 				],
 			];
 
@@ -697,16 +707,13 @@ class Settings {
 		$statuses = PWSMS()->get_all_statuses();
 		foreach ( ( array ) $statuses as $status_val => $status_name ) {
 
-			$_status_name = preg_replace( '/\(.*\)/is', '', $status_name );
-			$_status_name = trim( $_status_name );
-
 			$text = [
 				[
 					'name'    => 'super_admin_sms_body_' . $status_val,
 					'label'   => 'وضعیت ' . $status_name,
 					'type'    => 'textarea',
 					'row'     => 5,
-					'default' => "سلام مدیر\nسفارش {order_id} ثبت شده است و هم اکنون در وضعیت " . $_status_name . " می‌باشد.\nآیتم های سفارش : {all_items}\nمبلغ سفارش : {price}",
+					'default' => "سلام مدیر\nسفارش {order_id} ثبت شده است و هم اکنون در وضعیت {status} می‌باشد.\nآیتم های سفارش : {all_items}\nمبلغ سفارش : {price}",
 				],
 			];
 
@@ -748,16 +755,13 @@ class Settings {
 
 		foreach ( ( array ) $statuses as $status_val => $status_name ) {
 
-			$_status_name = preg_replace( '/\(.*\)/is', '', $status_name );
-			$_status_name = trim( $_status_name );
-
 			$text = [
 				[
 					'name'    => 'product_admin_sms_body_' . $status_val,
 					'label'   => 'وضعیت ' . $status_name,
 					'type'    => 'textarea',
 					'row'     => 4,
-					'default' => "سلام\nسفارش {order_id} ثبت شده است و هم اکنون در وضعیت " . $_status_name . " می‌باشد.\nآیتم های سفارش متعلق به شما: {vendor_items}",
+					'default' => "سلام\nسفارش {order_id} ثبت شده است و هم اکنون در وضعیت {status} می‌باشد.\nآیتم های سفارش متعلق به شما: {vendor_items}",
 				],
 			];
 

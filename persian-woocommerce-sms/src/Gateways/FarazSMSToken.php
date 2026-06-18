@@ -36,7 +36,7 @@ class FarazSMSToken extends Gateway {
 		return $this->format_failed_numbers();
 	}
 
-	private function send_pattern_sms() {
+	public function send_pattern_sms() {
 		$pattern = $this->parse_pattern();
 
 		$payload = [
@@ -70,7 +70,7 @@ class FarazSMSToken extends Gateway {
 		}
 	}
 
-	private function send_normal_sms() {
+	public function send_normal_sms() {
 		$payload = [
 			'text'          => $this->message,
 			'recipients'    => $this->mobile,
@@ -92,7 +92,7 @@ class FarazSMSToken extends Gateway {
 		$this->handle_response( $response );
 	}
 
-	private function handle_response( $response, string $recipient = '' ): void {
+	public function handle_response( $response, string $recipient = '' ): void {
 
 		if ( is_wp_error( $response ) ) {
 
@@ -140,29 +140,4 @@ class FarazSMSToken extends Gateway {
 		}
 	}
 
-	private function format_failed_numbers() {
-
-		if ( empty( $this->failed_numbers ) ) {
-			return true;
-		}
-
-		$grouped = [];
-
-		foreach ( $this->failed_numbers as $number => $message ) {
-
-			if ( ! isset( $grouped[ $message ] ) ) {
-				$grouped[ $message ] = [];
-			}
-
-			$grouped[ $message ][] = $number;
-		}
-
-		return implode( ', ', array_map(
-			function ( string $message, array $numbers ) {
-				return implode( ',', $numbers ) . ': ' . $message;
-			},
-			array_keys( $grouped ),
-			$grouped
-		) );
-	}
 }

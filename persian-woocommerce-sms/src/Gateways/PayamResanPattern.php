@@ -30,7 +30,7 @@ class PayamResanPattern extends Gateway {
 		return $this->send_normal_sms();
 	}
 
-	private function send_pattern_sms() {
+	public function send_pattern_sms() {
 
 		$pattern = $this->parse_pattern();
 
@@ -91,7 +91,7 @@ class PayamResanPattern extends Gateway {
 		return $this->format_failed_numbers();
 	}
 
-	private function send_normal_sms() {
+	public function send_normal_sms() {
 
 		$payload = [
 			'ApiKey'     => $this->api_key,
@@ -140,24 +140,4 @@ class PayamResanPattern extends Gateway {
 		return 'خطای وبسرویس: ' . $response_data['Error'] ?? 'خطایی ناشناخته رخ داده است.';
 	}
 
-	private function format_failed_numbers() {
-
-		if ( empty( $this->failed_numbers ) ) {
-			return true;
-		}
-
-		$grouped = [];
-		foreach ( $this->failed_numbers as $number => $message ) {
-			if ( ! isset( $grouped[ $message ] ) ) {
-				$grouped[ $message ] = [];
-			}
-			$grouped[ $message ][] = $number;
-		}
-
-		$result = implode( ', ', array_map( function ( string $message, array $numbers ) {
-			return implode( ',', $numbers ) . ': ' . $message;
-		}, array_keys( $grouped ), $grouped ) );
-
-		return $result;
-	}
 }

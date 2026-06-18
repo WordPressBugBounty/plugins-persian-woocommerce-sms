@@ -7,11 +7,12 @@ use Automattic\WooCommerce\Utilities\OrderUtil;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Exception;
+use PW\PWSMS\Enums\EventsEnum;
 use WP_List_Table;
 
 class ListTable extends WP_List_Table {
 
-	public static $table = 'woocommerce_ir_sms_archive';
+	public static string $table = 'woocommerce_ir_sms_archive';
 
 	public function __construct() {
 		parent::__construct( [
@@ -101,80 +102,11 @@ class ListTable extends WP_List_Table {
 	}
 
 	public function column_type( $item ) {
-		// TODO: Maybe types should be unique for each sending situation. like RSS can start with 10 : 101, 102,...
 		if ( empty( $item['type'] ) ) {
 			return '-';
 		}
 
-		switch ( $item['type'] ) {
-
-			case '1':
-				$value = 'ارسال دسته جمعی';
-				break;
-
-			/*مشتری*/ case '2':
-			$value = 'مشتری - خودکار - سفارش';
-			break;
-
-			case '3':
-				$value = 'مشتری - دستی - متاباکس سفارش';
-				break;
-
-			/*مدیر کل*/ case '4':
-			$value = 'مدیر کل - خودکار - سفارش';
-			break;
-
-			/* مدیر محصول*/ case '5':
-			$value = 'مدیر محصول - خودکار - سفارش';
-			break;
-
-			case '6':
-				$value = 'مدیر محصول - دستی - متاباکس محصول';
-				break;
-
-			/*مشترک مدیر کل و مدیر محصول*/ case '7':
-			$value = 'مدیران - خودکار - ناموجود شدن';
-			break;
-
-			case '8':
-				$value = 'مدیران - خودکار - کم بودن موجودی';
-				break;
-
-			/*خبرنامه*/ case '9':
-			$value = 'خبرنامه - حراج شدن - اتوماتیک';
-			break;
-
-			case '10':
-				$value = 'خبرنامه - حراج شدن - دستی';
-				break;
-			/*--*/ case '11':
-			$value = 'خبرنامه - موجود شدن - اتوماتیک';
-			break;
-
-			case '12':
-				$value = 'خبرنامه - موجود شدن - دستی';
-				break;
-			/*--*/ case '13':
-			$value = 'خبرنامه - کم بودن موجودی - اتوماتیک';
-			break;
-
-			case '14':
-				$value = 'خبرنامه - کم بودن موجودی - دستی';
-				break;
-			/*--*/ case '15':
-			$value = 'خبرنامه - گزینه های دلخواه - دستی';
-			break;
-
-			/*Delayed product sms*/
-			/*case '16' :
-				$value = 'خبرنامه - پیامک زمان‌دار محصول - اتوماتیک';
-				break;*/
-
-			default:
-				$value = '';
-		}
-
-		return $value;
+		return EventsEnum::label( $item['type'] );
 	}
 
 	public function column_date( $item ): string {

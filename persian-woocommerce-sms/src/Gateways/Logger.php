@@ -26,7 +26,7 @@ class Logger extends Gateway {
 		return true;
 	}
 
-	protected function logVariables( $args ) {
+	public function logVariables( $args ) {
 
 		self::log( PHP_EOL . '######## ' . date( 'Y-m-d H:i:s' ) );
 
@@ -36,7 +36,7 @@ class Logger extends Gateway {
 
 	}
 
-	protected function log( $message ) {
+	public function log( $message ) {
 		error_log( $message . PHP_EOL, 3, wp_upload_dir()['basedir'] . '/wc-logs/pwsms.log' );
 	}
 

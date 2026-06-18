@@ -30,7 +30,7 @@ class Asanak extends Gateway {
 		return $this->format_failed_numbers();
 	}
 
-	private function send_pattern_sms() {
+	public function send_pattern_sms() {
 
 		$pattern = $this->parse_pattern();
 
@@ -60,7 +60,7 @@ class Asanak extends Gateway {
 
 	}
 
-	private function send_normal_sms() {
+	public function send_normal_sms() {
 
 		$response = wp_remote_post( $this->api_url . '/v2rest/sendsms', [
 			'headers' => [
@@ -80,12 +80,12 @@ class Asanak extends Gateway {
 		$this->handle_response( $response );
 	}
 
-	private function normalize_number( $number ): string {
+	public function normalize_number( $number ): string {
 
 		return str_replace( '+98', '0', trim( $number ) );
 	}
 
-	private function handle_response( $response, $recipient = '' ) {
+	public function handle_response( $response, $recipient = '' ) {
 
 		if ( is_wp_error( $response ) ) {
 
@@ -105,7 +105,7 @@ class Asanak extends Gateway {
 		}
 	}
 
-	private function record_failure( $recipient, $message ) {
+	public function record_failure( $recipient, $message ) {
 
 		if ( $recipient ) {
 			$this->failed_numbers[ $recipient ] = $message;
@@ -113,28 +113,6 @@ class Asanak extends Gateway {
 			$this->failed_numbers[] = $message;
 		}
 
-	}
-
-	private function format_failed_numbers() {
-
-		if ( empty( $this->failed_numbers ) ) {
-			return true;
-		}
-
-		$grouped = [];
-
-		foreach ( $this->failed_numbers as $number => $message ) {
-			$grouped[ $message ][] = $number;
-		}
-
-		return implode(
-			', ',
-			array_map(
-				fn( $message, $numbers ) => implode( ', ', (array) $numbers ) . ': ' . $message,
-				array_keys( $grouped ),
-				$grouped
-			)
-		);
 	}
 
 	public function get_credit() {

@@ -221,7 +221,8 @@ class ListTable extends WP_List_Table {
 
 			if ( $product_id ) {
 
-				$title        = get_the_title( $product_id );
+				$product = wc_get_product( $product_id );
+				$title   = $product ? ( $product->is_type('variation') ? $product->get_name() . ' - ' . implode(', ', $product->get_variation_attributes()) : $product->get_name() ) : $product_id;
 				$title        = ! empty( $title ) ? $product_id . ' :: ' . $title : $product_id;
 				$column_value = '<a title="مشاهده لیست مشترکین این محصول" href="' . add_query_arg( [ 'product_id' => $product_id ] ) . '">' . $title . '</a>';
 

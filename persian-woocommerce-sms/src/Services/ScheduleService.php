@@ -9,7 +9,7 @@ class ScheduleService {
 	public const HOOK = 'pwsms_schedule_service';
 	public const MAX_RETRY = 2;
 
-	public static function init(): void {
+	public function __construct() {
 		add_action( self::HOOK, [ self::class, 'handle' ], 10, 4 );
 	}
 

@@ -45,31 +45,43 @@ class Contacts {
 		return isset( $groups[ $group_id ] ) ? $groups[ $group_id ] : '';
 	}
 
-	/*------------------------------------------------------------------------------*/
-
-	public static function get_groups( $product_id, $check = true, $cond = true ) {
+	public static function get_groups( $product_id, $check = true, $cond = true ): array {
 		$groups = [];
 
 		if ( ! $check || ! PWSMS()->product_has_prop( $product_id, 'is_on_sale' ) ) {
 
-			if ( ! $cond || PWSMS()->has_notif_condition( 'enable_onsale', $product_id ) ) {
-				$groups['_onsale'] = PWSMS()->get_product_meta_value( 'notif_onsale_text', $product_id );
+			// global options
+			if ( ! $cond || PWSMS()->maybe_bool( PWSMS()->get_option( 'enable_onsale', '__' ) ) ) {
+				$groups['_onsale'] = PWSMS()->get_option( 'notif_onsale_text', '__' );
+			}
+
+			// product override
+			if ( ! $cond || PWSMS()->maybe_bool( PWSMS()->get_product_meta_value( 'enable_onsale', $product_id ) ) ) {
+				$groups['_onsale'] = PWSMS()->get_sms_setting( 'notif_onsale_text', $product_id );
 			}
 
 		}
 
 		if ( ! $check || ! PWSMS()->product_has_prop( $product_id, 'is_in_stock' ) ) {
 
-			if ( ! $cond || PWSMS()->has_notif_condition( 'enable_notif_no_stock', $product_id ) ) {
-				$groups['_in'] = PWSMS()->get_product_meta_value( 'notif_no_stock_text', $product_id );
+			if ( ! $cond || PWSMS()->maybe_bool( PWSMS()->get_option( 'enable_notif_no_stock', '__' ) ) ) {
+				$groups['_in'] = PWSMS()->get_option( 'notif_no_stock_text', '__' );
+			}
+
+			if ( ! $cond || PWSMS()->maybe_bool( PWSMS()->get_product_meta_value( 'enable_notif_no_stock', $product_id ) ) ) {
+				$groups['_in'] = PWSMS()->get_sms_setting( 'notif_no_stock_text', $product_id );
 			}
 
 		}
 
 		if ( ! $check || PWSMS()->product_has_prop( $product_id, 'is_not_low_stock' ) ) {
 
-			if ( ! $cond || PWSMS()->has_notif_condition( 'enable_notif_low_stock', $product_id ) ) {
-				$groups['_low'] = PWSMS()->get_product_meta_value( 'notif_low_stock_text', $product_id );
+			if ( ! $cond || PWSMS()->maybe_bool( PWSMS()->get_option( 'enable_notif_low_stock', '__' ) ) ) {
+				$groups['_low'] = PWSMS()->get_option( 'notif_low_stock_text', '__' );
+			}
+
+			if ( ! $cond || PWSMS()->maybe_bool( PWSMS()->get_product_meta_value( 'enable_notif_low_stock', $product_id ) ) ) {
+				$groups['_low'] = PWSMS()->get_sms_setting( 'notif_low_stock_text', $product_id );
 			}
 
 		}
@@ -79,7 +91,7 @@ class Contacts {
 		// 1:زمانیکه محصول توقف فروش شد 2:زمانیکه نسخه جدید محصول منتشر شد
 		// We have to use regex to separate these two sentences
 		// And We also need to remove potential : from each string
-		$product_notification_groups = (string) PWSMS()->get_product_meta_value( 'notif_options', $product_id );
+		$product_notification_groups = (string) PWSMS()->get_sms_setting( 'notif_options', $product_id );
 		$product_notification_groups = array_filter( preg_split( '/\d+:/', $product_notification_groups ) );
 
 		$product_notification_groups_keys = array_map( function ( $key ) {
@@ -138,8 +150,6 @@ class Contacts {
 
 		update_option( 'pwoosms_table_contacts_created', '1' );
 	}
-
-	/*-------------------------------------------------------------------------------*/
 
 	public function move_old_contents_38() {
 		global $wpdb;
@@ -256,7 +266,6 @@ class Contacts {
 			<?php update_option( 'pwoosms_table_contacts_updated', '2' );
 		}
 
-		/*----------------------------------------------------------------------------*/
 		if ( isset( $_GET['edit'] ) ) {
 			$this->edit_contact( intval( $_GET['edit'] ) );
 		} elseif ( isset( $_GET['add'] ) ) {

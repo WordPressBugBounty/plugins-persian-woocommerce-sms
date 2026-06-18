@@ -10,9 +10,9 @@ defined( 'ABSPATH' ) || exit;
 
 class Widget extends WP_Widget {
 
-	private static $form_id = 0;
-	private static $groups = [];
-	private $enable_notification = false;
+	private static int $form_id = 0;
+	private static array $groups = [];
+	private bool $enable_notification = false;
 
 	public function __construct() {
 
@@ -28,8 +28,6 @@ class Widget extends WP_Widget {
 		if ( $this->enable_notification ) {
 			add_action( 'woocommerce_product_thumbnails', [ $this, 'show_in_single_product' ], 100 );
 			add_action( 'woocommerce_single_product_summary', [ $this, 'show_in_single_product' ], 39 );
-			add_action( 'wp_ajax_wc_sms_save_notification_data', [ $this, 'update_subscription' ] );
-			add_action( 'wp_ajax_nopriv_wc_sms_save_notification_data', [ $this, 'update_subscription' ] );
 		}
 	}
 
@@ -119,7 +117,7 @@ class Widget extends WP_Widget {
 			return;
 		}
 
-		$show_form = PWSMS()->get_product_meta_value( 'enable_notif_sms', $product_id );
+		$show_form = PWSMS()->get_sms_setting( 'enable_notif_sms', $product_id );
 		if ( ! PWSMS()->maybe_bool( $show_form ) ) { //این شرط اگر ریترن کنه یعنی نمایش دستی انتخاب شده
 			return;
 		}
@@ -189,7 +187,7 @@ class Widget extends WP_Widget {
 					<input type="checkbox" id="sms-notif-enable-<?php echo intval( $id ); ?>" class="sms-notif-enable"
 					       name="sms_notif_enable"
 					       value="1">
-					<strong><?php echo esc_attr( PWSMS()->get_product_meta_value( 'notif_title', $product_id ) ); ?></strong>
+					<strong><?php echo esc_attr( PWSMS()->get_sms_setting( 'notif_title', $product_id ) ); ?></strong>
 				</label>
 			</div>
 
@@ -217,7 +215,7 @@ class Widget extends WP_Widget {
 
 				<?php if ( ! $can_be_subscribe ) : ?>
 					<p id="sms-notif-disabled-<?php echo intval( $id ); ?>" class="sms-notif-disabled">
-						<?php echo esc_attr( PWSMS()->get_product_meta_value( 'notif_only_loggedin_text', $product_id ) ); ?>
+						<?php echo esc_attr( PWSMS()->get_sms_setting( 'notif_only_loggedin_text', $product_id ) ); ?>
 					</p>
 				<?php else : ?>
 					<button id="sms-notif-submit-<?php echo intval( $id ); ?>"
@@ -237,108 +235,27 @@ class Widget extends WP_Widget {
 		do_action( 'pwoosms_after_product_newsletter_form', $product );
 
 		if ( $id == 1 ) {
-			wc_enqueue_js( '
-			jQuery(document).ready(function($){
-				$(".sms-notif-content").hide();
-			    $(document.body).on( "change", ".sms-notif-enable", function() {
-					if( $(this).is(":checked") )
-						$(this).closest("form").find(".sms-notif-content").fadeIn();			
-					else
-				    	$(this).closest("form").find(".sms-notif-content").fadeOut();
-				}).on( "click", ".sms-notif-submit", function() {
-				    var form = $(this).closest("form");
-				    var result = form.find(".sms-notif-result");
-				    result.html( "<img style=\"width:16px;display:inline;\" src=\"' . esc_url( PWSMS_URL . '/assets/images/ajax-loader.gif' ) . '\" />" );
-			    	var sms_group = [];
-				    form.find(".sms-notif-groups:checked").each(function(i){
-					    sms_group[i] = $(this).val();
-			    	});
-				    $.ajax({
-					    url : "' . esc_url( admin_url( "admin-ajax.php" ) ) . '",
-				    	type : "post",
-					    data : {
-						    action : "wc_sms_save_notification_data",
-					    	security: "' . esc_js( wp_create_nonce( "wc_sms_save_notification_data" ) ) . '",
-						    sms_mobile : form.find(".sms-notif-mobile").val(),
-						    sms_group : sms_group,
-						    product_id : "' . $product_id . '",
-					    },
-				    	success : function( response ) {
-					    	result.html( response );
-					    }
-			    	});
-				    return false;
-		    	});
-		    });
-		' );
+
+			wp_enqueue_script(
+				'pwsms-notification',
+				PWSMS_URL . '/assets/js/sms-notification.js',
+				[ 'jquery' ],
+				PWSMS_VERSION,
+				true
+			);
+
+			wp_localize_script(
+				'pwsms-notification',
+				'pwsms_notification',
+				[
+					'rest_url'   => esc_url_raw( rest_url() ),
+					'nonce'      => wp_create_nonce( 'wp_rest' ),
+					'product_id' => $product_id,
+					'loader'     => esc_url( PWSMS_URL . '/assets/images/ajax-loader.gif' ),
+				]
+			);
+
 		}
-	}
-
-	public function update_subscription() {
-
-		check_ajax_referer( 'wc_sms_save_notification_data', 'security' );
-
-		$error_image = wp_kses( '<img style="width:16px;display:inline;" src="' . esc_url( PWSMS_URL . '/assets/images/false.png' ) . '">&nbsp;', [ 'img' => [ 'style' => [], 'src' => [] ] ] );
-
-		$product_id = isset( $_POST['product_id'] ) ? intval( $_POST['product_id'] ) : 0;
-		if ( empty( $product_id ) ) {
-			die( $error_image . 'حطایی رخ داده است.' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		}
-
-		$can_be_subscribe = ! PWSMS()->has_notif_condition( 'notif_only_loggedin', $product_id ) || is_user_logged_in();
-		if ( ! $can_be_subscribe ) {
-			die( $error_image . esc_attr( PWSMS()->get_product_meta_value( 'notif_only_loggedin_text', $product_id ) ) ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		}
-
-		$mobile = PWSMS()->modify_mobile( sanitize_text_field( $_POST['sms_mobile'] ?? '' ) );
-		if ( empty( $mobile ) ) {
-			die( $error_image . 'شماره موبایل را وارد نمایید.' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		}
-
-		if ( ! PWSMS()->validate_mobile( $mobile ) ) {
-			die( $error_image . 'شماره موبایل معتبر نیست.' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		}
-
-		if ( empty( $_POST['sms_group'] ) ) {
-			die( $error_image . 'انتخاب یکی از گزینه ها الزامیست.' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		}
-
-		$groups = ( new Settings() )->sanitize_array_text_fields( (array) $_POST['sms_group'] );
-
-		$success_image = wp_kses( '<img style="width:16px;display:inline;" src="' . esc_url( PWSMS_URL . '/assets/images/tick.png' ) . '">&nbsp;', [ 'img' => [ 'src' => [], 'style' => [] ] ] );
-
-		$contact = (array) Contacts::get_contact_by_mobile( $product_id, $mobile );
-
-		if ( ! empty( $contact['id'] ) ) {
-
-			$old_groups = ! empty( $contact['groups'] ) ? explode( ',', $contact['groups'] ) : [];
-			$new_groups = array_merge( $old_groups, $groups );
-
-			$update = Contacts::update_contact( [
-				'id'         => $contact['id'],
-				'product_id' => $product_id,
-				'mobile'     => $mobile,
-				'groups'     => $new_groups,
-			] );
-
-			if ( $update !== false ) {
-				die( $success_image . 'اطلاعات شما با موفقیت بروز شد.' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			}
-
-		} else {
-
-			$insert = Contacts::insert_contact( [
-				'product_id' => $product_id,
-				'mobile'     => $mobile,
-				'groups'     => $groups,
-			] );
-
-			if ( $insert ) {
-				die( $success_image . 'اطلاعات شما با موفقیت ثبت شد.' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			}
-		}
-
-		die( $error_image . 'خطایی رخ داده است. مجددا تلاش کنید.' ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 

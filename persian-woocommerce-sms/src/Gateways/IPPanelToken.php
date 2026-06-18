@@ -2,21 +2,16 @@
 
 namespace PW\PWSMS\Gateways;
 
-/**
- * The new IPPanel service based on https://ippanelcom.github.io
- * Can send Pattern and Simple SMS at same time (based on message)
- */
-class IPPanelToken extends Gateway {
+use Exception;
+use PW\PWSMS\Gateways\Features\SendPatternFeature;
+use PW\PWSMS\Helpers\Curl;
+
+class IPPanelToken extends Gateway implements SendPatternFeature {
 
 	/**
 	 * @var string
 	 */
 	public string $api_url = 'https://edge.ippanel.com/v1/';
-
-	/**
-	 * @var array
-	 */
-	public array $failed_numbers = [];
 
 	/**
 	 * @var string
@@ -31,57 +26,82 @@ class IPPanelToken extends Gateway {
 		return 'ippanel.com (کلید دسترسی)';
 	}
 
-	public function send() {
+	/**
+	 * @return bool|string|null
+	 *
+	 * @throws Exception
+	 */
+	public function send(): bool {
 		$this->api_key = $this->get_token();
 
 		if ( empty( $this->api_key ) ) {
-			return 'کلید وبسرویس را در بخش تنظیمات وبسرویس تعریف کنید.';
+			throw new Exception( 'کلید وبسرویس را در بخش تنظیمات وبسرویس تعریف کنید.' );
 		}
 
 		if ( empty( $this->senderNumber ) ) {
-			return 'شماره فرستنده پیامک تعیین نشده است.';
+			throw new Exception( 'شماره فرستنده پیامک تعیین نشده است.' );
 		}
 
 		if ( $this->is_pattern() ) {
-			$this->send_pattern_sms();
-		} else {
-			$this->send_normal_sms();
+			return $this->send_pattern_sms();
 		}
 
-		return $this->format_failed_numbers();
+		return $this->send_normal_sms();
 	}
 
-	private function send_pattern_sms() {
+	/**
+	 * @return bool
+	 *
+	 * @throws Exception
+	 */
+	public function send_pattern_sms(): bool {
+
 		$pattern = $this->parse_pattern();
 
-		$payload = [
+		$data = [
 			'sending_type' => 'pattern',
 			'from_number'  => $this->senderNumber,
 			'code'         => $pattern['code'],
 			'params'       => $pattern['vars'],
 		];
 
+		$headers = [
+			'Content-Type: application/json',
+			'Authorization: ' . $this->api_key,
+		];
+
 		foreach ( $this->mobile as $recipient ) {
 
-			$payload['recipients'] = [ $recipient ];
+			$data['recipients'] = [ $recipient ];
 
-			$response = wp_remote_post( $this->api_url . 'api/send', [
-				'method'  => 'POST',
-				'body'    => json_encode( $payload ),
-				'timeout' => 10,
-				'headers' => [
-					'Content-Type'  => 'application/json',
-					'Authorization' => $this->api_key,
-				],
-			] );
+			try {
+				$response = Curl::post( $this->api_url . 'api/send', wp_json_encode( $data ), $headers );
+			} catch ( Exception $e ) {
+				$this->failed_numbers[ $recipient ] = $e->getMessage();
+				continue;
+			}
 
-			$this->handle_response( $response, $recipient );
+			if ( isset( $response['meta']['status'] ) && $response['meta']['status'] ) {
+				continue;
+			}
+
+			if ( isset( $response['meta']['message'] ) ) {
+				$this->failed_numbers[ $recipient ] = $response['meta']['message'];
+				continue;
+			}
+
+			$this->failed_numbers[ $recipient ] = 'خطای ناشناخته در ارسال به درگاه پیامک رخ داده است.';
 		}
+
+		return $this->format_failed_numbers();
 	}
 
-	private function send_normal_sms() {
+	/**
+	 * @throws Exception
+	 */
+	public function send_normal_sms(): bool {
 
-		$payload = [
+		$data = [
 			'sending_type' => 'webservice',
 			'from_number'  => $this->senderNumber,
 			'message'      => $this->message,
@@ -90,95 +110,22 @@ class IPPanelToken extends Gateway {
 			],
 		];
 
-		$response = wp_remote_post( $this->api_url . 'api/send', [
-			'method'  => 'POST',
-			'body'    => json_encode( $payload ),
-			'timeout' => 10,
-			'headers' => [
-				'Content-Type'  => 'application/json',
-				'Authorization' => $this->api_key,
-			],
-		] );
+		$headers = [
+			'Content-Type: application/json',
+			'Authorization: ' . $this->api_key,
+		];
 
-		$this->handle_response( $response );
-	}
+		$response = Curl::post( $this->api_url . 'api/send', wp_json_encode( $data ), $headers );
 
-	private function handle_response( $response, string $recipient = '' ): void {
-
-		if ( is_wp_error( $response ) ) {
-
-			$message = $response->get_error_message();
-
-			if ( $recipient ) {
-				$this->failed_numbers[ $recipient ] = $message;
-			} else {
-				$this->failed_numbers[] = $message;
-			}
-
-			return;
-		}
-
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( isset( $body['meta']['status'] ) && $body['meta']['status'] ) {
-			return;
-		}
-
-		if ( isset( $body['meta']['message'] ) ) {
-
-			$message = $body['meta']['message'];
-
-		} elseif ( isset( $body['meta']['errors'] ) && is_array( $body['meta']['errors'] ) ) {
-
-			$all_errors = [];
-
-			foreach ( $body['meta']['errors'] as $field_errors ) {
-
-				if ( ! is_array( $field_errors ) ) {
-					continue;
-				}
-
-				$all_errors = array_merge( $all_errors, $field_errors );
-
-			}
-
-			$message = implode( ' ', $all_errors );
-
-		} else {
-
-			$message = 'خطایی ناشناخته رخ داده است.';
-
-		}
-
-		if ( ! empty( $recipient ) ) {
-			$this->failed_numbers[ $recipient ] = $message;
-		} else {
-			$this->failed_numbers[] = $message;
-		}
-	}
-
-
-	private function format_failed_numbers(): bool {
-
-		if ( empty( $this->failed_numbers ) ) {
+		if ( isset( $response['meta']['status'] ) && $response['meta']['status'] ) {
 			return true;
 		}
 
-		$grouped = [];
-
-		foreach ( $this->failed_numbers as $number => $message ) {
-
-			if ( ! isset( $grouped[ $message ] ) ) {
-				$grouped[ $message ] = [];
-			}
-
-			$grouped[ $message ][] = $number;
-
+		if ( isset( $response['meta']['message'] ) ) {
+			throw new Exception( $response['meta']['message'] );
 		}
 
-		return implode( ', ', array_map( function ( string $message, array $numbers ) {
-			return implode( ',', $numbers ) . ': ' . $message;
-		}, array_keys( $grouped ), $grouped ) );
+		throw new Exception( 'خطای ناشناخته در ارسال به درگاه پیامک رخ داده است.' );
 	}
 
 }

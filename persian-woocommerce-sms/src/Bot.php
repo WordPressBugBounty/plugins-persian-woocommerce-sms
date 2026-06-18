@@ -52,7 +52,7 @@ class Bot {
 		if ( ! empty( $data['post_id'] ) ) {
 
 			$order_id  = absint( $data['post_id'] );
-			$order    = wc_get_order( $order_id );
+			$order     = wc_get_order( $order_id );
 			$edit_link = $order ? $order->get_edit_order_url() : '';
 
 			$buttons = [
@@ -60,8 +60,8 @@ class Bot {
 					[
 						'text' => '🔍 مشاهده سفارش ' . $order_id,
 						'url'  => $edit_link,
-					]
-				]
+					],
+				],
 			];
 		}
 
@@ -82,7 +82,6 @@ class Bot {
 					'Content-Type' => 'application/json',
 				],
 				'body'    => wp_json_encode( $payload ),
-				'timeout' => 20,
 			]
 		);
 

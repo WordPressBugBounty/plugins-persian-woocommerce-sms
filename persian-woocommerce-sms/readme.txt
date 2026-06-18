@@ -5,8 +5,8 @@ author URI: https://woosupport.ir
 Donate link: https://woosupport.ir
 plugin URI: https://woosupport.ir
 Tags: sms,ووکامرس فارسی,woocommerce,persian woocommerce,پیامک
-Requires at least: 5.8
-Tested up to: 6.8.1
+Requires at least: 6.8
+Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 7.2.1
 
@@ -167,6 +167,13 @@ Stable tag: 7.2.1
 14. Screen shot 14
 
 == Changelog ==
+= 7.2.1 =
+* بروزرسانی درگاه ملی پیامک طبق آخرین مستندات
+* بروزرسانی درگاه کاوه نگار طبق آخرین مستندات
+* بروزرسانی درگاه sms.ir طبق آخرین مستندات
+* بروزرسانی درگاه ippanel طبق آخرین مستندات
+* حل مشکل پیامک کمبود موجودی
+* حل برخی مشکلات خبرنامه
 = 7.2.0 =
 * افزودن ربات اطلاع رسانی رایگان بله https://ble.ir/PersianWoocommerceBot
 * افزودن ربات اطلاع رسانی رایگان تلگرام https://t.me/PersianWoocommerceBot

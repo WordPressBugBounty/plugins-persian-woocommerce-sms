@@ -2,15 +2,26 @@
 
 namespace PW\PWSMS\Gateways;
 
+use Exception;
+
 defined( 'ABSPATH' ) || exit;
 
 abstract class Gateway {
 
 	public array $mobile = [];
+
 	public string $message = '';
+
 	public string $username;
+
 	public string $password;
+
 	public string $senderNumber;
+
+	/**
+	 * @var array
+	 */
+	public array $failed_numbers = [];
 
 	public function __construct() {
 		$this->username     = PWSMS()->get_option( 'sms_gateway_username' );
@@ -24,6 +35,11 @@ abstract class Gateway {
 
 	abstract public static function name(): string;
 
+	/**
+	 * @return mixed
+	 *
+	 * @throws Exception
+	 */
 	abstract public function send();
 
 	/**
@@ -58,6 +74,30 @@ abstract class Gateway {
 		return $password;
 	}
 
+	/**
+	 * @throws Exception
+	 */
+	public function format_failed_numbers(): bool {
+
+		if ( empty( $this->failed_numbers ) ) {
+			return true;
+		}
+
+		$grouped = [];
+
+		foreach ( $this->failed_numbers as $number => $message ) {
+
+			if ( isset( $grouped[ $message ] ) ) {
+				$grouped[ $message ] = $number . ', ' . $grouped[ $message ];
+			} else {
+				$grouped[ $message ] = $number . ': ' . $message;
+			}
+
+		}
+
+		throw new Exception( implode( ' | ', array_values( $grouped ) ) );
+	}
+
 	public function is_pattern(): bool {
 		return str_starts_with( $this->message, 'pattern:' ) || str_starts_with( $this->message, 'pcode:' ) || str_starts_with( $this->message, 'patterncode:' );
 	}
@@ -87,7 +127,7 @@ abstract class Gateway {
 
 			[ $key, $value ] = explode( ':', $part, 2 );
 
-			$key   = trim( $key , "}{% \n\r\t\v\x00");
+			$key   = trim( $key, "}{% \n\r\t\v\x00" );
 			$value = trim( $value );
 
 			if ( in_array( $key, [ 'pattern', 'pcode', 'patterncode' ] ) ) {

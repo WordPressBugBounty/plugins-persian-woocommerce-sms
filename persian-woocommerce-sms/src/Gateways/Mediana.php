@@ -44,7 +44,7 @@ class Mediana extends Gateway {
 
 	}
 
-	private function send_pattern_sms() {
+	public function send_pattern_sms() {
 
 		$pattern = $this->parse_pattern();
 
@@ -89,7 +89,7 @@ class Mediana extends Gateway {
 		return true;
 	}
 
-	private function send_normal_sms( $informational = false ) {
+	public function send_normal_sms( $informational = false ) {
 
 		$payload = [
 			'recipients'  => $this->mobile,
