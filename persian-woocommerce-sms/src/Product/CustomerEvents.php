@@ -2,6 +2,7 @@
 
 namespace PW\PWSMS\Product;
 
+use PW\PWSMS\Bot;
 use PW\PWSMS\Enums\EventsEnum;
 use PW\PWSMS\Subscription\Contacts;
 use PW\PWSMS\Helper;
@@ -20,7 +21,7 @@ class CustomerEvents {
 			return false;
 		}
 
-		if ( $product->is_type( 'variable' ) && ! $product->is_type( 'variation' ) ) {
+		if ( $product->is_type( 'variable' ) ) {
 			return false;
 		}
 
@@ -128,7 +129,7 @@ class CustomerEvents {
 			return false;
 		}
 
-		if ( $product->is_type( 'variable' ) && ! $product->is_type( 'variation' ) ) {
+		if ( $product->is_type( 'variable' ) ) {
 			return false;
 		}
 
@@ -222,7 +223,7 @@ class CustomerEvents {
 			return false;
 		}
 
-		if ( $product->is_type( 'variable' ) && ! $product->is_type( 'variation' ) ) {
+		if ( $product->is_type( 'variable' ) ) {
 			return false;
 		}
 
@@ -292,7 +293,7 @@ class CustomerEvents {
 			'message' => $message,
 		];
 
-		\PW\PWSMS\Bot::send_async( $data );
+		Bot::send_async( $data );
 
 		$message_sent = PWSMS()->send_sms( $data );
 

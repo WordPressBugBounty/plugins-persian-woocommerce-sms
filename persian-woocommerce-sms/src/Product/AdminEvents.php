@@ -18,13 +18,66 @@ class AdminEvents {
 			return false;
 		}
 
+		if ( $product->is_type( 'variable' ) ) {
+			return false;
+		}
+
 		if ( ! $product->is_in_stock() ) {
 			return false;
 		}
 
-		$parent_product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+		if ( ! PWSMS()->is_stock_managing( $product ) ) {
+			return false;
+		}
 
-		return $this->sms_handler( $product_id, $parent_product_id, 'low', EventsEnum::NEWSLETTER_LOW_STOCK_AUTOMATIC );
+		$parent_product_id = $product->get_parent_id() ? $product->get_parent_id() : $product->get_id();
+		$parent_product    = wc_get_product( $parent_product_id );
+
+		$post_meta = '_admin_low_stock_send';
+		$quantity  = PWSMS()->product_stock_qty( $product );
+
+		$low_stock_history = $parent_product->get_meta( $post_meta, true );
+
+		if ( ! is_array( $low_stock_history ) ) {
+			$low_stock_history = [];
+		}
+
+		$low_stock_limit = $product->get_low_stock_amount() ?: get_option( 'woocommerce_notify_low_stock_amount' );
+
+		if ( $quantity > $low_stock_limit ) {
+
+			if ( ! isset( $low_stock_history[ $product_id ] ) ) {
+				return true;
+			}
+
+			unset( $low_stock_history[ $product_id ] );
+
+			if ( empty( $low_stock_history ) ) {
+				$parent_product->delete_meta_data( $post_meta );
+			} else {
+				$parent_product->update_meta_data( $post_meta, $low_stock_history );
+			}
+
+			$parent_product->save();
+
+			return true;
+		}
+
+		if ( isset( $low_stock_history[ $product_id ] ) && $low_stock_history[ $product_id ] === 'yes' ) {
+			return false;
+		}
+
+		$sent = $this->sms_handler( $product_id, $parent_product_id, 'low', EventsEnum::NEWSLETTER_LOW_STOCK_AUTOMATIC );
+
+		if ( $sent ) {
+
+			$low_stock_history[ $product_id ] = 'yes';
+			$parent_product->update_meta_data( $post_meta, $low_stock_history );
+			$parent_product->save();
+
+		}
+
+		return $sent;
 	}
 
 	public function out_of_stock( int $product_id, string $stock_status, WC_Product $product ): bool {
@@ -46,7 +99,7 @@ class AdminEvents {
 			return false;
 		}
 
-		$post_meta = '_out_stock_send_sms';
+		$post_meta = '_admin_out_stock_send_sms';
 
 		$out_stock_history = $parent_product->get_meta( $post_meta, true );
 

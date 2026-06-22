@@ -48,10 +48,24 @@ class FarazSMSToken extends Gateway {
 			'numberFormat'  => 'english',
 		];
 
+		// Todo: in https://docs.iranpayamak.com/send-simple-sms-13909967e0 with server respond has difference so from and number_format provided with both keys
 		foreach ( $this->mobile as $recipient ) {
-			// Todo: in https://docs.iranpayamak.com/send-simple-sms-13909967e0 with server respond has difference so from and number_format provided with both keys
 
-			$payload['recipient'] = $recipient;
+			$clean_number = trim( $recipient );
+
+			if ( str_starts_with( $clean_number, '+98' ) ) {
+				$clean_number = substr( $clean_number, 3 );
+			} elseif ( str_starts_with( $clean_number, '098' ) ) {
+				$clean_number = substr( $clean_number, 3 );
+			} elseif ( str_starts_with( $clean_number, '98' ) ) {
+				$clean_number = substr( $clean_number, 2 );
+			}
+			
+			if ( ! str_starts_with( $clean_number, '0' ) ) {
+				$clean_number = '0' . $clean_number;
+			}
+
+			$payload['recipient'] = $clean_number;
 
 			$response = wp_remote_post( $this->api_url . '/ws/v1/sms/pattern',
 				[
