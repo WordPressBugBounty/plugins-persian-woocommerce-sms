@@ -11,7 +11,8 @@ class Notice {
 	public function __construct() {
 		add_action( 'admin_notices', [ $this, 'admin_notices' ], 10 );
 		add_action( 'wp_ajax_pwsms_dismiss_notice', [ $this, 'dismiss_notice' ] );
-		add_action( 'wp_ajax_pwsms_update_notice', [ $this, 'update_notice' ] );
+		add_action( 'admin_init', [ $this, 'schedule_update_notice_cron' ] );
+		add_action( 'hourly_update_notice', [ $this, 'update_notice' ] );
 	}
 
 	public function admin_notices() {
@@ -65,14 +66,6 @@ class Notice {
 
                 });
 
-                $.ajax({
-                    url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>",
-                    type: 'post',
-                    data: {
-                        action: 'pwsms_update_notice',
-                        nonce: '<?php echo esc_js( wp_create_nonce( 'pwsms_update_notice' ) ); ?>'
-                    }
-                });
             });
 		</script>
 		<?php
@@ -85,21 +78,35 @@ class Notice {
 	public function notices(): array {
 		global $pagenow;
 
-		$post_type    = sanitize_text_field( $_GET['post_type'] ?? null );
 		$page         = sanitize_text_field( $_GET['page'] ?? null );
 		$tab          = sanitize_text_field( $_GET['tab'] ?? null );
 		$has_shipping = function_exists( 'wc_shipping_enabled' ) && wc_shipping_enabled();
 
+		$pinova_install_url = self::get_plugin_action_url( 'pinova/pinova.php' );
+
 		$notices = [
 			[
-				'id'        => 'nrr_product_reviews',
-				'content'   => sprintf( '<b>نظرسنجی خودکار ووکامرس:</b> جهت افزایش تعداد نظرات فروشگاه‌تان، می‌توانید با استفاده از <a href="%s" target="_blank">افزونه نظرسنجی خودکار ندا</a> با ارسال خودکار پیامک، برای هر سفارش از مشتریان خود درخواست ثبت نظر کنید. | کدتخفیف: pwsms20',
-					'https://l.nabik.net/neda?utm_source=pwsms' ),
-				'condition' => $page == 'product-reviews' && is_plugin_inactive( 'nabik-review-reminder/nabik-review-reminder.php' ) && is_plugin_inactive( 'persian-woocommerce-shipping/woocommerce-shipping.php' ),
+				'id'        => 'pinova_digits',
+				'content'   => sprintf(
+					'آیا به دنبال جایگزینی سبک و رایگان برای افزونه دیجیتس هستید؟ همین حالا افزونه ورود و عضویت پینوا را از مخزن وردپرس نصب کنید.
+					<a href="%s" target="_blank"><input type="button" class="button button-primary" value="نصب سریع و رایگان از مخزن وردپرس"></a>',
+					$pinova_install_url
+				),
+				'condition' => $pinova_install_url && is_plugin_active( 'digits/digit.php' ),
 				'dismiss'   => 6 * MONTH_IN_SECONDS,
 			],
 			[
-				'id'        => 'pw_plugin',
+				'id'        => 'pinova',
+				'content'   => sprintf(
+					'<b>پینوا:</b> با افزونه رایگان پینوا، قابلیت ورود و عضویت با ارسال کد یکبارمصرف از طریق <b>پیامک، تماس صوتی و پیام‌رسان بله</b> را به فروشگاه‌تان اضافه کنید.
+					<a href="%s" target="_blank"><input type="button" class="button button-primary" value="نصب سریع و رایگان از مخزن وردپرس"></a>',
+					$pinova_install_url
+				),
+				'condition' => $pinova_install_url,
+				'dismiss'   => 6 * MONTH_IN_SECONDS,
+			],
+			[
+				'id'        => 'persian_woocommerce_plugin',
 				'content'   => sprintf( '<b>پیامک حرفه‌ای ووکامرس: </b> برای استفاده از امکانات تازه و بهره بردن از قابلیت های جدید افزونه پیامک حرفه‌ای در نسخه های بعدی، لطفا افزونه <a href="%s" target="_blank">ووکامرس فارسی</a> را نصب و فعال نمایید.',
 					admin_url( 'plugin-install.php?tab=plugin-information&plugin=persian-woocommerce' ) ),
 				'condition' => is_plugin_inactive( 'persian-woocommerce/woocommerce-persian.php' ),
@@ -167,16 +174,13 @@ class Notice {
 
 	}
 
-	public function update_notice() {
-		$update = get_transient( 'pwsms_update_notices' );
-
-		if ( $update ) {
-			return;
+	function schedule_update_notice_cron() {
+		if ( ! wp_next_scheduled( 'hourly_update_notice' ) ) {
+			wp_schedule_event( time(), 'hourly', 'hourly_update_notice' );
 		}
+	}
 
-		set_transient( 'pwsms_update_notices', 1, DAY_IN_SECONDS / 4 );
-
-		check_ajax_referer( 'pwsms_update_notice', 'nonce' );
+	public function update_notice() {
 
 		$notices = wp_remote_get( 'https://woonotice.ir/pwsms.json', [ 'timeout' => 5, ] );
 		$sign    = wp_remote_get( 'https://woohash.ir/pwsms.hash', [ 'timeout' => 5, ] );
@@ -248,6 +252,34 @@ class Notice {
 		update_option( 'pwsms_notices', $notices );
 
 		die();
+	}
+
+	public static function get_plugin_action_url( $plugin ): ?string {
+
+		if ( is_plugin_active( $plugin ) ) {
+			return null;
+		}
+
+		if ( ! isset( get_plugins()[ $plugin ] ) ) {
+
+			$plugin = strtok( $plugin, '/' );
+
+			return wp_nonce_url(
+				add_query_arg(
+					[
+						'action' => 'install-plugin',
+						'plugin' => $plugin,
+					],
+					admin_url( 'update.php' )
+				),
+				'install-plugin_' . $plugin
+			);
+		}
+
+		return wp_nonce_url(
+			admin_url( 'plugins.php?action=activate&plugin=' . $plugin ),
+			'activate-plugin_' . $plugin
+		);
 	}
 
 }
