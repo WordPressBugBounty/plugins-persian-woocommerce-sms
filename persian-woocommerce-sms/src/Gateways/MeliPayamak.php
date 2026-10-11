@@ -10,6 +10,39 @@ class MeliPayamak extends Gateway {
 
 	public string $api_url = 'https://rest.payamak-panel.com/api/SendSMS';
 
+	public const ERRORS = [
+		- 110 => 'الزام استفاده از ApiKey به جای رمز عبور',
+		- 109 => 'الزام تنظیم IP مجاز برای استفاده از API',
+		- 108 => 'مسدود شدن IP به دلیل تلاش ناموفق استفاده از API',
+		- 10  => 'در میان متغییر های ارسالی ، لینک وجود دارد.',
+		- 7   => 'خطایی در شماره فرستنده پیامک رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
+		- 6   => 'خطای داخلی رخ داده است، لطفاً با پشتیبانی فنی تماس بگیرید.',
+		- 5   => 'تعداد متغیرهای پترن با متن ارسالی مطابقت ندارد.',
+		- 4   => 'کد پترن صحیح نیست یا تایید نشده است.',
+		- 3   => 'سرشماره تعریف نشده یا تعداد گیرندگان مجاز نیست.',
+		- 2   => 'در هر بار ارسال، تنها یک گیرنده مجاز است.',
+		- 1   => 'دسترسی به وب‌سرویس غیرفعال است.',
+		0     => 'نام کاربری یا رمز عبور اشتباه است.',
+		2     => 'اعتبار کافی نیست.',
+		3     => 'محدودیت در ارسال روزانه.',
+		4     => 'محدودیت تعداد یا حجم پیامک.',
+		5     => 'شماره فرستنده معتبر نیست.',
+		6     => 'سامانه در حال بروزرسانی است.',
+		7     => 'متن پیامک شامل کلمات فیلتر شده است.',
+		8     => 'تعداد پیامک کمتر از حداقل مجاز.',
+		9     => 'ارسال از خطوط عمومی غیرمجاز است.',
+		10    => 'پنل غیرفعال یا مسدود است.',
+		11    => 'شماره گیرنده در لیست سیاه است.',
+		12    => 'مدارک پنل ناقص است.',
+		14    => 'ارسال لینک از این سرشماره مجاز نیست.',
+		15    => 'ارسال به چند شماره بدون لغو11 مجاز نیست.',
+		16    => 'شماره گیرنده ای یافت نشد',
+		17    => 'متن پیامک خالی می باشد',
+		18    => 'شماره گیرنده نامعتبر است',
+		19    => 'از محدودیت ساعتی فراتر رفته اید.',
+		35    => 'شماره در لیست سیاه مخابرات است.',
+	];
+
 	public static function id(): string {
 		return 'melipayamak_unified';
 	}
@@ -69,6 +102,11 @@ class MeliPayamak extends Gateway {
 			$value = $response['Value'] ?? '';
 
 			if ( strlen( $value ) > 15 ) {
+				continue;
+			}
+
+			if ( isset( self::ERRORS[ $value ] ) ) {
+				$this->failed_numbers[ $recipient ] = sprintf( 'خطای %s: %s', $value, self::ERRORS[ $value ] );
 				continue;
 			}
 
@@ -138,12 +176,16 @@ class MeliPayamak extends Gateway {
 	public function parse_legacy_pattern(): array {
 
 		$parts = explode( '@', $this->message );
-		$code  = $parts[1] ?? '';
-		$vars  = str_replace( [ '##shared', '##' ], '', $parts[2] ?? '' );
+		$code  = trim( $parts[1] ?? '' );
+		$vars  = trim( $parts[2] ?? '' );
+
+		$vars = str_ireplace( [ ';;##shared', ';;##' ], [ ';##shared', ';##' ], $vars );
+
+		$vars = str_replace( [ '##shared', '##' ], '', $vars );
 
 		return [
-			'code' => trim( $code ),
-			'vars' => array_values( array_filter( array_map( 'trim', explode( ';', $vars ) ) ) ),
+			'code' => $code,
+			'vars' => array_map( 'trim', explode( ';', $vars ) ),
 		];
 	}
 }

@@ -2,6 +2,8 @@
 
 namespace PW\PWSMS\Gateways;
 
+use Exception;
+
 class ParsGreen extends Gateway {
 
 	public static function id(): string {

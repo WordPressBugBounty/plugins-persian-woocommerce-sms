@@ -47,7 +47,10 @@ class Events {
 		/*onSale*/
 		add_action( 'woocommerce_process_product_meta', [ $this->customer_events, 'onsale' ], 9999, 1 );
 		add_action( 'woocommerce_update_product_variation', [ $this->customer_events, 'onsale' ], 9999, 1 );
+		add_action( 'woocommerce_product_quick_edit_save', [ $this->customer_events, 'onsale' ], 9999, 1 );
 		add_action( 'woocommerce_sms_send_onsale_event', [ $this->customer_events, 'onsale' ] );
+		
+		add_action( 'dokan_product_updated', [ $this->customer_events, 'onsale' ], 9999, 1 );
 
 		/*inStock*/
 		add_action( 'woocommerce_product_set_stock_status', [ $this->customer_events, 'in_stock' ], 12, 3 );

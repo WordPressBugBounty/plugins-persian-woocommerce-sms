@@ -11,11 +11,6 @@ class Contacts {
 		add_action( 'pwoosms_settings_form_bottom_sms_contacts', [ $this, 'contacts_table' ] );
 		add_action( 'init', [ $this, 'create_table' ] );
 		add_action( 'init', [ $this, 'move_old_contents_38' ] );
-
-		if ( isset( $_GET['test'] ) ) {
-			self::get_contacts_mobile( 361, '_in' );
-		}
-
 	}
 
 	public static function get_contacts_mobile( int $product_id, string $group ) {

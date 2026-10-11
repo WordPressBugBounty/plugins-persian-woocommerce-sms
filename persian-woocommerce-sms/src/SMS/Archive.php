@@ -7,6 +7,9 @@ class Archive {
 	public function __construct() {
 		add_action( 'pwoosms_settings_form_bottom_sms_archive', [ $this, 'archive_table' ] );
 		add_action( 'init', [ $this, 'create_table' ] );
+
+		add_action( 'current_screen', [ $this, 'add_screen_options' ] );
+		add_filter( 'set-screen-option', [ $this, 'set_screen_option' ], 10, 3 );
 	}
 
 	public static function insert_record( $data ) {
@@ -53,7 +56,7 @@ class Archive {
 		if ( ! class_exists( 'WP_List_Table' ) ) {
 			require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 		}
-		
+
 		$table = ListTable::table();
 
 		dbDelta( "CREATE TABLE IF NOT EXISTS $table (
@@ -125,4 +128,33 @@ class Archive {
 		<?php
 	}
 
+	public function add_screen_options(): void {
+		$screen         = get_current_screen();
+		$is_archive_tab = ( $_GET['tab'] ?? '' ) === 'archive';
+
+		$is_plugin_page = $screen &&
+		                  (
+			                  str_contains( $screen->id, 'pwsms' ) ||
+			                  str_contains( $screen->id, 'woocommerce' )
+		                  );
+
+		if ( ! $is_archive_tab || ! $is_plugin_page ) {
+			return;
+		}
+
+		add_screen_option( 'per_page', [
+			'label'   => 'تعداد پیامک در هر صفحه',
+			'default' => 20,
+			'option'  => 'pwsms_archive_per_page',
+		] );
+	}
+
+	public function set_screen_option( $status, string $option, $value ) {
+
+		if ( 'pwsms_archive_per_page' === $option ) {
+			return intval( $value );
+		}
+
+		return $status;
+	}
 }

@@ -5,7 +5,7 @@ Donate link: https://woosupport.ir
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 7.2.3
+Stable tag: 7.3.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -42,7 +42,6 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 * MeliPayamak.com - ملی پیامک
 * 0098SMS.com - ۰۰۹۸ اس ام اس
 * 1b1.ir - یک به یک
-* Afe.ir - واید
 * Afe.ir - واید
 * Arad-SMS.ir - آراد اس ام اس
 * AradPayamak.net - آراد پیامک
@@ -144,11 +143,8 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 * ippanel.com (کلید دسترسی)
 * iransmsserver.com
 * karenkart.com
-* kavenegar.com(lookup)
 * kianartpanel.ir
 * mehrpanel.ir
-* melipayamak.com (ترکیبی)
-* melipayamak.com خدماتی
 * parsianpayam.ir
 * payamafraz.com
 * postgah.info
@@ -184,6 +180,20 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 14. Screen shot 14
 
 == Changelog ==
+= 7.3.0 - 1405/07/19 =
+* معرفی افزونه ورود و ثبت نام پیامکی پینوا
+* حل مشکل کندی سرعت پیشخوان در برخی سایت‌ها
+* افزودن قابلیت صفحه بندی در آرشیو پیامک های ارسالی
+* سازگاری بیشتر با سفارشات و محصولات فروشندگان دکان
+* حل مشکل عدم ارسال خبرنامه در ویرایش سریع محصول
+* بهبود فرآیند انتخاب درگاه پیامک در تنظیمات
+* حل مشکل تگ {vendor_name} برای فروشندگان
+* بهبود رابط کاربری پنل مدیریت
+* بهبود متن خطاهای درگاه ملی پیامک
+* بروزرسانی درگاه sms.ir
+* بروزرسانی درگاه آرکا اس ام اس
+* بروزرسانی درگاه پارس گرین
+* بروزرسانی درگاه سیگنال ادز
 = 7.2.2 =
 * حل مشکل ارسال پیامک تکراری کمبود موجودی به مدیر
 = 7.2.1 =

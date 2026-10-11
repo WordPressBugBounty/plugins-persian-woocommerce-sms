@@ -135,7 +135,7 @@ class ListTable extends WP_List_Table {
 		$sortable              = $this->get_sortable_columns();
 		$this->_column_headers = [ $columns, $hidden, $sortable ];
 
-		$per_page     = 20;
+		$per_page     = $this->get_items_per_page( 'pwsms_archive_per_page', 20 );
 		$current_page = $this->get_pagenum();
 
 		$total_items = $this->record_count();

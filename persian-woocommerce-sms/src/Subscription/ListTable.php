@@ -221,10 +221,10 @@ class ListTable extends WP_List_Table {
 
 			if ( $product_id ) {
 
-				$product = wc_get_product( $product_id );
-				$title   = $product ? ( $product->is_type('variation') ? $product->get_name() . ' - ' . implode(', ', $product->get_variation_attributes()) : $product->get_name() ) : $product_id;
+				$product      = wc_get_product( $product_id );
+				$title        = $product ? ( $product->is_type( 'variation' ) ? $product->get_name() . ' - ' . implode( ', ', $product->get_variation_attributes() ) : $product->get_name() ) : $product_id;
 				$title        = ! empty( $title ) ? $product_id . ' :: ' . $title : $product_id;
-				$column_value = '<a title="مشاهده لیست مشترکین این محصول" href="' . add_query_arg( [ 'product_id' => $product_id ] ) . '">' . $title . '</a>';
+				$column_value = '<a title="مشاهده لیست مشترکین این محصول" href="' . esc_url( add_query_arg( [ 'product_id' => $product_id ] ) ) . '">' . $title . '</a>';
 
 			}
 
@@ -237,13 +237,13 @@ class ListTable extends WP_List_Table {
 			$query_args['product_id'] = $product_ids;
 		}
 
-		$edit_url = add_query_arg( $query_args, admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=contacts' ) );
+		$edit_url = esc_url( add_query_arg( $query_args, admin_url( 'admin.php?page=persian-woocommerce-sms-pro&tab=contacts' ) ) );
 
-		$delete_url = add_query_arg( [
+		$delete_url = esc_url( add_query_arg( [
 			'action'   => 'delete',
 			'item'     => absint( $item['id'] ),
 			'_wpnonce' => wp_create_nonce( 'pwoosms_delete_contact' ),
-		] );
+		] ) );
 
 		$actions = [
 			'edit'   => sprintf( '<a href="%s">%s</a>', $edit_url, 'ویرایش مشترک' ),

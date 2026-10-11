@@ -15,35 +15,25 @@ class Orders {
 		add_action( 'wp_enqueue_scripts', [ $this, 'checkout_script' ] );
 		add_action( 'woocommerce_checkout_process', [ $this, 'checkout_fields_validation' ] );
 
-		/*بعد از تغییر وضعیت سفارش*/
-		add_action( 'woocommerce_order_status_changed', [ $this, 'send_order_sms' ], 99, 3 );
-
-		/*بعد از ثبت سفارش*/
+		add_action( 'woocommerce_checkout_order_created', [ $this, 'send_order_sms' ], 99, 1 );
 		add_action( 'woocommerce_checkout_order_processed', [ $this, 'send_order_sms' ], 99, 1 );
+		add_action( 'woocommerce_order_status_changed', [ $this, 'send_order_sms' ], 99, 3 );
 		add_action( 'woocommerce_process_shop_order_meta', [ $this, 'send_order_sms' ], 999, 1 );
+		add_action( 'dokan_checkout_update_order_meta', [ $this, 'send_dokan_order_sms' ], 30, 2 );
 
-		/*جلوگیری از ارسال بعد از ثبت مجدد سفارش از صفحه تسویه حساب*/
+		/* جلوگیری از ارسال بعد از ثبت مجدد سفارش از صفحه تسویه حساب */
 		add_action( 'woocommerce_resume_order', function () {
-			remove_action( 'woocommerce_checkout_order_processed', [ $this, 'send_order_sms' ], 99 );
+			remove_action( 'woocommerce_checkout_order_created', [ $this, 'send_order_sms' ], 99 );
 		} );
 
-		/*هنگامی که بارکد پستی مرسوله در تاپین ثبت شد*/
+		/* هنگامی که بارکد پستی مرسوله در تاپین ثبت شد */
 		add_action( 'pws_save_order_post_barcode', [ $this, 'send_order_post_tracking_code' ], 100, 2 );
 
-		add_filter( 'woocommerce_form_field_pwoosms_multiselect', [
-			Helper::class,
-			'multi_select_and_checkbox',
-		], 11, 4 );
-		add_filter( 'woocommerce_form_field_pwoosms_multicheckbox', [
-			Helper::class,
-			'multi_select_and_checkbox',
-		], 11, 4 );
+		add_filter( 'woocommerce_form_field_pwoosms_multiselect', [ Helper::class, 'multi_select_and_checkbox' ], 11, 4 );
+		add_filter( 'woocommerce_form_field_pwoosms_multicheckbox', [ Helper::class, 'multi_select_and_checkbox' ], 11, 4 );
 
 		if ( is_admin() ) {
-			add_action( 'woocommerce_admin_order_data_after_billing_address', [
-				$this,
-				'buyer_sms_details',
-			], 10, 1 );
+			add_action( 'woocommerce_admin_order_data_after_billing_address', [ $this, 'buyer_sms_details' ], 10, 1 );
 			add_action( 'woocommerce_admin_order_data_after_order_details', [ $this, 'change_sms_text_js' ] );
 			add_action( 'wp_ajax_change_sms_text', [ $this, 'change_sms_text_callback' ] );
 			add_action( 'wp_ajax_nopriv_change_sms_text', [ $this, 'change_sms_text_callback' ] );
@@ -53,13 +43,13 @@ class Orders {
 
 	public function checkout_script() {
 
-		if ( ! function_exists( 'is_checkout' ) || ! function_exists( 'wc_enqueue_js' ) ) {
+		if ( ! function_exists( 'is_checkout' ) ) {
 			return;
 		}
 
 		if ( is_checkout() ) {
 
-			wp_register_script( 'pwoosms-multiselect', PWSMS_URL . '/assets/js/multi-select.js', [ 'jquery' ], PWSMS_VERSION, true );
+			wp_enqueue_script( 'pwoosms-multiselect', PWSMS_URL . '/assets/js/multi-select.js', [ 'jquery' ], PWSMS_VERSION, true );
 
 			wp_localize_script( 'pwoosms-multiselect', 'pwoosms', [
 				'ajax_url'                  => admin_url( 'admin-ajax.php' ),
@@ -67,7 +57,6 @@ class Orders {
 				'chosen_placeholder_multi'  => 'گزینه های مورد نظر را انتخاب نمایید.',
 				'chosen_no_results_text'    => 'هیچ گزینه ای وجود ندارد.',
 			] );
-			wp_enqueue_script( 'pwoosms-multiselect' );
 
 		}
 	}
@@ -119,41 +108,96 @@ class Orders {
 		$order_status = $order->get_status();
 		$mobile       = PWSMS()->buyer_mobile( $order_id );
 		$message      = PWSMS()->get_option( 'sms_body_set-post-tracking-code' );
-		$data         = [
+
+		$data = [
 			'post_id' => $order_id,
 			'mobile'  => $mobile,
 			'type'    => EventsEnum::SUPER_ADMIN_AUTOMATIC_ORDER,
 			'message' => PWSMS()->replace_short_codes( $message, $order_status, $order, [ 'post_tracking_code' => $tracking_code, 'post_tracking_url' => 'https://radgir.net' ] ),
 		];
 
-		if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+		$result = PWSMS()->send_sms( $data );
+
+		if ( $result === true ) {
 			$order->add_order_note( sprintf( 'پیامک کد رهگیری مرسوله با موفقیت به مشتری با شماره %s ارسال گردید.', $mobile ) );
 		} else {
 			$order->add_order_note( sprintf( 'پیامک کد رهگیری بخاطر خطا به مشتری با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
 		}
 	}
 
-	public function send_order_sms( int $order_id, $old_status = '', $new_status = 'created' ) {
+	public function send_dokan_order_sms( int $order_id, int $seller_id ) {
+		$order = wc_get_order( $order_id );
 
-		if ( current_action() == 'woocommerce_process_shop_order_meta' ) {
+		if ( ! $order || ! $order->get_parent_id() ) {
+			return;
+		}
+
+		$actual_status = $order->get_status();
+
+		$this->send_order_sms( $order_id, '', 'created' );
+
+		if ( $actual_status !== 'created' ) {
+			$this->send_order_sms( $order_id, 'created', $actual_status );
+		}
+
+	}
+
+	/**
+	 * @param WC_Order|int $order
+	 */
+	public function send_order_sms( $order, $old_status = '', $new_status = '' ) {
+		$order_id = PWSMS()->order_ID( $order );
+		$order    = wc_get_order( $order_id );
+
+		if ( ! $order_id || ! $order ) {
+			return;
+		}
+
+		$current_action  = current_action();
+		$is_created_hook = $current_action === 'woocommerce_checkout_order_created';
+
+		$old_status = PWSMS()->modify_status( $old_status );
+		$new_status = PWSMS()->modify_status( $new_status );
+
+		if ( empty( $new_status ) ) {
+			$new_status = $is_created_hook ? 'created' : PWSMS()->modify_status( $order->get_status() );
+		}
+
+		$is_admin_save  = $current_action === 'woocommerce_process_shop_order_meta';
+		$is_manual_send = ! empty( $_POST['sms_order_send'] );
+
+		// Handle admin save
+		if ( $is_admin_save ) {
+
 			if ( ! is_admin() ) {
 				return;
 			}
+
+			if ( ! $is_manual_send && ( empty( $old_status ) || $old_status === $new_status ) ) {
+				return;
+			}
+
 		} else {
 			remove_action( 'woocommerce_process_shop_order_meta', [ $this, 'send_order_sms' ], 999 );
 		}
 
-		$new_status = PWSMS()->modify_status( $new_status );
-
-		if ( ! $order_id ) {
+		// Handle frontend / Automatic hooks
+		if ( ! $is_admin_save && ! empty( $old_status ) && $old_status === $new_status ) {
 			return;
 		}
 
-		$order = new WC_Order( $order_id );
-
 		$order_page = ( $_POST['is_shop_order'] ?? null ) == 'true';
 
-		if ( ( $order_page && ! empty( $_POST['sms_order_send'] ) ) || ( ! $order_page && $this->buyer_can_get_sms( $order_id, $new_status ) ) ) {
+		// Check Dokan order characteristics
+		$parent_id      = $order->get_parent_id();
+		$has_sub_orders = metadata_exists( 'post', $order_id, 'has_sub_order' )
+		                  || $order->get_meta( 'has_sub_order', true )
+		                  || ( function_exists( 'dokan_is_order_has_sub_order' ) && dokan_is_order_has_sub_order( $order_id ) );
+
+		$should_send_customer_sms = ( ! $has_sub_orders && ! $parent_id ) || ( $parent_id > 0 );
+
+		// Customer
+		if ( $should_send_customer_sms && ( ( $order_page && $is_manual_send ) || ( ! $order_page && $this->buyer_can_get_sms( $order_id, $new_status ) ) ) ) {
 
 			$mobile  = PWSMS()->buyer_mobile( $order_id );
 			$message = isset( $_POST['sms_order_text'] ) ? sanitize_textarea_field( $_POST['sms_order_text'] ) : PWSMS()->get_option( 'sms_body_' . $new_status );
@@ -165,32 +209,34 @@ class Orders {
 				'message' => PWSMS()->replace_short_codes( $message, $new_status, $order ),
 			];
 
-			if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+			$result = PWSMS()->send_sms( $data );
+
+			if ( $result === true ) {
 				$order->add_order_note( sprintf( 'پیامک با موفقیت به مشتری با شماره %s ارسال گردید.', $mobile ) );
 			} else {
 				$order->add_order_note( sprintf( 'پیامک بخاطر خطا به مشتری با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
 			}
+
 		}
 
-		// send sms to Super Admin, Excluded sub orders
-		if (
-			in_array( $new_status, (array) PWSMS()->get_option( 'super_admin_order_status' ) ) &&
-			! $order->get_parent_id()
-		) {
+		// Super Admin
+		if ( ! $parent_id && in_array( $new_status, (array) PWSMS()->get_option( 'super_admin_order_status' ) ) ) {
 
 			$mobile  = PWSMS()->get_option( 'super_admin_phone' );
 			$message = PWSMS()->get_option( 'super_admin_sms_body_' . $new_status );
 
-			$data = [
+			$admin_data = [
 				'post_id' => $order_id,
 				'type'    => EventsEnum::SUPER_ADMIN_AUTOMATIC_ORDER,
 				'mobile'  => $mobile,
 				'message' => PWSMS()->replace_short_codes( $message, $new_status, $order ),
 			];
 
-			Bot::send_async( $data );
+			Bot::send_async( $admin_data );
 
-			if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
+			$result = PWSMS()->send_sms( $admin_data );
+
+			if ( $result === true ) {
 				$order->add_order_note( sprintf( 'پیامک با موفقیت به مدیر کل با شماره %s ارسال گردید.', $mobile ) );
 			} else {
 				$order->add_order_note( sprintf( 'پیامک بخاطر خطا به مدیر کل با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
@@ -198,43 +244,48 @@ class Orders {
 
 		}
 
-		$order_products = PWSMS()->get_product_lists( $order, 'product_id' );
+		// Product Admin / Dokan Vendor
+		if ( $parent_id || ! $has_sub_orders ) {
 
-		if ( $order->get_parent_id() ) {
+			if ( ! $parent_id && function_exists( 'dokan_get_sellers_by' ) ) {
+				$sellers = dokan_get_sellers_by( $order_id );
 
-			$sources = [
-				'dokan_vendor',
-				'user_meta',
-				'post_meta',
-			];
+				if ( count( $sellers ) > 1 ) {
+					return;
+				}
 
-		} else {
-
-			$sources = [
-				'product_meta',
-			];
-
-		}
-
-		$mobiles = PWSMS()->product_admin_mobiles( $order_products['product_id'], $new_status, $sources );
-
-		foreach ( (array) $mobiles as $mobile => $product_ids ) {
-
-			$vendor_items = PWSMS()->product_admin_items( $order_products, $product_ids );
-			$message      = PWSMS()->get_option( 'product_admin_sms_body_' . $new_status );
-
-			$data = [
-				'post_id' => $order_id,
-				'type'    => EventsEnum::PRODUCT_MANAGER_AUTOMATIC_ORDER,
-				'mobile'  => $mobile,
-				'message' => PWSMS()->replace_short_codes( $message, $new_status, $order, $vendor_items ),
-			];
-
-			if ( ( $result = PWSMS()->send_sms( $data ) ) === true ) {
-				$order->add_order_note( sprintf( 'پیامک با موفقیت به مدیر محصول با شماره %s ارسال گردید.', $mobile ) );
-			} else {
-				$order->add_order_note( sprintf( 'پیامک بخاطر خطا به مدیر محصول با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
 			}
+
+			$order_products = PWSMS()->get_product_lists( $order, 'product_id' );
+			$sources        = [ 'dokan_vendor', 'user_meta', 'post_meta', 'product_meta' ];
+
+			$mobiles = PWSMS()->product_admin_mobiles( $order_products['product_id'], $new_status, $sources );
+
+			foreach ( (array) $mobiles as $mobile => $data ) {
+
+				$product_ids                 = ! empty( $data['products'] ) ? $data['products'] : [];
+				$vendor_items                = PWSMS()->product_admin_items( $order_products, $product_ids );
+				$vendor_items['vendor_name'] = ! empty( $data['vendor_name'] ) ? $data['vendor_name'] : '';
+
+				$message = PWSMS()->get_option( 'product_admin_sms_body_' . $new_status );
+
+				$vendor_data = [
+					'post_id' => $order_id,
+					'type'    => EventsEnum::PRODUCT_MANAGER_AUTOMATIC_ORDER,
+					'mobile'  => $mobile,
+					'message' => PWSMS()->replace_short_codes( $message, $new_status, $order, $vendor_items ),
+				];
+
+				$result = PWSMS()->send_sms( $vendor_data );
+
+				if ( $result === true ) {
+					$order->add_order_note( sprintf( 'پیامک با موفقیت به مدیر محصول با شماره %s ارسال گردید.', $mobile ) );
+				} else {
+					$order->add_order_note( sprintf( 'پیامک بخاطر خطا به مدیر محصول با شماره %s ارسال نشد.<br>پاسخ وبسرویس: %s', $mobile, $result ) );
+				}
+
+			}
+
 		}
 
 	}
@@ -319,7 +370,7 @@ class Orders {
 			$new_status    = PWSMS()->modify_status( $_order_status );
 		}
 
-		$order   = new WC_Order( $order_id );
+		$order   = wc_get_order( $order_id );
 		$message = PWSMS()->get_option( 'sms_body_' . $new_status );
 		$message = PWSMS()->replace_short_codes( $message, $new_status, $order );
 

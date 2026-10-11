@@ -1159,24 +1159,32 @@ class Helper {
 
 			foreach ( (array) $product_admin as $data ) {
 
-				if ( ! empty( $data['mobile'] ) && ! empty( $data['statuses'] ) && $this->validate_mobile( $data['mobile'] ) ) {
-
-					$statuses = $this->prepare_admin_product_status( $data['statuses'] );
-
-					if ( empty( $status ) || in_array( $status, $statuses ) ) {
-
-						$_mobiles = array_map( 'trim', explode( ',', $data['mobile'] ) );
-
-						foreach ( $_mobiles as $_mobile ) {
-							$mobiles[ $_mobile ][] = $product_id;
-						}
-
-					}
-
+				if (
+					empty( $data['mobile'] )
+					|| empty( $data['statuses'] )
+					|| ! $this->validate_mobile( $data['mobile'] )
+				) {
+					continue;
 				}
 
+				$statuses = $this->prepare_admin_product_status( $data['statuses'] );
+
+				if (
+					! empty( $status )
+					&& ! in_array( $status, $statuses )
+				) {
+					continue;
+				}
+
+				$_mobiles = array_map( 'trim', explode( ',', $data['mobile'] ) );
+
+				foreach ( $_mobiles as $_mobile ) {
+					$mobiles[ $_mobile ]['products'][]  = $product_id;
+					$mobiles[ $_mobile ]['vendor_name'] = $this->get_dokan_vendor_name( $product_id );
+				}
 			}
 		}
+
 
 		return $mobiles;
 	}
@@ -1221,6 +1229,21 @@ class Helper {
 			'mobile'   => $vendor_mobile,
 			'statuses' => $prepared_statuses,
 		];
+	}
+
+	public function get_dokan_vendor_name( int $product_id ): string {
+
+		if ( ! function_exists( 'dokan_get_vendor_by_product' ) || ! PWSMS()->get_option( 'product_admin_dokan_integration' ) ) {
+			return '';
+		}
+
+		$vendor = dokan_get_vendor_by_product( $product_id );
+
+		if ( empty( $vendor ) || ! is_object( $vendor ) ) {
+			return '';
+		}
+
+		return method_exists( $vendor, 'get_shop_name' ) ? $vendor->get_shop_name() : '';
 	}
 
 	public function get_user_mobile_meta( $post_id = 0 ) {
@@ -1450,10 +1473,10 @@ class Helper {
 
 		foreach ( $product_ids as $product_id ) {
 
-			$item_datas = $order_products[ $product_id ];
+			$item_data = $order_products[ $product_id ];
 
-			foreach ( (array) $item_datas as $item_data ) {
-				$this->prepare_items( $items, $item_data );
+			foreach ( (array) $item_data as $item ) {
+				$this->prepare_items( $items, $item );
 			}
 
 		}
@@ -1464,6 +1487,11 @@ class Helper {
 	}
 
 	public function order_ID( $order ) {
+
+		if ( is_numeric( $order ) ) {
+			return intval( $order );
+		}
+
 		return $this->order_prop( $order, 'id' );
 	}
 
@@ -1504,8 +1532,6 @@ class Helper {
 		$mobile = array_filter( $mobile, [ $this, 'validate_mobile' ] );
 		$mobile = array_unique( array_filter( $mobile ) );
 
-		$gateway_obj = $this->get_sms_gateway();
-
 		if ( empty( $mobile ) ) {
 			return 'شماره موبایل خالی/نامعتبر است.';
 		}
@@ -1514,8 +1540,11 @@ class Helper {
 			return 'متن پیامک خالی است.';
 		}
 
+		$gateway_obj = null;
+
 		try {
 
+			$gateway_obj          = $this->get_sms_gateway();
 			$gateway_obj->mobile  = $mobile;
 			$gateway_obj->message = $message;
 
@@ -1528,12 +1557,20 @@ class Helper {
 			$result = var_export( $result, true );
 		}
 
+		$sender_number = ( is_object( $gateway_obj ) && isset( $gateway_obj->senderNumber ) )
+			? $gateway_obj->senderNumber
+			: 'نامشخص';
+
+		$sender_details = is_object( $gateway_obj ) && method_exists( $gateway_obj, 'name' )
+			? "{$gateway_obj->name()} ( {$sender_number} ) "
+			: "درگاه نامشخص ( {$sender_number} )";
+
 		Archive::insert_record( [
 			'post_id'  => ! empty( $data['post_id'] ) ? $data['post_id'] : '',
 			'type'     => ! empty( $data['type'] ) ? $data['type'] : 0,
 			'reciever' => implode( ',', (array) $mobile ),
 			'message'  => $message,
-			'sender'   => '( ' . $gateway_obj->senderNumber . ' ) ' . $gateway_obj->name(),
+			'sender'   => $sender_details,
 			'result'   => $result === true ? '_ok_' : $result,
 		] );
 
@@ -1545,13 +1582,14 @@ class Helper {
 	 * Return the current active gateway
 	 *
 	 * @return Gateway
+	 * @throws Exception
 	 */
 	public static function get_sms_gateway() {
 
 		$active_gateway = PWSMS()->get_option( 'sms_gateway' );
 
 		if ( ! class_exists( $active_gateway ) || ! is_subclass_of( $active_gateway, Gateway::class ) ) {
-			$active_gateway = Logger::class;
+			throw new Exception( 'ابتدا وبسرویس ارسال پیامک را از بخش «پیامک حرفه‌ای ووکامرس ← وبسرویس» انتخاب و پیکربندی کنید.' );
 		}
 
 		return new $active_gateway();

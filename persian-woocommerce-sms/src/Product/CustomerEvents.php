@@ -14,8 +14,14 @@ class CustomerEvents {
 
 	public static array $groups_to_remove = [];
 
-	public function onsale( int $product_id ): bool {
-		$product = wc_get_product( $product_id );
+	public function onsale( $product ): bool {
+
+		if ( $product instanceof WC_Product ) {
+			$product_id = $product->get_id();
+		} else {
+			$product_id = $product;
+			$product    = wc_get_product( $product_id );
+		}
 
 		if ( ! PWSMS()->is_wc_product( $product ) ) {
 			return false;

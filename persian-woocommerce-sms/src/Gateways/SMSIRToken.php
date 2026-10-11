@@ -72,7 +72,7 @@ class SMSIRToken extends Gateway implements SendPatternFeature {
 				continue;
 			}
 
-			if ( isset( $response['messageId'] ) ) {
+			if ( isset( $response['data']['messageId'] ) ) {
 				continue;
 			}
 
