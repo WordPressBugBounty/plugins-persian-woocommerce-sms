@@ -44,7 +44,7 @@ class PersianSMS extends Gateway {
 				'api'              => 6,
 			];
 
-			$remote = wp_remote_get( 'http://persian-sms.com/api/?' . http_build_query( $data ) );
+			$remote = wp_remote_get( 'https://persian-sms.com/api/?' . http_build_query( $data ) );
 
 			$response = json_decode( wp_remote_retrieve_body( $remote ) );
 

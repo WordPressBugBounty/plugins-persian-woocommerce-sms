@@ -26,7 +26,7 @@ class IranSMS extends Gateway {
 
 		foreach ( $this->mobile as $mobile ) {
 
-			$remote = wp_remote_get( 'http://www.iransms.co/URLSend.aspx?Username=' . $username . '&Password=' . $password . '&PortalCode=' . $from . '&Mobile=' . $mobile . '&Message=' . $massage . '&Flash=0' );
+			$remote = wp_remote_get( 'https://www.iransms.co/URLSend.aspx?Username=' . $username . '&Password=' . $password . '&PortalCode=' . $from . '&Mobile=' . $mobile . '&Message=' . $massage . '&Flash=0' );
 
 			$response = wp_remote_retrieve_body( $remote );
 

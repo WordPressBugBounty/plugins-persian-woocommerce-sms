@@ -32,7 +32,7 @@ class NHOne extends Gateway {
 			'From'     => $from,
 		];
 
-		$remote = wp_remote_get( 'http://ws.nh1.ir/Api/SMS/Send?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://ws.nh1.ir/Api/SMS/Send?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

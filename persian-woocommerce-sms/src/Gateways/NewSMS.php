@@ -25,7 +25,7 @@ class NewSMS extends Gateway {
 
 		$to = implode( ',', $this->mobile );
 
-		$url = 'http://newsms.ir/api/?action=SMS_SEND&username=' . rawurlencode( $username ) .
+		$url = 'https://newsms.ir/api/?action=SMS_SEND&username=' . rawurlencode( $username ) .
 		       '&password=' . rawurlencode( $password ) .
 		       '&API_CHANGE_ALLOW=true&to=' . rawurlencode( $to ) .
 		       '&api=1&from=' . rawurlencode( $from ) .

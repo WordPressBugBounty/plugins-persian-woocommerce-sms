@@ -27,7 +27,7 @@ class Postgah extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( 'http://postgah.net/API/Send.asmx?WSDL' );
+			$client       = new SoapClient( 'https://postgah.net/API/Send.asmx?WSDL' );
 			$sms_response = $client->SendSms(
 				[
 					'username' => $username,

@@ -27,7 +27,7 @@ class Paaz extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://sms.paaz.ir/post/send.asmx?wsdl" );
+			$client       = new SoapClient( "https://sms.paaz.ir/post/send.asmx?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

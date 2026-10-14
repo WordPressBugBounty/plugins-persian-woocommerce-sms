@@ -30,7 +30,7 @@ class ParsianSMS extends Gateway {
 		           '&from=' . rawurlencode( $from ) .
 		           '&msg=' . $massage;
 
-		$remote = wp_remote_get( 'http://185.4.31.182/class/sms/webservice/send_url.php?' . $content );
+		$remote = wp_remote_get( 'https://185.4.31.182/class/sms/webservice/send_url.php?' . $content );
 
 		$response = wp_remote_retrieve_body( $remote );
 

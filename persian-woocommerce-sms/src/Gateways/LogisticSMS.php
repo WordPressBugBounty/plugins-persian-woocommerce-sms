@@ -86,7 +86,7 @@ class LogisticSMS extends Gateway {
 				'body'      => $payload,
 				'timeout'   => 5,
 				'headers'   => $headers,
-				'sslverify' => false,
+				//'sslverify' => false,
 			] );
 
 			// Check if the response is a WP_Error

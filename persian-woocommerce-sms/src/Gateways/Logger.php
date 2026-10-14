@@ -16,11 +16,13 @@ class Logger extends Gateway {
 	public function send(): bool {
 
 		$this->logVariables( [
-			'username'     => $this->username,
-			'password'     => $this->password,
-			'senderNumber' => $this->senderNumber,
-			'mobile'       => $this->mobile,
-			'message'      => $this->message,
+			'mobile'  => array_map(
+				function ( $mobile ) {
+					return substr( $mobile, 0, 4 ) . '***' . substr( $mobile, - 4 );
+				},
+				$this->mobile
+			),
+			'message' => $this->message,
 		] );
 
 		return true;

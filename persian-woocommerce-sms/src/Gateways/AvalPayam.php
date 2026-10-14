@@ -2,7 +2,7 @@
 
 namespace PW\PWSMS\Gateways;
 
-use nusoap_client;
+use SoapClient;
 
 class AvalPayam extends Gateway {
 
@@ -26,10 +26,7 @@ class AvalPayam extends Gateway {
 		}
 		$to = $this->mobile;
 
-
-		/*PWSMS()->nusoap();*/
-
-		$client = new nusoap_client( "http://www.avalpayam.com/class/sms/webservice/server.php?wsdl" );
+		$client = new SoapClient( "https://www.avalpayam.com/class/sms/webservice/server.php?wsdl" );
 
 		$client->soap_defencoding = 'UTF-8';
 		$client->decode_utf8      = true;

@@ -33,7 +33,7 @@ class SMSNegarIR extends Gateway {
 			'smsText'       => $massage,
 		];
 
-		$remote = wp_remote_get( 'http://sms.smsnegar.ir/sendSMSURL.aspx?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://sms.smsnegar.ir/sendSMSURL.aspx?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

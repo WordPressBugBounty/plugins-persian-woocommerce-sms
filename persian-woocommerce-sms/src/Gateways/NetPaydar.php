@@ -30,7 +30,7 @@ class NetPaydar extends Gateway {
 		           '&lineNo=' . rawurlencode( $from ) .
 		           '&text=' . $massage;
 
-		$remote = wp_remote_get( 'http://sms.netpaydar.com/SendMessage.ashx?' . $content );
+		$remote = wp_remote_get( 'https://sms.netpaydar.com/SendMessage.ashx?' . $content );
 
 		$response = wp_remote_retrieve_body( $remote );
 

@@ -33,7 +33,7 @@ class TSMS extends Gateway {
 			'message'  => $massage,
 		];
 
-		$remote = wp_remote_get( 'http://tsms.ir/url/tsmshttp.php?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://tsms.ir/url/tsmshttp.php?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

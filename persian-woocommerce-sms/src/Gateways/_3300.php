@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use Exception;
-use nusoap_client;
+use SoapClient;
 
 class _3300 extends Gateway {
 
@@ -28,10 +28,9 @@ class _3300 extends Gateway {
 		}
 
 		$to = $this->mobile;
-		/*PWSMS()->nusoap();*/
 
 		try {
-			$client                   = new nusoap_client( 'http://sms.3300.ir/almassms.asmx?wsdl', 'wsdl', '', '', '',
+			$client                   = new SoapClient( 'https://sms.3300.ir/almassms.asmx?wsdl', 'wsdl', '', '', '',
 				'' );
 			$client->soap_defencoding = 'UTF-8';
 			$client->decode_utf8      = true;

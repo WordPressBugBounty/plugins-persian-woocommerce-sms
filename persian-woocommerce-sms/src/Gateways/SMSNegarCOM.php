@@ -31,7 +31,7 @@ class SMSNegarCOM extends Gateway {
 
 		try {
 
-			$client = new SoapClient( "http://sms.smsnegar.com/webservice/Service.asmx?wsdl" );
+			$client = new SoapClient( "https://sms.smsnegar.com/webservice/Service.asmx?wsdl" );
 
 			$result = $client->SendSms( [
 				"cUserName"     => $username,

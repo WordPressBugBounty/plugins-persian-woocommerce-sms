@@ -29,7 +29,7 @@ class MehrAfraz extends Gateway {
 
 		try {
 
-			$client = new SoapClient( "http://www.mehrafraz.com/webservice/service.asmx?wsdl" );
+			$client = new SoapClient( "https://www.mehrafraz.com/webservice/service.asmx?wsdl" );
 
 			$result = $client->SendSms( [
 				"cUserName"     => $username,

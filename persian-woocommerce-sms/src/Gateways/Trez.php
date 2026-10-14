@@ -33,7 +33,7 @@ class Trez extends Gateway {
 			'MessageBody' => $massage,
 		];
 
-		$remote = wp_remote_get( 'http://smspanel.trez.ir/SendGroupMessageWithUrl.ashx?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://smspanel.trez.ir/SendGroupMessageWithUrl.ashx?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

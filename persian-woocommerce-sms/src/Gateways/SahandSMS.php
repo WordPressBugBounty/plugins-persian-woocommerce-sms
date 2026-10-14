@@ -26,7 +26,7 @@ class SahandSMS extends Gateway {
 		$to = implode( '-', $to );
 		$to = str_ireplace( '+98', '0', $to );
 
-		$url = 'http://webservice.sahandsms.com/NewSMSWebService.asmx/SendFromUrl?username=' . $username . '&password=' . $password . '&fromNumber=' . $from . '&toNumber=' . $to . '&message=' . urlencode( trim( $massage ) );
+		$url = 'https://webservice.sahandsms.com/NewSMSWebService.asmx/SendFromUrl?username=' . $username . '&password=' . $password . '&fromNumber=' . $from . '&toNumber=' . $to . '&message=' . urlencode( trim( $massage ) );
 
 		wp_remote_get( $url );
 

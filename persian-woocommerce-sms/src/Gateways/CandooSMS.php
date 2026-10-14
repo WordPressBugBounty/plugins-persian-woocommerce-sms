@@ -3,7 +3,8 @@
 namespace PW\PWSMS\Gateways;
 
 
-use nusoap_client;
+use Exception;
+use SoapClient;
 
 class CandooSMS extends Gateway {
 
@@ -55,10 +56,8 @@ class CandooSMS extends Gateway {
 			$to[ $i ] = '98' . $ret;
 		}
 
-		/*PWSMS()->nusoap();*/
-
 		try {
-			$client                   = new nusoap_client( 'http://my.candoosms.com/services/?wsdl', true );
+			$client                   = new SoapClient( 'https://my.candoosms.com/services/?wsdl', true );
 			$client->soap_defencoding = 'UTF-8';
 			$client->decode_utf8      = false;
 

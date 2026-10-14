@@ -30,7 +30,7 @@ class HadafWP extends Gateway {
 
 		try {
 
-			$client = new SoapClient( "http://sms.hadafwp.com/Post/Send.asmx?wsdl" );
+			$client = new SoapClient( "https://sms.hadafwp.com/Post/Send.asmx?wsdl" );
 
 			$encoding     = "UTF-8";
 			$parameters   = [

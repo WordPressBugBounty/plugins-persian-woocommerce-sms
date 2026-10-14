@@ -28,7 +28,7 @@ class AtlasPayamak extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://4646.ir/post/send.php?wsdl" );
+			$client       = new SoapClient( "https://4646.ir/post/send.php?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

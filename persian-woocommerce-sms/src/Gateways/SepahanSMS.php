@@ -29,7 +29,7 @@ class SepahanSMS extends Gateway {
 
 		try {
 
-			$client = new SoapClient( "http://www.sepahansms.com/smsSendWebServiceforphp.asmx?wsdl" );
+			$client = new SoapClient( "https://www.sepahansms.com/smsSendWebServiceforphp.asmx?wsdl" );
 
 			$sms_response = $client->SendSms( [
 				'UserName'     => $username,

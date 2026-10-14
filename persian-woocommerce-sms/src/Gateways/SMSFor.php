@@ -2,7 +2,8 @@
 
 namespace PW\PWSMS\Gateways;
 
-use nusoap_client;
+
+use SoapClient;
 
 class SMSFor extends Gateway {
 
@@ -25,8 +26,6 @@ class SMSFor extends Gateway {
 			return false;
 		}
 		$to = $this->mobile;
-
-		/*PWSMS()->nusoap();*/
 
 		$i = sizeOf( $to );
 		while ( $i -- ) {
@@ -56,7 +55,7 @@ class SMSFor extends Gateway {
 			$to[ $i ] = '0' . $ret;
 		}
 
-		$client                   = new nusoap_client( 'http://www.smsfor.ir/webservice/soap/smsService.php?wsdl',
+		$client                   = new SoapClient( 'https://www.smsfor.ir/webservice/soap/smsService.php?wsdl',
 			'wsdl' );
 		$client->soap_defencoding = 'UTF-8';
 		$client->decode_utf8      = false;

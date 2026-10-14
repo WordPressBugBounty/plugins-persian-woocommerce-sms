@@ -27,7 +27,7 @@ class KianArtPanel extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://onlinepanel.ir/post/send.asmx?wsdl" );
+			$client       = new SoapClient( "https://onlinepanel.ir/post/send.asmx?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

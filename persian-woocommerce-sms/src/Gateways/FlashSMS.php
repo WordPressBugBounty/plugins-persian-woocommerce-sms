@@ -28,7 +28,7 @@ class FlashSMS extends Gateway {
 
 		try {
 
-			$client       = new SoapClient( "http://flashsms.ir/smssendwebserviceforcms.asmx?wsdl" );
+			$client       = new SoapClient( "https://flashsms.ir/smssendwebserviceforcms.asmx?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

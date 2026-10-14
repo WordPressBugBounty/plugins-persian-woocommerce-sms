@@ -29,7 +29,7 @@ class NiazPardazIR extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://payamak-service.ir/SendService.svc?wsdl" );
+			$client       = new SoapClient( "https://payamak-service.ir/SendService.svc?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'userName'       => $username,

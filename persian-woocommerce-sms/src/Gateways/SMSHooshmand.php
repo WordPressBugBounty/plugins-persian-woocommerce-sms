@@ -2,8 +2,7 @@
 
 namespace PW\PWSMS\Gateways;
 
-
-use nusoap_client;
+use SoapClient;
 
 class SMSHooshmand extends Gateway {
 
@@ -27,7 +26,7 @@ class SMSHooshmand extends Gateway {
 
 		$to = $this->mobile;
 
-		$client = new nusoap_client( "http://smswbs.ir/class/sms/webservice/server.php?wsdl" );
+		$client = new SoapClient( "https://smswbs.ir/class/sms/webservice/server.php?wsdl" );
 
 		$client->soap_defencoding = 'UTF-8';
 		$client->decode_utf8      = true;

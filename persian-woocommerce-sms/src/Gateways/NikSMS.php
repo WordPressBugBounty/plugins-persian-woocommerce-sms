@@ -34,7 +34,7 @@ class NikSMS extends Gateway {
 			'sendType'     => 1,
 		];
 
-		$remote = wp_remote_post( "http://niksms.com/fa/PublicApi/GroupSms", [
+		$remote = wp_remote_post( "https://niksms.com/fa/PublicApi/GroupSms", [
 			'body' => $param,
 		] );
 

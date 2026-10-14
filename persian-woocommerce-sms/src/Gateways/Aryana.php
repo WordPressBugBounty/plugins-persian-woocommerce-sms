@@ -33,7 +33,7 @@ class Aryana extends Gateway {
 			'flash'   => 1,
 		];
 
-		$remote = wp_remote_get( 'http://www.payamkotah.ir/FastSendSMS.ashx?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://www.payamkotah.ir/FastSendSMS.ashx?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

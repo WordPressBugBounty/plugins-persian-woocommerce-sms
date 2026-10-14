@@ -5,7 +5,7 @@ Donate link: https://woosupport.ir
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 7.3.0
+Stable tag: 7.3.1
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -136,11 +136,10 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 * SMSFa.ir
 * SmsBefrest.ir
 * TJP.ir
-* farazsms.com (نام کاربری و کلمه عبور)
+* farazsms.com - ایران پیامک (فراز اس ام اس)
 * flashsms.ir (adminpayamak.ir)
 * gama.systems
-* ippanel.com (نام کاربری و کلمه عبور)
-* ippanel.com (کلید دسترسی)
+* ippanel.com - آی پی پنل (توکن)
 * iransmsserver.com
 * karenkart.com
 * kianartpanel.ir
@@ -164,22 +163,23 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 3. Complete Persian Woocommerce SMS Settings
 
 == Screenshots ==
-1. Screen shot 1
-2. Screen shot 2
-3. Screen shot 3
-4. Screen shot 4
-5. Screen shot 5
-6. Screen shot 6
-7. Screen shot 7
-8. Screen shot 8
-9. Screen shot 9
-10. Screen shot 10
-11. Screen shot 11
-12. Screen shot 12
-13. Screen shot 13
-14. Screen shot 14
+1. تنظیمات درگاه پیامک
+2. اطلاع رسانی مدیر | ربات تلگرام و بله رایگان
+3. ارسال پیامک وضعیت سفارشات
+4. خبرنامه حرفه‌ای محصولات
+5. مدیریت مشترکین خبرنامه
+6. ارسال پیامک تکی و انبوه
+7. تاریخچه پیامک‌های ارسال شده
+8. سازگاری با فروشندگان دکان
+9. ارسال پیامک به فروشندگان دکان
+10. شخصی سازی خبرنامه برای محصولات
+11. عضویت در خبرنامه
+12. ارسال پیامک دسته جمعی
+13. ارسال پیامک کد رهگیری پستی
 
 == Changelog ==
+= 7.3.1 - 1405/07/22 =
+* حل مشکل کلیدهای افزونه پیامک در لیست افزونه ها
 = 7.3.0 - 1405/07/19 =
 * معرفی افزونه ورود و ثبت نام پیامکی پینوا
 * حل مشکل کندی سرعت پیشخوان در برخی سایت‌ها

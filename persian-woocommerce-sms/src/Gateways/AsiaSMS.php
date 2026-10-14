@@ -32,7 +32,7 @@ class AsiaSMS extends Gateway {
 			'SenderId'  => $from,
 		];
 
-		$remote = wp_remote_get( 'http://api.asiasms.ir:8080/Messages/SendViaURL?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://api.asiasms.ir:8080/Messages/SendViaURL?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

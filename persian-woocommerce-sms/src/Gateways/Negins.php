@@ -26,7 +26,7 @@ class Negins extends Gateway {
 
 		foreach ( $this->mobile as $mobile ) {
 
-			$remote = wp_remote_get( 'http://negins.com/URLSend.aspx?Username=' . $username . '&Password=' . $password . '&PortalCode=' . $from . '&Mobile=' . $mobile . '&Message=' . urlencode( $massage ) . '&Flash=0' );
+			$remote = wp_remote_get( 'https://negins.com/URLSend.aspx?Username=' . $username . '&Password=' . $password . '&PortalCode=' . $from . '&Mobile=' . $mobile . '&Message=' . urlencode( $massage ) . '&Flash=0' );
 
 			$response = wp_remote_retrieve_body( $remote );
 

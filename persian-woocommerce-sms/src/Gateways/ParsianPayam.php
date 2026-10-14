@@ -28,7 +28,7 @@ class ParsianPayam extends Gateway {
 
 		try {
 
-			$client     = new SoapClient( "http://onepayam.ir/API/Send.asmx?wsdl" );
+			$client     = new SoapClient( "https://onepayam.ir/API/Send.asmx?wsdl" );
 			$encoding   = "UTF-8";
 			$parameters = [
 				'username' => $username,

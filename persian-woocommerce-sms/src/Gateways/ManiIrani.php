@@ -29,7 +29,7 @@ class ManiIrani extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( 'http://sms.manirani.ir/API/Send.asmx?WSDL' );
+			$client       = new SoapClient( 'https://sms.manirani.ir/API/Send.asmx?WSDL' );
 			$sms_response = $client->SendSms(
 				[
 					'username' => $username,

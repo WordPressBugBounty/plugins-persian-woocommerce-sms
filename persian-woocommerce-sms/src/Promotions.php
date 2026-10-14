@@ -22,7 +22,7 @@ class Promotions {
                     ملی پیامک</strong> است. این سامانه 20% تخفیف با کد <code>wcsms20</code> به مدیران سایت های وردپرس
                 ارائه می‌دهد.
                 <br><br>
-                <a href='http://www.melipayamak.com/' class='button button-primary button-large' target='_blank'>خرید
+                <a href='https://www.melipayamak.com/' class='button button-primary button-large' target='_blank'>خرید
                     پنل ملی پیامک با 20% تخفیف</a>
                 <a href='#' onclick='return false;' class='button button-secondary button-large'>من از قبل پنل اس ام
                     اس دارم</a>

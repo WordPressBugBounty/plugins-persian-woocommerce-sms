@@ -24,7 +24,7 @@ class PayamResan extends Gateway {
 
 		$to = implode( ',', $this->mobile );
 
-		$url = 'http://www.payam-resan.com/APISend.aspx?UserName=' . rawurlencode( $username ) .
+		$url = 'https://www.payam-resan.com/APISend.aspx?UserName=' . rawurlencode( $username ) .
 		       '&Password=' . rawurlencode( $password ) .
 		       '&To=' . rawurlencode( $to ) .
 		       '&From=' . rawurlencode( $from ) .

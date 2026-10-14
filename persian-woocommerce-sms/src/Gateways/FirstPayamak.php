@@ -28,7 +28,7 @@ class FirstPayamak extends Gateway {
 		}
 
 		try {
-			$client = new SoapClient( "http://ui.firstpayamak.ir/webservice/v2.asmx?WSDL" );
+			$client = new SoapClient( "https://ui.firstpayamak.ir/webservice/v2.asmx?WSDL" );
 			$params = [
 				'username'         => $username,
 				'password'         => $password,

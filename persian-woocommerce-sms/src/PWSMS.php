@@ -82,7 +82,7 @@ class PWSMS {
 		wp_register_style( 'pwsms-sweetalert2', PWSMS_URL . '/assets/css/sweetalert2.min.css', [], PWSMS_VERSION );
 	}
 
-	public function action_links( array $links ): array {
+	public function action_links( array $actions ): array {
 
 		$actions['settings'] = sprintf( '<a href="%s" target="blank">%s</a>', admin_url( 'admin.php?page=persian-woocommerce-sms-pro' ), 'تنظیمات' );
 

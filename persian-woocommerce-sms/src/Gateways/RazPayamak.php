@@ -28,7 +28,7 @@ class RazPayamak extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://37.228.138.118/post/send.asmx?wsdl" );
+			$client       = new SoapClient( "https://37.228.138.118/post/send.asmx?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

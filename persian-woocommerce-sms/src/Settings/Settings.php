@@ -784,7 +784,7 @@ class Settings {
 
 	public function footer_note( $text ) {
 		if ( isset( $_GET['page'] ) && $_GET['page'] == 'persian-woocommerce-sms-pro' ) {
-			return ' این افزونه به صورت رایگان از سوی <a href="http://woosupport.ir/" target="_blank">ووکامرس فارسی</a> ارائه شده است. هر گونه کپی برداری و کسب درآمد از آن توسط سایرین غیر مجاز می‌باشد.';
+			return ' این افزونه به صورت رایگان از سوی <a href="https://woosupport.ir/" target="_blank">ووکامرس فارسی</a> ارائه شده است. هر گونه کپی برداری و کسب درآمد از آن توسط سایرین غیر مجاز می‌باشد.';
 		}
 
 		return $text;

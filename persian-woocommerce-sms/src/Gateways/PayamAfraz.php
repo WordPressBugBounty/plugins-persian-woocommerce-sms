@@ -27,7 +27,7 @@ class PayamAfraz extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://payamafraz.ir/post/send.asmx?wsdl" );
+			$client       = new SoapClient( "https://payamafraz.ir/post/send.asmx?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

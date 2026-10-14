@@ -31,7 +31,7 @@ class AradPayamak extends Gateway {
 
 		try {
 
-			$client             = new SoapClient( "http://aradpayamak.net/APPs/SMS/WebService.php?wsdl" );
+			$client             = new SoapClient( "https://aradpayamak.net/APPs/SMS/WebService.php?wsdl" );
 			$sendsms_parameters = [
 				'domain'   => 'aradpayamak.net',
 				'username' => $username,

@@ -32,7 +32,7 @@ class Jarin extends Gateway {
 			'lines'            => $from,
 		];
 
-		$remote = wp_remote_post( "http://wp.jarin.ir/Api/SendMessage.php", [
+		$remote = wp_remote_post( "https://wp.jarin.ir/Api/SendMessage.php", [
 			'body' => $param,
 		] );
 

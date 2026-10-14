@@ -98,7 +98,7 @@ class ListTable extends WP_List_Table {
 			$result = 'پیامک با موفقیت ارسال شد.';
 		}
 
-		return $result;
+		return esc_html( $result );
 	}
 
 	public function column_type( $item ) {

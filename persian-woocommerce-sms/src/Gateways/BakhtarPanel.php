@@ -2,7 +2,7 @@
 
 namespace PW\PWSMS\Gateways;
 
-use nusoap_client;
+use SoapClient;
 
 class BakhtarPanel extends Gateway {
 
@@ -27,9 +27,7 @@ class BakhtarPanel extends Gateway {
 
 		$to = implode( ',', $this->mobile );
 
-		/*PWSMS()->nusoap();*/
-
-		$client = new nusoap_client( 'http://login.bakhtar.xyz/webservice/server.asmx?wsdl' );
+		$client = new SoapClient( 'https://login.bakhtar.xyz/webservice/server.asmx?wsdl' );
 
 		$status = explode( ',', ( $client->call( 'Sendsms', [
 			'4',

@@ -2,7 +2,7 @@
 
 namespace PW\PWSMS\Gateways;
 
-use nusoap_client;
+use SoapClient;
 
 class Berandet extends Gateway {
 
@@ -25,9 +25,6 @@ class Berandet extends Gateway {
 		if ( empty( $username ) || empty( $password ) ) {
 			return false;
 		}
-
-
-		/*PWSMS()->nusoap();*/
 
 		$i = sizeOf( $to );
 		while ( $i -- ) {
@@ -59,7 +56,7 @@ class Berandet extends Gateway {
 
 		$timeout                  = 1800;
 		$response_timeout         = 180;
-		$client                   = new nusoap_client( "http://berandet.ir/Modules/DevelopmentTools/Groups/Messaging/MessagingWbs.php?wsdl",
+		$client                   = new SoapClient( "https://berandet.ir/Modules/DevelopmentTools/Groups/Messaging/MessagingWbs.php?wsdl",
 			true, false, false, false, false, $timeout, $response_timeout, '' );
 		$client->soap_defencoding = 'UTF-8';
 		$client->decode_utf8      = false;

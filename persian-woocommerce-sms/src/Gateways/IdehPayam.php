@@ -29,7 +29,7 @@ class IdehPayam extends Gateway {
 
 		try {
 
-			$soap = new SoapClient( "http://185.112.33.61/webservice/send.php?wsdl" );
+			$soap = new SoapClient( "https://185.112.33.61/webservice/send.php?wsdl" );
 
 			$soap->Username = $username;
 			$soap->Password = $password;

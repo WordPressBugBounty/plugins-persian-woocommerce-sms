@@ -29,7 +29,7 @@ class AradSMS extends Gateway {
 		}
 
 		try {
-			$client = new SoapClient( "http://arad-sms.ir/post/send.asmx?wsdl" );
+			$client = new SoapClient( "https://arad-sms.ir/post/send.asmx?wsdl" );
 
 			$encoding     = "UTF-8";
 			$parameters   = [

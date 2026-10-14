@@ -26,7 +26,7 @@ class ParsianTD extends Gateway {
 
 		foreach ( (array) $recievers as $to ) {
 
-			$content = 'http://sms.parsiantd.com/Api-Services/sms_sender_url.php?' .
+			$content = 'https://sms.parsiantd.com/Api-Services/sms_sender_url.php?' .
 			           '&username=' . rawurlencode( $username ) .
 			           '&password=' . rawurlencode( $password ) .
 			           '&from=' . rawurlencode( $from ) .

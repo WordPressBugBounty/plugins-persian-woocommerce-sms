@@ -28,7 +28,7 @@ class HiroSMS extends Gateway {
 
 		try {
 
-			$soap = new SoapClient( "http://my.hiro-sms.com/wbs/send.php?wsdl" );
+			$soap = new SoapClient( "https://my.hiro-sms.com/wbs/send.php?wsdl" );
 
 			$soap->Username = $username;
 			$soap->Password = $password;

@@ -45,7 +45,7 @@ class ParsGreen extends Gateway {
 
 		try {
 
-			$remote = wp_remote_post( 'http://sms.parsgreen.ir/Apiv2/Message/SendSms', $args );
+			$remote = wp_remote_post( 'https://sms.parsgreen.ir/Apiv2/Message/SendSms', $args );
 
 			$response = json_decode( wp_remote_retrieve_body( $remote ) );
 

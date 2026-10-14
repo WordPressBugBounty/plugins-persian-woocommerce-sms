@@ -80,81 +80,6 @@
             "install-path": "./pcre"
         },
         {
-            "name": "econea/nusoap",
-            "version": "v0.9.20",
-            "version_normalized": "0.9.20.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/contributte/nusoap.git",
-                "reference": "802484f443cf16495eb085f04351076456077f99"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/contributte/nusoap/zipball/802484f443cf16495eb085f04351076456077f99",
-                "reference": "802484f443cf16495eb085f04351076456077f99",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "ext-json": "*",
-                "ext-xml": "*",
-                "ext-zlib": "*",
-                "php": ">=5.4"
-            },
-            "require-dev": {
-                "php-parallel-lint/php-parallel-lint": "~1.2.0"
-            },
-            "time": "2025-07-15T07:09:21+00:00",
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.10.x-dev"
-                }
-            },
-            "installation-source": "dist",
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "LGPL-2.1-or-later"
-            ],
-            "authors": [
-                {
-                    "name": "Milan Felix Šulc",
-                    "homepage": "https://f3l1x.io"
-                }
-            ],
-            "description": "Fixed NuSOAP for PHP 5.4 - 8.2",
-            "homepage": "https://github.com/pwnlabs/nusoap",
-            "keywords": [
-                "client",
-                "http",
-                "nusoap",
-                "php",
-                "soap",
-                "transport",
-                "xml"
-            ],
-            "support": {
-                "issues": "https://github.com/contributte/nusoap/issues",
-                "source": "https://github.com/contributte/nusoap/tree/v0.9.20"
-            },
-            "funding": [
-                {
-                    "url": "https://contributte.org/partners.html",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/f3l1x",
-                    "type": "github"
-                }
-            ],
-            "install-path": "../econea/nusoap"
-        },
-        {
             "name": "ezyang/htmlpurifier",
             "version": "v4.19.1",
             "version_normalized": "4.19.1.0",
@@ -480,17 +405,17 @@
         },
         {
             "name": "phpoffice/phpspreadsheet",
-            "version": "1.30.6",
-            "version_normalized": "1.30.6.0",
+            "version": "1.30.7",
+            "version_normalized": "1.30.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPOffice/PhpSpreadsheet.git",
-                "reference": "a416375ffc8bf5b661c1bb4e6c60d8f3fddbe5ce"
+                "reference": "f5dd9c1f084d336ea63cf53099533e061a9c157a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPOffice/PhpSpreadsheet/zipball/a416375ffc8bf5b661c1bb4e6c60d8f3fddbe5ce",
-                "reference": "a416375ffc8bf5b661c1bb4e6c60d8f3fddbe5ce",
+                "url": "https://api.github.com/repos/PHPOffice/PhpSpreadsheet/zipball/f5dd9c1f084d336ea63cf53099533e061a9c157a",
+                "reference": "f5dd9c1f084d336ea63cf53099533e061a9c157a",
                 "shasum": ""
             },
             "require": {
@@ -536,7 +461,7 @@
                 "mpdf/mpdf": "Option for rendering PDF with PDF Writer",
                 "tecnickcom/tcpdf": "Option for rendering PDF with PDF Writer"
             },
-            "time": "2026-07-12T19:59:31+00:00",
+            "time": "2026-09-17T03:56:23+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -585,7 +510,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHPOffice/PhpSpreadsheet/issues",
-                "source": "https://github.com/PHPOffice/PhpSpreadsheet/tree/1.30.6"
+                "source": "https://github.com/PHPOffice/PhpSpreadsheet/tree/1.30.7"
             },
             "install-path": "../phpoffice/phpspreadsheet"
         },
@@ -701,17 +626,17 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.38.2",
-            "version_normalized": "1.38.2.0",
+            "version": "v1.43.0",
+            "version_normalized": "1.43.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
+                "reference": "4d5d331bf731e0aedbc6b2f5e61135b7b7996a72"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
-                "reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/4d5d331bf731e0aedbc6b2f5e61135b7b7996a72",
+                "reference": "4d5d331bf731e0aedbc6b2f5e61135b7b7996a72",
                 "shasum": ""
             },
             "require": {
@@ -724,7 +649,7 @@
             "suggest": {
                 "ext-mbstring": "For best performance"
             },
-            "time": "2026-05-27T06:59:30+00:00",
+            "time": "2026-09-24T15:19:04+00:00",
             "type": "library",
             "extra": {
                 "thanks": {
@@ -765,7 +690,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.38.2"
+                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.43.0"
             },
             "funding": [
                 {

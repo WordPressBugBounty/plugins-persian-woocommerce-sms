@@ -25,7 +25,7 @@ class KarenKart extends Gateway {
 		$to = implode( ',', $this->mobile );
 
 
-		$remote = wp_remote_get( 'http://www.karenkart.com/Home/send_via_get?note=' . $massage . '&username=' . $username . '&password=' . $password . '&receiver_number=' . $to . '&sender_number=' . $from . '' );
+		$remote = wp_remote_get( 'https://www.karenkart.com/Home/send_via_get?note=' . $massage . '&username=' . $username . '&password=' . $password . '&receiver_number=' . $to . '&sender_number=' . $from . '' );
 
 		$response = wp_remote_retrieve_body( $remote );
 

@@ -31,7 +31,7 @@ class BOne extends Gateway {
 
 		try {
 
-			$client             = new SoapClient( "http://1b1.ir/APPs/SMS/WebService.php?wsdl" );
+			$client             = new SoapClient( "https://1b1.ir/APPs/SMS/WebService.php?wsdl" );
 			$sendsms_parameters = [
 				'domain'   => '1b1.ir',
 				'username' => $username,

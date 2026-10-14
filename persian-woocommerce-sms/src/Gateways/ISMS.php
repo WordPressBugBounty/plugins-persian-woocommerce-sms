@@ -32,7 +32,7 @@ class ISMS extends Gateway {
 			'sender'   => $from,
 		];
 
-		$remote = wp_remote_get( 'http://ws3584.isms.ir/sendWS?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://ws3584.isms.ir/sendWS?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

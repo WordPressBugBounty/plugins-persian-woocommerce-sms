@@ -29,7 +29,7 @@ class FarsTech extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://sms.farstech.ir/post/send.asmx?wsdl" );
+			$client       = new SoapClient( "https://sms.farstech.ir/post/send.asmx?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

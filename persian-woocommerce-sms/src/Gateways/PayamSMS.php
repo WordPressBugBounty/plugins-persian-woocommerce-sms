@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use Exception;
-use nusoap_client;
+use SoapClient;
 
 class PayamSMS extends Gateway {
 
@@ -56,11 +56,8 @@ class PayamSMS extends Gateway {
 			$to[ $i ] = '98' . $ret;
 		}
 
-		/*PWSMS()->nusoap();*/
-
-
 		try {
-			$client                   = new nusoap_client( 'https://new.payamsms.com/services/v2/?wsdl', true );
+			$client                   = new SoapClient( 'https://new.payamsms.com/services/v2/?wsdl', true );
 			$client->soap_defencoding = 'UTF-8';
 			$client->decode_utf8      = false;
 

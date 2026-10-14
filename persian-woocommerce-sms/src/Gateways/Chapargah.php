@@ -30,7 +30,7 @@ class Chapargah extends Gateway {
 		$massage = iconv( 'UTF-8', 'UTF-8//TRANSLIT', $massage );
 
 		try {
-			$client       = new SoapClient( 'http://chapargah.com/API/Send.asmx?WSDL' );
+			$client       = new SoapClient( 'https://chapargah.com/API/Send.asmx?WSDL' );
 			$sms_response = $client->SendSms(
 				[
 					'username' => $username,

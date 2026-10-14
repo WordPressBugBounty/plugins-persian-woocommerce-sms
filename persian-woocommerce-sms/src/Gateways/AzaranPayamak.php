@@ -29,7 +29,7 @@ class AzaranPayamak extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( 'http://azaranpayamak.ir/API/Send.asmx?WSDL' );
+			$client       = new SoapClient( 'https://azaranpayamak.ir/API/Send.asmx?WSDL' );
 			$sms_response = $client->SendSms(
 				[
 					'username' => $username,

@@ -34,7 +34,7 @@ class SunwaySMS extends Gateway {
 				'message'  => urlencode( $massage ),
 			];
 
-			$remote = wp_remote_get( 'http://sms.sunwaysms.com/SMSWS/HttpService.ashx?' . http_build_query( $data ) );
+			$remote = wp_remote_get( 'https://sms.sunwaysms.com/SMSWS/HttpService.ashx?' . http_build_query( $data ) );
 
 			$response = wp_remote_retrieve_body( $remote );
 

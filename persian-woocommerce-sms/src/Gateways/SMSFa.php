@@ -29,7 +29,7 @@ class SMSFa extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( 'http://smsfa.net/API/Send.asmx?WSDL' );
+			$client       = new SoapClient( 'https://smsfa.net/API/Send.asmx?WSDL' );
 			$sms_response = $client->SendSms(
 				[
 					'username' => $username,

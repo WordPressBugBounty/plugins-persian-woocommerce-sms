@@ -28,7 +28,7 @@ class SefidSMS extends Gateway {
 		}
 
 		try {
-			$client     = new SoapClient( "http://api.sefidsms.ir/post/send.asmx?wsdl" );
+			$client     = new SoapClient( "https://api.sefidsms.ir/post/send.asmx?wsdl" );
 			$encoding   = "UTF-8";
 			$parameters = [
 				'username' => $username,

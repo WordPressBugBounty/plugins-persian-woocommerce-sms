@@ -4,7 +4,7 @@ namespace PW\PWSMS\Gateways;
 
 
 use Exception;
-use nusoap_client;
+use SoapClient;
 
 class SMSPishgaman extends Gateway {
 
@@ -55,11 +55,9 @@ class SMSPishgaman extends Gateway {
 			}
 			$to[ $i ] = '98' . $ret;
 		}
-
-		/*PWSMS()->nusoap();*/
-
+		
 		try {
-			$client                   = new nusoap_client( 'http://82.99.216.45/services/?wsdl', true );
+			$client                   = new SoapClient( 'https://82.99.216.45/services/?wsdl', true );
 			$client->soap_defencoding = 'UTF-8';
 			$client->decode_utf8      = false;
 

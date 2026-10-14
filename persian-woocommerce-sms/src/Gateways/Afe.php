@@ -26,7 +26,7 @@ class Afe extends Gateway {
 
 		foreach ( $this->mobile as $mobile ) {
 
-			$remote = wp_remote_get( 'http://www.afe.ir/Url/SendSMS?username=' . $username . '&Password=' . $password . '&Number=' . $from . '&mobile=' . $mobile . '&sms=' . $massage );
+			$remote = wp_remote_get( 'https://www.afe.ir/Url/SendSMS?username=' . $username . '&Password=' . $password . '&Number=' . $from . '&mobile=' . $mobile . '&sms=' . $massage );
 
 			$response = wp_remote_retrieve_body( $remote );
 

@@ -32,7 +32,7 @@ class PardisSMS extends Gateway {
 			'note'            => $massage,
 		];
 
-		$remote = wp_remote_get( 'http://pardis.ssmss.ir/send_via_get/send_sms.php?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://pardis.ssmss.ir/send_via_get/send_sms.php?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

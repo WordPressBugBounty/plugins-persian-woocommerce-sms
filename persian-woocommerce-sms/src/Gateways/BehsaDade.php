@@ -41,7 +41,7 @@ class BehsaDade extends Gateway {
 				'sender_number'   => $from,
 			];
 
-			$remote = wp_remote_get( 'http://sms.behsadade.com/webservice/rest/sms_send?' . http_build_query( $data ) );
+			$remote = wp_remote_get( 'https://sms.behsadade.com/webservice/rest/sms_send?' . http_build_query( $data ) );
 
 			$response = json_decode( wp_remote_retrieve_body( $remote ) );
 

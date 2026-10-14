@@ -396,7 +396,7 @@ class ListTable extends WP_List_Table {
 
 		if ( isset( $_REQUEST['s'] ) ) {
 
-			$s       = sanitize_text_field( $_REQUEST['s'] );
+			$s       = sanitize_text_field( wp_unslash( $_REQUEST['s'] ) );
 			$s       = self::prepareMobile( $s );
 			$where[] = $wpdb->prepare( "(`mobile` LIKE %s OR `product_id` = %s)", '%' . $s . '%', $s );
 
@@ -408,9 +408,18 @@ class ListTable extends WP_List_Table {
 
 		$where_sql = ! empty( $where ) ? 'WHERE ' . implode( ' AND ', $where ) : '';
 
-		$order_by = ! empty( $_REQUEST['orderby'] ) ? sanitize_text_field( $_REQUEST['orderby'] ) : 'id';
-		$order    = ! empty( $_REQUEST['order'] ) ? strtoupper( sanitize_text_field( $_REQUEST['order'] ) ) : 'DESC';
-		$order    = in_array( $order, [ 'ASC', 'DESC' ] ) ? $order : 'DESC';
+		$allowed_order_by = [
+			'id',
+			'mobile',
+			'product_id',
+			'groups',
+		];
+
+		$order_by = ! empty( $_REQUEST['orderby'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['orderby'] ) ) : 'id';
+		$order_by = in_array( $order_by, $allowed_order_by ) ? $order_by : 'id';
+
+		$order = ! empty( $_REQUEST['order'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_REQUEST['order'] ) ) ) : 'DESC';
+		$order = in_array( $order, [ 'ASC', 'DESC' ] ) ? $order : 'DESC';
 
 		$select = $count ? 'COUNT(*) AS total' : '*';
 

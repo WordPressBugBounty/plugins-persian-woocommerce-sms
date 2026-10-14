@@ -28,7 +28,7 @@ class LoginPanel extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://87.107.121.52/post/send.asmx?wsdl" );
+			$client       = new SoapClient( "https://87.107.121.52/post/send.asmx?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

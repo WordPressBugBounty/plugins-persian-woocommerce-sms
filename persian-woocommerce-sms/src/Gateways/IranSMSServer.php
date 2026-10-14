@@ -27,7 +27,7 @@ class IranSMSServer extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "http://sms.iransmsserver.ir/post/send.asmx?wsdl" );
+			$client       = new SoapClient( "https://sms.iransmsserver.ir/post/send.asmx?wsdl" );
 			$encoding     = "UTF-8";
 			$parameters   = [
 				'username' => $username,

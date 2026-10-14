@@ -27,7 +27,7 @@ class IRPayamak extends Gateway {
 		$to = implode( '-', $to );
 		$to = str_ireplace( '+98', '0', $to );
 
-		$url = 'http://irpayamak.com/API/SendSms.ashx?username=' . $username . '&password=' . $password . '&from=' . $from . '&to=' . $to . '&message=' . urlencode( trim( $massage ) );
+		$url = 'https://irpayamak.com/API/SendSms.ashx?username=' . $username . '&password=' . $password . '&from=' . $from . '&to=' . $to . '&message=' . urlencode( trim( $massage ) );
 
 		$remote = wp_remote_get( $url );
 

@@ -31,7 +31,7 @@ class WebSMS extends Gateway {
 		           '&csender=' . rawurlencode( $from ) .
 		           '&cbody=' . $massage;
 
-		$remote = wp_remote_get( 'http://s1.websms.ir/wservice.php?' . $content );
+		$remote = wp_remote_get( 'https://s1.websms.ir/wservice.php?' . $content );
 
 		$sms_response = wp_remote_retrieve_body( $remote );
 

@@ -31,7 +31,7 @@ class TJPIR extends Gateway {
 
 		try {
 
-			$client = new SoapClient( 'http://sms-login.tjp.ir/webservice/?WSDL', [
+			$client = new SoapClient( 'https://sms-login.tjp.ir/webservice/?WSDL', [
 				'login'    => $username,
 				'password' => $password,
 			] );

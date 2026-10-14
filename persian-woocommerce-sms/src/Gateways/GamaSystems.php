@@ -32,7 +32,7 @@ class GamaSystems extends Gateway {
 			'text'     => $massage,
 		];
 
-		$remote = wp_remote_get( 'http://sms.gama.systems/url/post/SendSMS.ashx?' . http_build_query( $data ) );
+		$remote = wp_remote_get( 'https://sms.gama.systems/url/post/SendSMS.ashx?' . http_build_query( $data ) );
 
 		$response = wp_remote_retrieve_body( $remote );
 

@@ -26,7 +26,7 @@ class _0098 extends Gateway {
 
 		foreach ( (array) $recievers as $to ) {
 
-			$url = 'http://www.0098sms.com/sendsmslink.aspx?DOMAIN=0098' .
+			$url = 'https://www.0098sms.com/sendsmslink.aspx?DOMAIN=0098' .
 			       '&USERNAME=' . rawurlencode( $username ) .
 			       '&PASSWORD=' . rawurlencode( $password ) .
 			       '&FROM=' . rawurlencode( $from ) .

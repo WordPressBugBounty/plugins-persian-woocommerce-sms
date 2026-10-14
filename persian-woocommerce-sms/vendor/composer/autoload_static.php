@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitb1491eef9abebeef3a826afb3b069082
+class ComposerStaticInit37745c5d5e3f13dafe43d45ad54be0ef
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
@@ -95,35 +95,15 @@ class ComposerStaticInitb1491eef9abebeef3a826afb3b069082
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Stringable' => __DIR__ . '/..' . '/myclabs/php-enum/stubs/Stringable.php',
-        'XMLSchema' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'nusoap_base' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'nusoap_client' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'nusoap_client_mime' => __DIR__ . '/..' . '/econea/nusoap/src/nusoapmime.php',
-        'nusoap_fault' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'nusoap_parser' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'nusoap_server' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'nusoap_server_mime' => __DIR__ . '/..' . '/econea/nusoap/src/nusoapmime.php',
-        'nusoap_wsdlcache' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'nusoap_xmlschema' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'nusoapservermime' => __DIR__ . '/..' . '/econea/nusoap/src/nusoapmime.php',
-        'soap_fault' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'soap_parser' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'soap_server' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'soap_transport_http' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'soapclient' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'soapclientmime' => __DIR__ . '/..' . '/econea/nusoap/src/nusoapmime.php',
-        'soapval' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'wsdl' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
-        'wsdlcache' => __DIR__ . '/..' . '/econea/nusoap/src/nusoap.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitb1491eef9abebeef3a826afb3b069082::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitb1491eef9abebeef3a826afb3b069082::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitb1491eef9abebeef3a826afb3b069082::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitb1491eef9abebeef3a826afb3b069082::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit37745c5d5e3f13dafe43d45ad54be0ef::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit37745c5d5e3f13dafe43d45ad54be0ef::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit37745c5d5e3f13dafe43d45ad54be0ef::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit37745c5d5e3f13dafe43d45ad54be0ef::$classMap;
 
         }, null, ClassLoader::class);
     }
