@@ -4,7 +4,7 @@ namespace PW\PWSMS\Gateways;
 
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class TJPIR extends Gateway {
 
@@ -31,15 +31,18 @@ class TJPIR extends Gateway {
 
 		try {
 
-			$client = new SoapClient( 'https://sms-login.tjp.ir/webservice/?WSDL', [
-				'login'    => $username,
-				'password' => $password,
-			] );
+			$client = new SoapClient(
+				'https://sms-login.tjp.ir/webservice/?WSDL',
+				[
+					'login'    => $username,
+					'password' => $password,
+				]
+			);
 
 			$client->sendToMany( $to, $massage );
 
-		} catch ( SoapFault $sf ) {
-			$sms_response = $sf->getMessage();
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( empty( $sms_response ) ) {

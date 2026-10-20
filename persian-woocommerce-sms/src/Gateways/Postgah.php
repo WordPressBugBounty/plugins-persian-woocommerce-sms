@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class Postgah extends Gateway {
 
@@ -27,7 +27,9 @@ class Postgah extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( 'https://postgah.net/API/Send.asmx?WSDL' );
+
+			$client = new SoapClient( 'https://postgah.net/API/Send.asmx?WSDL' );
+
 			$sms_response = $client->SendSms(
 				[
 					'username' => $username,
@@ -39,9 +41,11 @@ class Postgah extends Gateway {
 					'udh'      => '',
 				]
 			)->SendSmsResult;
-		} catch ( SoapFault $sf ) {
-			$sms_response = $sf->getMessage();
+
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
+
 		if ( strval( $sms_response ) == '0' ) {
 			return true; // Success
 		} else {

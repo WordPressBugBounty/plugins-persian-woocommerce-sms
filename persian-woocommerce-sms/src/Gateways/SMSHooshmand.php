@@ -3,6 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
+use Throwable;
 
 class SMSHooshmand extends Gateway {
 
@@ -25,12 +26,6 @@ class SMSHooshmand extends Gateway {
 		}
 
 		$to = $this->mobile;
-
-		$client = new SoapClient( "https://smswbs.ir/class/sms/webservice/server.php?wsdl" );
-
-		$client->soap_defencoding = 'UTF-8';
-		$client->decode_utf8      = true;
-		$client->setCredentials( $username, $password );
 
 		$i = sizeOf( $to );
 		while ( $i -- ) {
@@ -60,20 +55,35 @@ class SMSHooshmand extends Gateway {
 			$to[ $i ] = '+98' . $ret;
 		}
 
-		$parameters = [
-			'from'       => $from,
-			'rcpt_array' => $to,
-			'msg'        => $massage,
-			'type'       => 'normal',
-		];
+		try {
 
-		$result = $client->call( "enqueue", $parameters );
-		if ( ( isset( $result['state'] ) && $result['state'] == 'done' ) && ( isset( $result['errnum'] ) && ( $result['errnum'] == '100' || $result['errnum'] == 100 ) ) ) {
-			return true; // Success
-		} else {
-			$response = $result;
+			$client = new SoapClient(
+				"https://smswbs.ir/class/sms/webservice/server.php?wsdl",
+				[
+					'encoding' => 'UTF-8',
+					'login'    => $username,
+					'password' => $password,
+				]
+			);
+
+			$parameters = [
+				'from'       => $from,
+				'rcpt_array' => $to,
+				'msg'        => $massage,
+				'type'       => 'normal',
+			];
+
+			$result = $client->enqueue( $parameters );
+
+		} catch ( Throwable $e ) {
+			$result = $e->getMessage();
 		}
 
-		return $response;
+		if ( ( $result->state ?? null ) != 'done' || ( $result->errnum ?? null ) != 100 ) {
+			return $result;
+		}
+
+		return true; // Success
 	}
+
 }

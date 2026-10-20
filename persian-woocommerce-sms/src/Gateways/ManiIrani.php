@@ -4,7 +4,7 @@ namespace PW\PWSMS\Gateways;
 
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class ManiIrani extends Gateway {
 
@@ -29,7 +29,9 @@ class ManiIrani extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( 'https://sms.manirani.ir/API/Send.asmx?WSDL' );
+
+			$client = new SoapClient( 'https://sms.manirani.ir/API/Send.asmx?WSDL' );
+
 			$sms_response = $client->SendSms(
 				[
 					'username' => $username,
@@ -41,8 +43,9 @@ class ManiIrani extends Gateway {
 					'udh'      => '',
 				]
 			)->SendSmsResult;
-		} catch ( SoapFault $sf ) {
-			$sms_response = $sf->getMessage();
+
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( intval( $sms_response ) > 0 ) {

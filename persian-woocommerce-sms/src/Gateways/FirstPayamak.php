@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class FirstPayamak extends Gateway {
 
@@ -28,7 +28,9 @@ class FirstPayamak extends Gateway {
 		}
 
 		try {
+
 			$client = new SoapClient( "https://ui.firstpayamak.ir/webservice/v2.asmx?WSDL" );
+
 			$params = [
 				'username'         => $username,
 				'password'         => $password,
@@ -39,8 +41,9 @@ class FirstPayamak extends Gateway {
 
 			$sms_response = $client->SendSMS( $params );
 			$sms_response = (array) $sms_response->SendSMSResult->long;
-		} catch ( SoapFault $ex ) {
-			$sms_response = $ex->getMessage();
+
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( is_array( $sms_response ) ) {

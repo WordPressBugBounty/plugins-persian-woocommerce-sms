@@ -3,6 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
+use Throwable;
 
 class SMSNegarCOM extends Gateway {
 
@@ -67,8 +68,9 @@ class SMSNegarCOM extends Gateway {
 			} else {
 				$sms_response = 'unknown';
 			}
-		} catch ( Exception $ex ) {
-			$sms_response = $ex->getMessage();
+
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( empty( $sms_response ) ) {

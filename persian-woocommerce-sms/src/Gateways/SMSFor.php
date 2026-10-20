@@ -4,6 +4,7 @@ namespace PW\PWSMS\Gateways;
 
 
 use SoapClient;
+use Throwable;
 
 class SMSFor extends Gateway {
 
@@ -16,7 +17,6 @@ class SMSFor extends Gateway {
 	}
 
 	public function send() {
-		$response = false;
 		$username = $this->username;
 		$password = $this->password;
 		$from     = $this->senderNumber;
@@ -25,6 +25,7 @@ class SMSFor extends Gateway {
 		if ( empty( $username ) || empty( $password ) ) {
 			return false;
 		}
+
 		$to = $this->mobile;
 
 		$i = sizeOf( $to );
@@ -55,31 +56,40 @@ class SMSFor extends Gateway {
 			$to[ $i ] = '0' . $ret;
 		}
 
-		$client                   = new SoapClient( 'https://www.smsfor.ir/webservice/soap/smsService.php?wsdl',
-			'wsdl' );
-		$client->soap_defencoding = 'UTF-8';
-		$client->decode_utf8      = false;
+		try {
 
-		$params = [
-			'username'         => $username,
-			'password'         => $password,
-			'sender_number'    => [ $from ],
-			'receiver_number'  => $to,
-			'note'             => [ $massage ],
-			'date'             => [],
-			'request_uniqueid' => [],
-			'flash'            => false,
-			'onlysend'         => 'ok',
-		];
-		$md_res = $client->call( "send_sms", $params );
+			$client = new SoapClient(
+				'https://www.smsfor.ir/webservice/soap/smsService.php?wsdl',
+				[
+					'encoding' => 'UTF-8',
+				]
+			);
 
-		if ( empty( $md_res['getMessage()'] ) && empty( $md_res['getMessage()'] ) && is_numeric( str_ireplace( ',', '',
-				$md_res[0] ) ) ) {
-			return true; // Success
-		} else {
-			$response = $md_res;
+			$params = [
+				'username'         => $username,
+				'password'         => $password,
+				'sender_number'    => [ $from ],
+				'receiver_number'  => $to,
+				'note'             => [ $massage ],
+				'date'             => [],
+				'request_uniqueid' => [],
+				'flash'            => false,
+				'onlysend'         => 'ok',
+			];
+
+			$md_res = $client->send_sms( $params );
+
+			if ( empty( $md_res->{'getMessage()'} ) && empty( $md_res->{'getMessage()'} ) && is_numeric( str_ireplace( ',', '', $md_res[0] ) ) ) {
+				return true; // Success
+			} else {
+				$response = $md_res;
+			}
+
+		} catch ( Throwable $e ) {
+			$response = $e->getMessage();
 		}
 
 		return $response;
 	}
+
 }

@@ -40,7 +40,6 @@ class Bulk {
 	}
 
 	public function bulk_form() {
-		$mobiles = $_POST['pwsms_mobiles'] ?? '';
 		?>
 
 		<div class="notice notice-info below-h2">
@@ -53,7 +52,7 @@ class Bulk {
 				<label for="pwoosms_mobile">شماره دریافت کننده</label><br>
 				<input type="text" name="pwoosms_mobile" id="pwoosms_mobile"
 				       style="direction:ltr; text-align:left; width:100%;"
-				       value="<?php echo $mobiles; ?>"
+				       value="<?php echo esc_attr( $_POST['pwsms_mobiles'] ?? '' ); ?>"
 				/>
 				<span>شماره‌ها را با کاما (,) جدا نمایید.</span>
 			</p>

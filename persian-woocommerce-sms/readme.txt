@@ -5,7 +5,7 @@ Donate link: https://woosupport.ir
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 7.3.1
+Stable tag: 7.3.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -178,6 +178,11 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 13. ارسال پیامک کد رهگیری پستی
 
 == Changelog ==
+= 7.3.2 - 1405/07/28 =
+* فعالسازی باکس رهگیری پستی به صورت پیشفرض
+* حذف nusoap_client و استفاده از SoapClient
+* سازگاری با ووکامرس 11.2
+* حل خطاهای گزارش شده کاربران
 = 7.3.1 - 1405/07/22 =
 * حل مشکل کلیدهای افزونه پیامک در لیست افزونه ها
 = 7.3.0 - 1405/07/19 =

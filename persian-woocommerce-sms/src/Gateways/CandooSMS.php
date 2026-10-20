@@ -3,8 +3,8 @@
 namespace PW\PWSMS\Gateways;
 
 
-use Exception;
 use SoapClient;
+use Throwable;
 
 class CandooSMS extends Gateway {
 
@@ -57,11 +57,15 @@ class CandooSMS extends Gateway {
 		}
 
 		try {
-			$client                   = new SoapClient( 'https://my.candoosms.com/services/?wsdl', true );
-			$client->soap_defencoding = 'UTF-8';
-			$client->decode_utf8      = false;
 
-			$results = $client->call( 'Send', [
+			$client = new SoapClient(
+				'https://my.candoosms.com/services/?wsdl',
+				[
+					'encoding' => 'UTF-8',
+				]
+			);
+
+			$results = $client->Send( [
 				'username'  => $username,
 				'password'  => $password,
 				'srcNumber' => $from,
@@ -72,7 +76,7 @@ class CandooSMS extends Gateway {
 
 			$error = [];
 			foreach ( $results as $result ) {
-				if ( ! isset( $result['Mobile'] ) || stripos( $result['ID'], 'e' ) !== false ) {
+				if ( ! isset( $result->Mobile ) || stripos( $result->ID, 'e' ) !== false ) {
 					$error[] = $result;
 				}
 			}
@@ -80,7 +84,10 @@ class CandooSMS extends Gateway {
 			if ( empty( $error ) ) {
 				return true; // Success
 			}
-		} catch ( Exception $e ) {
+
+			$response = implode( ',', $error );
+
+		} catch ( Throwable $e ) {
 			$response = $e->getMessage();
 		}
 

@@ -2,8 +2,8 @@
 
 namespace PW\PWSMS\Gateways;
 
-use Exception;
 use SoapClient;
+use Throwable;
 
 class _3300 extends Gateway {
 
@@ -16,7 +16,7 @@ class _3300 extends Gateway {
 	}
 
 	public function send() {
-		$response = false;
+
 		$username = $this->username;
 		$password = $this->password;
 		$from     = $this->senderNumber;
@@ -30,12 +30,15 @@ class _3300 extends Gateway {
 		$to = $this->mobile;
 
 		try {
-			$client                   = new SoapClient( 'https://sms.3300.ir/almassms.asmx?wsdl', 'wsdl', '', '', '',
-				'' );
-			$client->soap_defencoding = 'UTF-8';
-			$client->decode_utf8      = true;
 
-			$param  = [
+			$client = new SoapClient(
+				'https://sms.3300.ir/almassms.asmx?wsdl',
+				[
+					'encoding'   => 'UTF-8',
+				]
+			);
+
+			$param = [
 				'pUsername' => $username,
 				'pPassword' => $password,
 				'line'      => $from,
@@ -44,8 +47,10 @@ class _3300 extends Gateway {
 				'Encodings' => [ 'int' => 2 ],
 				'mclass'    => [ 'int' => 1 ],
 			];
-			$result = $client->call( "Send", $param );
-			$result = isset( $result['SendResult'] ) ? $result['SendResult'] : 0;
+
+			$result = $client->Send( $param );
+
+			$result = $result->SendResult ?? 0;
 
 			if ( $result < 0 ) {
 				return true; // Success
@@ -53,10 +58,11 @@ class _3300 extends Gateway {
 				$response = $result;
 			}
 
-		} catch ( Exception $ex ) {
-			$response = $ex->getMessage();
+		} catch ( Throwable $e ) {
+			$response = $e->getMessage();
 		}
 
 		return $response;
 	}
+
 }

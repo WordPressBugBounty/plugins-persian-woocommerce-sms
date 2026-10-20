@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class SefidSMS extends Gateway {
 
@@ -28,7 +28,9 @@ class SefidSMS extends Gateway {
 		}
 
 		try {
-			$client     = new SoapClient( "https://api.sefidsms.ir/post/send.asmx?wsdl" );
+
+			$client = new SoapClient( "https://api.sefidsms.ir/post/send.asmx?wsdl" );
+
 			$encoding   = "UTF-8";
 			$parameters = [
 				'username' => $username,
@@ -44,8 +46,8 @@ class SefidSMS extends Gateway {
 
 			$sms_response = $client->SendSms( $parameters )->SendSmsResult;
 
-		} catch ( SoapFault $ex ) {
-			$sms_response = $ex->getMessage();
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( $sms_response == 1 ) {

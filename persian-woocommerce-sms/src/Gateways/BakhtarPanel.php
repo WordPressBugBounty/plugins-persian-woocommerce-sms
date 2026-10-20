@@ -3,6 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
+use Throwable;
 
 class BakhtarPanel extends Gateway {
 
@@ -27,25 +28,32 @@ class BakhtarPanel extends Gateway {
 
 		$to = implode( ',', $this->mobile );
 
-		$client = new SoapClient( 'https://login.bakhtar.xyz/webservice/server.asmx?wsdl' );
+		try {
 
-		$status = explode( ',', ( $client->call( 'Sendsms', [
-			'4',
-			$from,
-			$username,
-			$password,
-			'98',
-			$massage,
-			$to,
-			false,
-		] ) ) );
+			$client = new SoapClient( 'https://login.bakhtar.xyz/webservice/server.asmx?wsdl' );
 
-		if ( count( $status ) > 1 && $status[0] == 1 ) {
-			return true; // Success
-		} else {
-			$response = $status;
+			$result = $client->Sendsms( [
+				'4',
+				$from,
+				$username,
+				$password,
+				'98',
+				$massage,
+				$to,
+				false,
+			] );
+
+			$status = explode( ',', strval( $result ?? '' ) );
+
+		} catch ( Throwable $e ) {
+			$status = $e->getMessage();
 		}
 
-		return $response;
+		if ( is_array( $status ) && count( $status ) > 1 && $status[0] == 1 ) {
+			return true; // Success
+		}
+
+		return $status;
 	}
+
 }

@@ -3,6 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
+use Throwable;
 
 class AvalPayam extends Gateway {
 
@@ -15,7 +16,7 @@ class AvalPayam extends Gateway {
 	}
 
 	public function send() {
-		$response = false;
+
 		$username = $this->username;
 		$password = $this->password;
 		$from     = $this->senderNumber;
@@ -25,12 +26,6 @@ class AvalPayam extends Gateway {
 			return false;
 		}
 		$to = $this->mobile;
-
-		$client = new SoapClient( "https://www.avalpayam.com/class/sms/webservice/server.php?wsdl" );
-
-		$client->soap_defencoding = 'UTF-8';
-		$client->decode_utf8      = true;
-		$client->setCredentials( $username, $password, "basic" );
 
 		$i = sizeOf( $to );
 		while ( $i -- ) {
@@ -60,20 +55,36 @@ class AvalPayam extends Gateway {
 			$to[ $i ] = '+98' . $ret;
 		}
 
-		$parameters = [
-			'from'       => $from,
-			'rcpt_array' => $to,
-			'msg'        => $massage,
-			'type'       => 'normal',
-		];
+		try {
 
-		$result = $client->call( "enqueue", $parameters );
-		if ( ( isset( $result['state'] ) && $result['state'] == 'done' ) && ( isset( $result['errnum'] ) && ( $result['errnum'] == '100' || $result['errnum'] == 100 ) ) ) {
-			return true; // Success
-		} else {
-			$response = $result;
+			$client = new SoapClient(
+				'https://www.avalpayam.com/class/sms/webservice/server.php?wsdl',
+				[
+					'encoding'       => 'UTF-8',
+					'login'          => $username,
+					'password'       => $password,
+					'authentication' => SOAP_AUTHENTICATION_BASIC,
+				]
+			);
+
+			$parameters = [
+				'from'       => $from,
+				'rcpt_array' => $to,
+				'msg'        => $massage,
+				'type'       => 'normal',
+			];
+
+			$result = $client->enqueue( $parameters );
+
+		} catch ( Throwable $e ) {
+			$result = $e->getMessage();
 		}
 
-		return $response;
+		if ( is_object( $result ) && ( isset( $result->state ) && $result->state == 'done' ) && ( isset( $result->errnum ) && ( $result->errnum == '100' || $result->errnum == 100 ) ) ) {
+			return true; // Success
+		}
+
+		return $result;
 	}
+
 }

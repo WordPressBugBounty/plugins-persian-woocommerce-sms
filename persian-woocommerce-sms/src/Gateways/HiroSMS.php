@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class HiroSMS extends Gateway {
 
@@ -28,17 +28,21 @@ class HiroSMS extends Gateway {
 
 		try {
 
-			$soap = new SoapClient( "https://my.hiro-sms.com/wbs/send.php?wsdl" );
+			$client = new SoapClient(
+				'https://my.hiro-sms.com/wbs/send.php?wsdl',
+				[
+					'encoding' => 'UTF-8',
+				]
+			);
 
-			$soap->Username = $username;
-			$soap->Password = $password;
-			$soap->fromNum  = $from;
-			$soap->toNum    = $to;
-			$soap->Content  = $massage;
-			$soap->Type     = '0';
-
-			$result = $soap->SendSMS( $soap->fromNum, $soap->toNum, $soap->Content, $soap->Type, $soap->Username,
-				$soap->Password );
+			$result = $client->SendSMS(
+				$from,
+				$to,
+				$massage,
+				'0',
+				$username,
+				$password
+			);
 
 			if ( ! empty( $result[0] ) && $result[0] > 100 ) {
 				return true; // Success
@@ -48,7 +52,7 @@ class HiroSMS extends Gateway {
 
 			return $response;
 
-		} catch ( SoapFault $e ) {
+		} catch ( Throwable $e ) {
 			return $e->getMessage();
 		}
 	}

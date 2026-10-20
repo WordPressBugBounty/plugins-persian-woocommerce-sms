@@ -347,10 +347,11 @@ class Settings {
 
 			'sms_buyer_settings' => apply_filters( 'pwoosms_buyer_settings', [
 				[
-					'name'  => 'enable_metabox',
-					'label' => 'متاباکس ارسال پیامک',
-					'desc'  => 'با فعالسازی این گزینه، در صورت فعال بودن قابلیت ارسال پیامک به مشتری، در صفحه سفارشات متاباکس ارسال پیامک به مشتریان اضافه می‌شود.',
-					'type'  => 'checkbox',
+					'name'    => 'enable_metabox',
+					'label'   => 'متاباکس ارسال پیامک',
+					'desc'    => 'با فعالسازی این گزینه، در صورت فعال بودن قابلیت ارسال پیامک به مشتری، در صفحه سفارشات متاباکس ارسال پیامک به مشتریان اضافه می‌شود.',
+					'type'    => 'checkbox',
+					'default' => 'yes',
 				],
 				[
 					'name'    => 'buyer_checkbox_text',

@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class BOne extends Gateway {
 
@@ -31,7 +31,8 @@ class BOne extends Gateway {
 
 		try {
 
-			$client             = new SoapClient( "https://1b1.ir/APPs/SMS/WebService.php?wsdl" );
+			$client = new SoapClient( "https://1b1.ir/APPs/SMS/WebService.php?wsdl" );
+
 			$sendsms_parameters = [
 				'domain'   => '1b1.ir',
 				'username' => $username,
@@ -42,14 +43,14 @@ class BOne extends Gateway {
 				'isflash'  => 0,
 			];
 
-			$sms_response = call_user_func_array( [ $client, 'sendSMS' ], $sendsms_parameters );
+			$sms_response = $client->sendSMS( $sendsms_parameters );
 
 			if ( ! empty( $sms_response ) ) {
 				return true; // Success
 			}
 
-		} catch ( SoapFault $ex ) {
-			$sms_response = $ex->getMessage();
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( $response !== true ) {

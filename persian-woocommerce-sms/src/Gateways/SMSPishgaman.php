@@ -3,8 +3,8 @@
 namespace PW\PWSMS\Gateways;
 
 
-use Exception;
 use SoapClient;
+use Throwable;
 
 class SMSPishgaman extends Gateway {
 
@@ -55,13 +55,17 @@ class SMSPishgaman extends Gateway {
 			}
 			$to[ $i ] = '98' . $ret;
 		}
-		
-		try {
-			$client                   = new SoapClient( 'https://82.99.216.45/services/?wsdl', true );
-			$client->soap_defencoding = 'UTF-8';
-			$client->decode_utf8      = false;
 
-			$results = $client->call( 'Send', [
+		try {
+
+			$client = new SoapClient(
+				'https://82.99.216.45/services/?wsdl',
+				[
+					'encoding' => 'UTF-8',
+				]
+			);
+
+			$results = $client->Send( [
 				'username'  => $username,
 				'password'  => $password,
 				'srcNumber' => $from,
@@ -72,7 +76,7 @@ class SMSPishgaman extends Gateway {
 
 			$error = [];
 			foreach ( $results as $result ) {
-				if ( ! isset( $result['Mobile'] ) || stripos( $result['ID'], 'e' ) !== false ) {
+				if ( ! isset( $result->Mobile ) || stripos( $result->ID ?? '', 'e' ) !== false ) {
 					$error[] = $result;
 				}
 			}
@@ -80,7 +84,10 @@ class SMSPishgaman extends Gateway {
 			if ( empty( $error ) ) {
 				return true; // Success
 			}
-		} catch ( Exception $e ) {
+
+			$response = implode( ',', $error );
+
+		} catch ( Throwable $e ) {
 			$response = $e->getMessage();
 		}
 

@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class ParsianPayam extends Gateway {
 
@@ -28,7 +28,8 @@ class ParsianPayam extends Gateway {
 
 		try {
 
-			$client     = new SoapClient( "https://onepayam.ir/API/Send.asmx?wsdl" );
+			$client = new SoapClient( "https://onepayam.ir/API/Send.asmx?wsdl" );
+
 			$encoding   = "UTF-8";
 			$parameters = [
 				'username' => $username,
@@ -43,8 +44,9 @@ class ParsianPayam extends Gateway {
 			];
 
 			$sms_response = $client->SendSms( $parameters )->SendSmsResult;
-		} catch ( SoapFault $ex ) {
-			$sms_response = $ex->getMessage();
+
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( $sms_response == 0 ) {

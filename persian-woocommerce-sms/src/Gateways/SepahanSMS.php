@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class SepahanSMS extends Gateway {
 
@@ -46,8 +46,8 @@ class SepahanSMS extends Gateway {
 				return true; // Success
 			}
 
-		} catch ( SoapFault $ex ) {
-			$sms_response = $ex->getMessage();
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( $response !== true ) {

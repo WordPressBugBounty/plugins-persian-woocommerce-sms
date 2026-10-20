@@ -4,7 +4,7 @@ namespace PW\PWSMS\Gateways;
 
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class NiazPardazIR extends Gateway {
 
@@ -29,9 +29,11 @@ class NiazPardazIR extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "https://payamak-service.ir/SendService.svc?wsdl" );
-			$encoding     = "UTF-8";
-			$parameters   = [
+
+			$client = new SoapClient( "https://payamak-service.ir/SendService.svc?wsdl" );
+
+			$encoding   = "UTF-8";
+			$parameters = [
 				'userName'       => $username,
 				'password'       => $password,
 				'fromNumber'     => $from,
@@ -42,10 +44,11 @@ class NiazPardazIR extends Gateway {
 				'recId'          => [ 0 ],
 				'status'         => 0,
 			];
+
 			$sms_response = $client->SendSms( $parameters )->SendSMSResult;
 
-		} catch ( SoapFault $ex ) {
-			$sms_response = $ex->getMessage();
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( strval( $sms_response ) == '0' ) {

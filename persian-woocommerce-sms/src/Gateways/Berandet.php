@@ -3,6 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
+use Throwable;
 
 class Berandet extends Gateway {
 
@@ -54,34 +55,39 @@ class Berandet extends Gateway {
 			$to[ $i ] = '+98' . $ret;
 		}
 
-		$timeout                  = 1800;
-		$response_timeout         = 180;
-		$client                   = new SoapClient( "https://berandet.ir/Modules/DevelopmentTools/Groups/Messaging/MessagingWbs.php?wsdl",
-			true, false, false, false, false, $timeout, $response_timeout, '' );
-		$client->soap_defencoding = 'UTF-8';
-		$client->decode_utf8      = false;
-		$client->response_timeout = $response_timeout;
-		$client->timeout          = $timeout;
+		$timeout = 1800;
 
-		$parameter = [
-			'request' => [
-				'username'   => $username,
-				'password'   => $password,
-				'fromNumber' => $from,
-				'message'    => $massage,
-				'recieptor'  => $to,
-			],
-		];
+		try {
 
-		$result = $client->call( 'sendMessageOneToMany', $parameter );
-		$result = json_decode( $result, true );
+			$client = new SoapClient(
+				'https://berandet.ir/Modules/DevelopmentTools/Groups/Messaging/MessagingWbs.php?wsdl',
+				[
+					'encoding'           => 'UTF-8',
+					'connection_timeout' => $timeout,
+				]
+			);
 
-		if ( ( isset( $result['errCode'] ) && $result['errCode'] < 0 ) || ! empty( $result['err'] ) ) {
-			$response = $result;
-		} else {
-			return true; // Success
+			$parameter = [
+				'request' => [
+					'username'   => $username,
+					'password'   => $password,
+					'fromNumber' => $from,
+					'message'    => $massage,
+					'recieptor'  => $to,
+				],
+			];
+
+			$result = $client->sendMessageOneToMany( $parameter );
+
+		} catch ( Throwable $e ) {
+			return $e->getMessage();
 		}
 
-		return $response;
+		if ( ( isset( $result->errCode ) && $result->errCode < 0 ) || ! empty( $result->err ) ) {
+			return json_encode( $result, JSON_UNESCAPED_UNICODE );
+		}
+
+		return true; // Success
 	}
+
 }

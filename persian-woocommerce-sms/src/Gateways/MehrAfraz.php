@@ -3,6 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
+use Throwable;
 
 class MehrAfraz extends Gateway {
 
@@ -15,7 +16,7 @@ class MehrAfraz extends Gateway {
 	}
 
 	public function send() {
-		$response = false;
+
 		$username = $this->username;
 		$password = $this->password;
 		$from     = $this->senderNumber;
@@ -25,7 +26,6 @@ class MehrAfraz extends Gateway {
 		if ( empty( $username ) || empty( $password ) ) {
 			return false;
 		}
-
 
 		try {
 
@@ -54,17 +54,21 @@ class MehrAfraz extends Gateway {
 				unset( $result );
 
 				foreach ( $results as $result ) {
+
 					if ( intval( $result ) < 1000 ) {
 						$result       = $client->ShowError( [ "cErrorCode" => $result, "cLanShow" => "FA" ] );
 						$sms_response = ! empty( $result->ShowErrorResult ) ? $result->ShowErrorResult : $results;
 						break;
 					}
+
 				}
+
 			} else {
 				$sms_response = 'unknown';
 			}
-		} catch ( Exception $ex ) {
-			$sms_response = $ex->getMessage();
+
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( empty( $sms_response ) ) {
@@ -73,4 +77,5 @@ class MehrAfraz extends Gateway {
 
 		return $sms_response;
 	}
+
 }

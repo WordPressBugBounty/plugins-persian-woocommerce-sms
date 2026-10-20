@@ -4,7 +4,7 @@ namespace PW\PWSMS\Gateways;
 
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class FarsTech extends Gateway {
 
@@ -29,9 +29,11 @@ class FarsTech extends Gateway {
 		}
 
 		try {
-			$client       = new SoapClient( "https://sms.farstech.ir/post/send.asmx?wsdl" );
-			$encoding     = "UTF-8";
-			$parameters   = [
+
+			$client = new SoapClient( "https://sms.farstech.ir/post/send.asmx?wsdl" );
+
+			$encoding   = "UTF-8";
+			$parameters = [
 				'username' => $username,
 				'password' => $password,
 				'from'     => $from,
@@ -42,9 +44,11 @@ class FarsTech extends Gateway {
 				'recId'    => [ 0 ],
 				'status'   => 0,
 			];
+
 			$sms_response = $client->SendSms( $parameters )->SendSmsResult;
-		} catch ( SoapFault $ex ) {
-			$sms_response = $ex->getMessage();
+
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
 
 		if ( $sms_response == 1 ) {

@@ -2,8 +2,8 @@
 
 namespace PW\PWSMS\Gateways;
 
-use Exception;
 use SoapClient;
+use Throwable;
 
 class PayamSMS extends Gateway {
 
@@ -57,11 +57,15 @@ class PayamSMS extends Gateway {
 		}
 
 		try {
-			$client                   = new SoapClient( 'https://new.payamsms.com/services/v2/?wsdl', true );
-			$client->soap_defencoding = 'UTF-8';
-			$client->decode_utf8      = false;
 
-			$results = $client->call( 'Send', [
+			$client = new SoapClient(
+				'https://new.payamsms.com/services/v2/?wsdl',
+				[
+					'encoding' => 'UTF-8',
+				]
+			);
+
+			$results = $client->Send( [
 				'organization' => $orginpayam,
 				'username'     => $username,
 				'password'     => $password,
@@ -73,7 +77,7 @@ class PayamSMS extends Gateway {
 
 			$error = [];
 			foreach ( $results as $result ) {
-				if ( ! isset( $result['Mobile'] ) || stripos( $result['ID'], 'e' ) !== false ) {
+				if ( ! isset( $result->Mobile ) || stripos( $result->ID, 'e' ) !== false ) {
 					$error[] = $result;
 				}
 			}
@@ -87,10 +91,11 @@ class PayamSMS extends Gateway {
 				}
 			}
 
-		} catch ( Exception $e ) {
+		} catch ( Throwable $e ) {
 			$response = $e->getMessage();
 		}
 
 		return $response;
 	}
+
 }

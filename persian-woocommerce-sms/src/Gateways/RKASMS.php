@@ -4,7 +4,7 @@ namespace PW\PWSMS\Gateways;
 
 use Exception;
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class RKASMS extends Gateway {
 
@@ -37,9 +37,12 @@ class RKASMS extends Gateway {
 			];
 
 			try {
-				$client   = new SoapClient( $this->api_url );
+
+				$client = new SoapClient( $this->api_url );
+
 				$response = $client->Send( $param );
-			} catch ( SoapFault $e ) {
+
+			} catch ( Throwable $e ) {
 				$this->failed_numbers[ $recipient ] = $e->getMessage();
 				continue;
 			}

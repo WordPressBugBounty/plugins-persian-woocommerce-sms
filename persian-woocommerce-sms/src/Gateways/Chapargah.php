@@ -3,7 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use SoapClient;
-use SoapFault;
+use Throwable;
 
 class Chapargah extends Gateway {
 
@@ -30,7 +30,9 @@ class Chapargah extends Gateway {
 		$massage = iconv( 'UTF-8', 'UTF-8//TRANSLIT', $massage );
 
 		try {
-			$client       = new SoapClient( 'https://chapargah.com/API/Send.asmx?WSDL' );
+
+			$client = new SoapClient( 'https://chapargah.com/API/Send.asmx?WSDL' );
+
 			$sms_response = $client->SendSms(
 				[
 					'username' => $username,
@@ -43,9 +45,11 @@ class Chapargah extends Gateway {
 					'status'   => 0,
 				]
 			)->SendSmsResult;
-		} catch ( SoapFault $sf ) {
-			$sms_response = $sf->getMessage();
+
+		} catch ( Throwable $e ) {
+			$sms_response = $e->getMessage();
 		}
+
 		if ( strval( $sms_response ) == '0' ) {
 			return true; // Success
 		} else {
