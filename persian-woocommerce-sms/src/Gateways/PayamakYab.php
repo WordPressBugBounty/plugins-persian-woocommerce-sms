@@ -28,7 +28,7 @@ class PayamakYab extends Gateway {
 
 		try {
 
-			$client = new SoapClient( "https://smspanel.payamakyab.com/Post/Send.asmx?wsdl" );
+			$client = new SoapClient( "https://p.1000sms.ir/Post/Send.asmx?wsdl" );
 
 			$encoding   = "UTF-8";
 			$parameters = [

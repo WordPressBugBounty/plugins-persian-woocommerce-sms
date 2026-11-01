@@ -2,8 +2,8 @@
 
 namespace PW\PWSMS\Gateways;
 
-use SoapClient;
-use Throwable;
+use Exception;
+use PW\PWSMS\Helpers\Curl;
 
 class WebOne extends Gateway {
 
@@ -16,45 +16,49 @@ class WebOne extends Gateway {
 	}
 
 	public function send() {
-		$username = $this->username;
-		$password = $this->password;
-		$from     = $this->senderNumber;
-		$to       = $this->mobile;
-		$message  = $this->message;
 
-		if ( empty( $username ) || empty( $password ) ) {
-			return false;
+		if ( empty( $this->username ) || empty( $this->password ) ) {
+			throw new Exception( 'لطفا نام کاربری و رمز عبور وبسرویس وب وان را در بخش تنظیمات وبسرویس ثبت نمایید.' );
 		}
 
-		try {
-
-			$client = new SoapClient( "https://payamakapi.ir/SendService.svc?wsdl" );
-
-			$encoding   = "UTF-8";
-			$parameters = [
-				'userName'       => $username,
-				'password'       => $password,
-				'fromNumber'     => $from,
-				'toNumbers'      => $to,
-				'messageContent' => iconv( $encoding, 'UTF-8//TRANSLIT', $message ),
-				'isflash'        => false,
-				'udh'            => "",
-				'recId'          => [ 0 ],
-				'status'         => 0,
-			];
-
-			$sms_response = $client->SendSms( $parameters )->SendSMSResult;
-
-		} catch ( Throwable $e ) {
-			$sms_response = $e->getMessage();
+		if ( empty ( $this->senderNumber ) ) {
+			throw new Exception( 'لطفا شماره ارسال کننده وبسرویس وب وان را در بخش تنظیمات وبسرویس ثبت نمایید.' );
 		}
 
-		if ( strval( $sms_response ) == '0' ) {
-			return true; // Success
-		} else {
-			$response = $sms_response;
+		$headers = [
+			"Content-Type: application/json",
+		];
+
+		$data = [
+			'UserName' => $this->username,
+			'Password' => $this->password,
+			'From'     => $this->senderNumber,
+			'Message'  => $this->message
+		];
+
+		foreach ( $this->mobile as $recipient ) {
+
+			$data['To'] = $recipient;
+
+			try {
+
+				$response = Curl::post( 'https://rest.payamakapi.ir/api/v1/SMS/Send', wp_json_encode( $data ), $headers );
+
+			} catch ( Exception $e ) {
+
+				$this->failed_numbers[ $recipient ] = $e->getMessage();
+				continue;
+
+			}
+
+			if ( ( $response['Status'] ?? false ) === true ) {
+				continue;
+			}
+
+			$this->failed_numbers[ $recipient ] = $response['Message'] ?? 'خطای ناشناخته ای در ارسال پیامک رخ داده است.';
 		}
 
-		return $response;
+		return $this->format_failed_numbers();
 	}
+
 }

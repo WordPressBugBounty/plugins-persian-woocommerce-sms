@@ -22,7 +22,11 @@ class RayganSMS extends Gateway {
 			return false;
 		}
 
-		$to = implode( '-', $this->mobile );
+		$to = array_map( function ( $mobile ) {
+			return preg_replace( '/^(\+980|\+98|098|98|0098|0)(\d{10})$/', '0$2', $mobile );
+		}, $this->mobile );
+
+		$to = implode( '-', $to );
 
 		$data = [
 			'Smsclass'    => 1,

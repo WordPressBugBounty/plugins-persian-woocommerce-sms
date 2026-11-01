@@ -3,6 +3,7 @@
 namespace PW\PWSMS\Gateways;
 
 use Exception;
+use PW\PWSMS\Helpers\Curl;
 
 class ParsGreen extends Gateway {
 
@@ -14,52 +15,39 @@ class ParsGreen extends Gateway {
 		return 'ParsGreen.com - پارس گرین';
 	}
 
-	public function send() {
-		$username = $this->username;
-		$from     = $this->senderNumber;
-		$massage  = $this->message;
+	/**
+	 * @throws Exception
+	 */
+	public function send(): bool {
+		$api_key = $this->get_token();
 
-		if ( empty( $username ) ) {
-			return false;
+		if ( empty( $api_key ) ) {
+			throw new Exception( 'کلید وبسرویس را در بخش تنظیمات وبسرویس تعریف کنید.' );
 		}
 
-		$to = $this->mobile;
-
-
-		$body = [
-			'SmsBody' => $massage,
-			'Mobiles' => $to,
-		];
-
-
-		$args = [
-			'body'        => json_encode( $body ),
-			'timeout'     => '45',
-			'headers'     => [
-				"Content-Type"  => "application/json; charset=utf-8",
-				"Accept"        => "application/json",
-				"Authorization" => "basic apikey:" . $username,
-			],
-			'data_format' => 'body',
-		];
-
-		try {
-
-			$remote = wp_remote_post( 'https://sms.parsgreen.ir/Apiv2/Message/SendSms', $args );
-
-			$response = json_decode( wp_remote_retrieve_body( $remote ) );
-
-
-		} catch ( Exception $ex ) {
-			return $response = "error";
+		if ( ! str_starts_with( $api_key, 'basic apikey:' ) ) {
+			$api_key = 'basic apikey:' . $api_key;
 		}
 
-		if ( $response->R_Success ) {
-			return $response = true;
-		} else {
-			$response = $response->R_Message;
+		$response = Curl::post(
+			'https://sms.parsgreen.ir/Apiv2/Message/SendSms',
+			wp_json_encode( [
+				'SmsBody'   => $this->message,
+				'Mobiles'   => $this->mobile,
+				'SmsNumber' => $this->senderNumber,
+			] ),
+			[
+				'Authorization: ' . $api_key,
+				'Accept: application/json',
+				'Content-Type: application/json; charset=utf-8',
+			]
+		);
+
+		if ( $response['R_Success'] ) {
+			return true;
 		}
 
-		return $response;
+		throw new Exception( $response['R_Message'] ?? $response['R_Error'] ?? 'خطای ناشناخته‌ای در ارسال پیامک توسط پارس گرین رخ داده است.' );
 	}
+
 }

@@ -5,7 +5,7 @@ Donate link: https://woosupport.ir
 Requires at least: 6.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 7.3.2
+Stable tag: 7.3.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -81,6 +81,7 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 * NH1.ir - نوین همراه
 * NMTSMS.ir - نگین مرمر تجارت
 * NPSMS.com - نوین پرداز
+* OneSMS.ir - وان اس‌ام‌اس
 * Negins.com - نگین
 * NewSMS.ir - نیو اس ام اس
 * NikSMS.com - نیک اس ام اس
@@ -178,6 +179,12 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 13. ارسال پیامک کد رهگیری پستی
 
 == Changelog ==
+= 7.3.3 - 1405/08/10 =
+* افزودن درگاه وان اس‌ام‌اس (OneSMS.ir)
+* بروزرسانی درگاه وب وان و استفاده از REST API
+* بروزرسانی درگاه پارس گرین و پشتیبانی از ارسال WhiteMsg
+* بروزرسانی درگاه رایگان اس ام اس و سازگاری با پینوا
+* بروزرسانی آدرس وبسرویس پیامک یاب
 = 7.3.2 - 1405/07/28 =
 * فعالسازی باکس رهگیری پستی به صورت پیشفرض
 * حذف nusoap_client و استفاده از SoapClient
